@@ -33,7 +33,8 @@
 ### 4. **Database Setup** ⚠️ REQUIRED
    - Install PostgreSQL
    - Create database: `CREATE DATABASE MarketAnalytics;`
-   - Update connection string in `appsettings.json` files if needed
+   - Store the connection string (with password) in user secrets, shared by Api and Worker:
+     `dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Database=MarketAnalytics;Username=postgres;Password=<your-password>" --project backend/MarketAnalytics.Api`
 
 ### 5. **Frontend Dependencies** ⚠️ REQUIRED
    - Run: `cd frontend && npm install`

@@ -5,7 +5,8 @@ using MarketAnalytics.Worker;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-// Database configuration
+// Database configuration (the password lives in user secrets, shared by Api and Worker)
+builder.Configuration.AddUserSecrets<Program>(optional: true);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? "Host=localhost;Database=MarketAnalytics;Username=postgres;Password=postgres";
 

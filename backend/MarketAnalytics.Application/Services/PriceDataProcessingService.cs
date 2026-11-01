@@ -64,14 +64,10 @@ public class PriceDataProcessingService : IPriceDataProcessingService
             return Enumerable.Empty<PriceDataDto>();
         }
 
-        // 3. Convert to value objects
-        var priceDataPoints = rawPricePoints
-            .OrderBy(p => p.DateTime)
-            .Select(p => new PriceDataPoint(p.DateTime, p.Price))
-            .ToList();
-
-        // 4. Clean data (already done in database - positive prices, valid dates, no duplicates)
-        // Skip explicit cleaning as database constraints ensure integrity
+        // 3-4. Convert to value objects and clean: dates and duplicates are enforced by the database,
+        //      but the sources occasionally contain one-day price spikes, which are dropped here
+        var priceDataPoints = PriceDataCleaner.RemoveSpikes(
+            rawPricePoints.Select(p => new PriceDataPoint(p.DateTime, p.Price)));
 
         // 5. Resample by interval
         var resampledData = _resamplingService.ResamplePriceData(priceDataPoints, interval);
@@ -82,6 +78,8 @@ public class PriceDataProcessingService : IPriceDataProcessingService
         var sma20 = _indicatorCalculationService.ComputeSma20(resampledList);
         var (upperBand, lowerBand) = _indicatorCalculationService.ComputeBollingerBands(resampledList);
         var intervalMAs = _indicatorCalculationService.ComputeIntervalSpecificMovingAverages(resampledList, interval);
+        var rsi = _indicatorCalculationService.ComputeRsi(resampledList);
+        var (macd, macdSignal, macdHistogram) = _indicatorCalculationService.ComputeMacd(resampledList);
 
         // 7. Filter by timeframe
         var filteredData = _timeframeFilterService.FilterByTimeframe(resampledList, timeframe);
@@ -101,7 +99,11 @@ public class PriceDataProcessingService : IPriceDataProcessingService
                 Price = dp.Price,
                 Sma20 = sma20.GetValueOrDefault(dp.DateTime),
                 UpperBand = upperBand.GetValueOrDefault(dp.DateTime),
-                LowerBand = lowerBand.GetValueOrDefault(dp.DateTime)
+                LowerBand = lowerBand.GetValueOrDefault(dp.DateTime),
+                Rsi14 = rsi.GetValueOrDefault(dp.DateTime),
+                Macd = macd.GetValueOrDefault(dp.DateTime),
+                MacdSignal = macdSignal.GetValueOrDefault(dp.DateTime),
+                MacdHistogram = macdHistogram.GetValueOrDefault(dp.DateTime)
             };
 
             // Add interval-specific MAs

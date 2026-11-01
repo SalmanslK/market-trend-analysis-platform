@@ -14,4 +14,8 @@ public class PriceDataDto
     public decimal? Ma4W { get; set; }
     public decimal? Ma6M { get; set; }
     public decimal? Ma12M { get; set; }
+    public decimal? Rsi14 { get; set; }
+    public decimal? Macd { get; set; }
+    public decimal? MacdSignal { get; set; }
+    public decimal? MacdHistogram { get; set; }
 }

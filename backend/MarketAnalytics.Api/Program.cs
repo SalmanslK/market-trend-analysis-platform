@@ -35,6 +35,7 @@ builder.Services.AddScoped<IResamplingService, ResamplingService>();
 builder.Services.AddScoped<ITimeframeFilterService, TimeframeFilterService>();
 builder.Services.AddScoped<IIndicatorCalculationService, IndicatorCalculationService>();
 builder.Services.AddScoped<IPriceDataProcessingService, PriceDataProcessingService>();
+builder.Services.AddScoped<IMarketAnalyticsService, MarketAnalyticsService>();
 
 // CORS configuration for React frontend
 builder.Services.AddCors(options =>

@@ -96,17 +96,50 @@ npm run dev
 
 Open http://localhost:3000. The Vite dev server proxies `/api` to the API on port 5000.
 
+## Tests
+
+```
+cd backend
+dotnet test
+```
+
+Covers the indicator maths (Bollinger, EMA, RSI, MACD, SMA, weekly resampling) and the analytics service
+(returns, drawdown, volatility, spike filter, signal scoring).
+
 ## Pages
 
-- **Dashboard**: latest price, SMA-20 and Bollinger Bands for every instrument
+- **Dashboard (Market Overview)**: price, 1D/1M/YTD/1Y change, RSI, 52-week range and a Buy/Hold/Sell
+  technical signal for every instrument; sortable columns, hover a signal for its reasons
 - **Instrument view**: price chart with SMA-20, Bollinger Bands and interval-specific moving averages
   (MA-4W for weekly, MA-6M / MA-12M for monthly). Indicators are computed on the full history before the
   timeframe is applied, so they cover the whole window; each line's latest value is shown in the legend.
+  Also shows the technical signal with its reasons, performance and risk stats, and RSI / MACD panels.
 - **Comparison**: % change of several instruments on one chart, plus a performance table
 - **Settings**: default interval/timeframe (saved in the browser), suggested presets, and data source
   update status
 
+## How the technical signal works
+
+Computed from daily prices (`MarketAnalyticsService`). Each rule adds +1 (bullish), -1 (bearish) or 0:
+
+| Rule | +1 | -1 |
+| --- | --- | --- |
+| Long-term trend | price above 200-period SMA | below |
+| Medium-term trend | price above 50-period SMA | below |
+| Momentum | MACD above its signal line | below |
+| RSI (14) | below 30 (oversold) | above 70 (overbought) |
+| Bollinger Bands | below the lower band | above the upper band |
+
+Score >= 3 Strong Buy, 1 to 2 Buy, 0 Hold, -1 to -2 Sell, <= -3 Strong Sell. Rules without enough history are
+skipped. One-day price spikes that immediately reverse (data errors in the sources) are filtered out when prices
+are read. Mutual fund NAVs drop when dividends are paid out and are not adjusted for this, so fund returns and
+signals around payout dates understate performance. Signals are not financial advice.
+
 ## Nice to have
+
+- **Dividend-adjusted fund returns**: needs payout data for the Meezan funds
+- **Backtesting**: measure how the signal rules would have performed on the stored history
+- **Alerts**: notify when an instrument's signal changes
 
 - **Error handling**: global exception middleware and more detailed error responses
 - **Validation**: FluentValidation for API request models

@@ -42,7 +42,7 @@ export default function Settings() {
 
   const handleSave = () => {
     const saved = savePreferences({ interval, timeframe })
-    setSaveMessage(saved ? 'Saved. Dashboard, Instrument and Comparison views will open with these defaults.' : 'Could not save: browser storage is unavailable.')
+    setSaveMessage(saved ? 'Saved. Instrument and Comparison views will open with these defaults.' : 'Could not save: browser storage is unavailable.')
   }
 
   const updateStatus = (lastUpdateDate?: string) => {

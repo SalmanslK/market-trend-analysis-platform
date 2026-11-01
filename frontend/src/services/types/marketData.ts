@@ -24,7 +24,7 @@ export enum InstrumentType {
   Commodity = 3,
 }
 
-export interface PriceDataDto {
+export interface PriceDataDto extends PriceIndicatorFields {
   dateTime: string;
   price: number;
   sma20?: number;
@@ -51,4 +51,54 @@ export interface SummaryDto {
   sma20?: number;
   upperBand?: number;
   lowerBand?: number;
+}
+export interface PriceIndicatorFields {
+  rsi14?: number;
+  macd?: number;
+  macdSignal?: number;
+  macdHistogram?: number;
+}
+
+export type SignalAction = 'StrongBuy' | 'Buy' | 'Hold' | 'Sell' | 'StrongSell';
+
+export interface SignalReason {
+  indicator: string;
+  /** +1 bullish, -1 bearish, 0 neutral */
+  impact: number;
+  detail: string;
+}
+
+export interface TechnicalSignal {
+  action: SignalAction;
+  score: number;
+  maxScore: number;
+  reasons: SignalReason[];
+}
+
+export interface InstrumentAnalyticsDto {
+  symbol: string;
+  name: string;
+  type: InstrumentType;
+  lastDate: string;
+  lastPrice: number;
+  dataPoints: number;
+  change1D?: number;
+  change1W?: number;
+  change1M?: number;
+  change3M?: number;
+  changeYtd?: number;
+  change1Y?: number;
+  high52W?: number;
+  low52W?: number;
+  rangePosition52W?: number;
+  volatility1Y?: number;
+  maxDrawdown1Y?: number;
+  rsi14?: number;
+  macd?: number;
+  macdSignal?: number;
+  macdHistogram?: number;
+  sma50?: number;
+  sma200?: number;
+  percentB?: number;
+  signal: TechnicalSignal;
 }

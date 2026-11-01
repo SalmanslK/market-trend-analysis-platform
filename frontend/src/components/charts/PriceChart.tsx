@@ -96,7 +96,7 @@ export default function PriceChart({ data, instrument, interval, timeframe }: Pr
       </div>
 
       <ResponsiveContainer width="100%" height="82%">
-        <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        <LineChart data={chartData} syncId="price" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="date" minTickGap={30} />
           {/* Fit the axis to the data so price moves are visible instead of squashed against a zero baseline */}

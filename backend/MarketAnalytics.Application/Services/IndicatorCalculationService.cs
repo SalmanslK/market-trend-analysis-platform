@@ -116,6 +116,120 @@ public class IndicatorCalculationService : IIndicatorCalculationService
     }
 
     /// <summary>
+    /// Computes a simple moving average over the given number of periods.
+    /// Matches pandas: rolling(period).mean()
+    /// </summary>
+    public Dictionary<DateTime, decimal?> ComputeSma(IEnumerable<PriceDataPoint> dataPoints, int period)
+    {
+        return ComputeMovingAverage(dataPoints.OrderBy(d => d.DateTime).ToList(), period, $"SMA_{period}");
+    }
+
+    /// <summary>
+    /// Computes an exponential moving average seeded with the first price.
+    /// Matches pandas: ewm(span=period, adjust=False).mean()
+    /// </summary>
+    public Dictionary<DateTime, decimal?> ComputeEma(IEnumerable<PriceDataPoint> dataPoints, int period)
+    {
+        var sortedData = dataPoints.OrderBy(d => d.DateTime).ToList();
+        return Ema(sortedData.Select(d => (decimal?)d.Price).ToList(), period)
+            .Select((value, i) => (sortedData[i].DateTime, value))
+            .ToDictionary(x => x.DateTime, x => x.value);
+    }
+
+    /// <summary>
+    /// Computes the Relative Strength Index with Wilder's smoothing (standard RSI).
+    /// The first value appears at index <paramref name="period"/>, after <paramref name="period"/> price changes.
+    /// Above 70 is conventionally overbought, below 30 oversold.
+    /// </summary>
+    public Dictionary<DateTime, decimal?> ComputeRsi(IEnumerable<PriceDataPoint> dataPoints, int period = 14)
+    {
+        var sortedData = dataPoints.OrderBy(d => d.DateTime).ToList();
+        var result = sortedData.ToDictionary(d => d.DateTime, _ => (decimal?)null);
+        if (sortedData.Count <= period)
+            return result;
+
+        decimal averageGain = 0, averageLoss = 0;
+        for (int i = 1; i <= period; i++)
+        {
+            var change = sortedData[i].Price - sortedData[i - 1].Price;
+            averageGain += Math.Max(change, 0);
+            averageLoss += Math.Max(-change, 0);
+        }
+        averageGain /= period;
+        averageLoss /= period;
+        result[sortedData[period].DateTime] = Rsi(averageGain, averageLoss);
+
+        for (int i = period + 1; i < sortedData.Count; i++)
+        {
+            var change = sortedData[i].Price - sortedData[i - 1].Price;
+            averageGain = (averageGain * (period - 1) + Math.Max(change, 0)) / period;
+            averageLoss = (averageLoss * (period - 1) + Math.Max(-change, 0)) / period;
+            result[sortedData[i].DateTime] = Rsi(averageGain, averageLoss);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Computes MACD: the fast EMA minus the slow EMA, its signal-line EMA, and the histogram (MACD minus signal).
+    /// Early values are left empty until the slow EMA (and then the signal line) have a full window of data.
+    /// </summary>
+    public (Dictionary<DateTime, decimal?> Macd, Dictionary<DateTime, decimal?> Signal, Dictionary<DateTime, decimal?> Histogram)
+        ComputeMacd(IEnumerable<PriceDataPoint> dataPoints, int fastPeriod = 12, int slowPeriod = 26, int signalPeriod = 9)
+    {
+        var sortedData = dataPoints.OrderBy(d => d.DateTime).ToList();
+        var prices = sortedData.Select(d => (decimal?)d.Price).ToList();
+
+        var fast = Ema(prices, fastPeriod);
+        var slow = Ema(prices, slowPeriod);
+        var macd = prices.Select((_, i) => i >= slowPeriod - 1 ? fast[i] - slow[i] : null).ToList();
+        var signal = Ema(macd, signalPeriod);
+
+        var macdResult = new Dictionary<DateTime, decimal?>();
+        var signalResult = new Dictionary<DateTime, decimal?>();
+        var histogramResult = new Dictionary<DateTime, decimal?>();
+
+        for (int i = 0; i < sortedData.Count; i++)
+        {
+            var date = sortedData[i].DateTime;
+            var signalReady = i >= slowPeriod + signalPeriod - 2;
+            macdResult[date] = macd[i];
+            signalResult[date] = signalReady ? signal[i] : null;
+            histogramResult[date] = signalReady ? macd[i] - signal[i] : null;
+        }
+
+        return (macdResult, signalResult, histogramResult);
+    }
+
+    /// <summary>
+    /// EMA over a series that may start with empty values; seeded with the first non-empty value
+    /// (pandas ewm(adjust=False) behaviour).
+    /// </summary>
+    private static List<decimal?> Ema(IList<decimal?> values, int period)
+    {
+        var alpha = 2m / (period + 1);
+        var result = new List<decimal?>(values.Count);
+        decimal? previous = null;
+
+        foreach (var value in values)
+        {
+            if (value.HasValue)
+                previous = previous.HasValue ? alpha * value.Value + (1 - alpha) * previous.Value : value.Value;
+            result.Add(value.HasValue ? previous : null);
+        }
+
+        return result;
+    }
+
+    private static decimal Rsi(decimal averageGain, decimal averageLoss)
+    {
+        if (averageLoss == 0)
+            return averageGain == 0 ? 50 : 100;
+        var relativeStrength = averageGain / averageLoss;
+        return 100 - 100 / (1 + relativeStrength);
+    }
+
+    /// <summary>
     /// Helper method to compute a simple moving average with specified period.
     /// Matches Python: df[price_col].rolling(window).mean()
     /// </summary>

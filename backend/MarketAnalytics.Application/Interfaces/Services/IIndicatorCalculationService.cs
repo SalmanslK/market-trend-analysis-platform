@@ -28,6 +28,27 @@ public interface IIndicatorCalculationService
     /// Monthly: MA_6M (6-month MA), MA_12M (12-month MA)
     /// </summary>
     Dictionary<string, Dictionary<DateTime, decimal?>> ComputeIntervalSpecificMovingAverages(
-        IEnumerable<PriceDataPoint> dataPoints, 
+        IEnumerable<PriceDataPoint> dataPoints,
         Interval interval);
+
+    /// <summary>
+    /// Computes a simple moving average over the given number of periods.
+    /// </summary>
+    Dictionary<DateTime, decimal?> ComputeSma(IEnumerable<PriceDataPoint> dataPoints, int period);
+
+    /// <summary>
+    /// Computes an exponential moving average (pandas ewm(span, adjust=False)).
+    /// </summary>
+    Dictionary<DateTime, decimal?> ComputeEma(IEnumerable<PriceDataPoint> dataPoints, int period);
+
+    /// <summary>
+    /// Computes the Relative Strength Index with Wilder's smoothing.
+    /// </summary>
+    Dictionary<DateTime, decimal?> ComputeRsi(IEnumerable<PriceDataPoint> dataPoints, int period = 14);
+
+    /// <summary>
+    /// Computes MACD line, signal line and histogram.
+    /// </summary>
+    (Dictionary<DateTime, decimal?> Macd, Dictionary<DateTime, decimal?> Signal, Dictionary<DateTime, decimal?> Histogram)
+        ComputeMacd(IEnumerable<PriceDataPoint> dataPoints, int fastPeriod = 12, int slowPeriod = 26, int signalPeriod = 9);
 }

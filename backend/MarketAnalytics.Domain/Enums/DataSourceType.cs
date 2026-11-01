@@ -6,5 +6,6 @@ namespace MarketAnalytics.Domain.Enums;
 public enum DataSourceType
 {
     JsonApi = 0,
-    HtmlScraper = 1
+    HtmlScraper = 1,
+    CurrencyApi = 2
 }

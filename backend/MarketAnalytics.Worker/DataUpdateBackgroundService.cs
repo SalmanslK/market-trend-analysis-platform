@@ -69,9 +69,20 @@ public class DataUpdateBackgroundService : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating data for instrument {Symbol}", instrument.Symbol);
-                
-                // Log the error to DataUpdateLog
-                await LogUpdateResultAsync(dbContext, instrument, null, 0, UpdateStatus.Failed, ex.Message, cancellationToken);
+
+                // Drop the failed instrument's pending changes so they aren't retried by the log save below
+                dbContext.ChangeTracker.Clear();
+
+                // Log the error to DataUpdateLog; a failure here must not stop the remaining instruments
+                try
+                {
+                    await LogUpdateResultAsync(dbContext, instrument, null, 0, UpdateStatus.Failed, ex.Message, cancellationToken);
+                }
+                catch (Exception logEx)
+                {
+                    _logger.LogError(logEx, "Error writing update log for instrument {Symbol}", instrument.Symbol);
+                    dbContext.ChangeTracker.Clear();
+                }
             }
         }
 

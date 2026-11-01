@@ -1,79 +1,114 @@
 # Setup Checklist - Market Analytics Platform
 
-## ✅ Completed
+## Prerequisites
 
-- Backend project structure (Clean Architecture)
-- Domain layer (enums, entities, value objects)
-- Application layer (services, DTOs, interfaces)
-- Infrastructure layer (EF Core, repositories, data fetchers)
-- API controllers (Instruments, Prices, Summary)
-- Background worker service
-- React frontend structure and components
-- Dependency injection configuration
+| Tool | Version | Notes |
+|------|---------|-------|
+| .NET SDK | 10.x | All projects target `net10.0` |
+| Node.js | 20+ | Tested with 24.x |
+| PostgreSQL | 16+ | Tested with 17.7 (portable binaries, see below) |
+| EF Core tools | any | `dotnet tool install --global dotnet-ef` |
 
-## 🔧 Critical Items Remaining
+## 1. Database password (user secrets)
 
-### 1. **Fix Project References** ⚠️ REQUIRED
-   - **Issue**: Infrastructure repositories implement `IInstrumentRepository` and `IPricePointRepository` from Application layer, but Infrastructure doesn't reference Application
-   - **Fix**: Add project reference from `MarketAnalytics.Infrastructure` to `MarketAnalytics.Application`
-   - **File**: `backend/MarketAnalytics.Infrastructure/MarketAnalytics.Infrastructure.csproj`
+The Api and Worker share one user-secrets store, so set the connection string once:
 
-### 2. **Worker Configuration** ⚠️ REQUIRED
-   - **Issue**: Worker `appsettings.json` missing connection string
-   - **Fix**: Add `ConnectionStrings` section to match API appsettings
-   - **File**: `backend/MarketAnalytics.Worker/appsettings.json`
+```
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Database=MarketAnalytics;Username=postgres;Password=<your-password>" --project backend/MarketAnalytics.Api
+```
 
-### 3. **Database Migrations** ⚠️ REQUIRED
-   - **Status**: EF Core configured but migrations not created
-   - **Steps**:
-     1. Install EF Core tools: `dotnet tool install --global dotnet-ef`
-     2. Add migration: `dotnet ef migrations add InitialCreate --project backend/MarketAnalytics.Infrastructure --startup-project backend/MarketAnalytics.Api`
-     3. Update database: `dotnet ef database update --project backend/MarketAnalytics.Infrastructure --startup-project backend/MarketAnalytics.Api`
+## 2. PostgreSQL
 
-### 4. **Database Setup** ⚠️ REQUIRED
-   - Install PostgreSQL
-   - Create database: `CREATE DATABASE MarketAnalytics;`
-   - Store the connection string (with password) in user secrets, shared by Api and Worker:
-     `dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Database=MarketAnalytics;Username=postgres;Password=<your-password>" --project backend/MarketAnalytics.Api`
+### Option A: portable binaries (no admin rights, no Windows service)
 
-### 5. **Frontend Dependencies** ⚠️ REQUIRED
-   - Run: `cd frontend && npm install`
-   - This installs React, Recharts, Axios, and other dependencies
+1. Download the Windows x64 binaries zip from
+   https://www.enterprisedb.com/download-postgresql-binaries (e.g. `postgresql-17.7-1-windows-x64-binaries.zip`)
+   and extract it to `%LOCALAPPDATA%\Programs\postgresql-17` (it contains a `pgsql` folder).
+2. Initialise a cluster once, using the same password as the user secret
+   (put the password alone in a temporary file, then delete it):
+   ```
+   set PG=%LOCALAPPDATA%\Programs\postgresql-17\pgsql
+   "%PG%\bin\initdb" -D "%PG%\data" -U postgres -A scram-sha-256 --pwfile=pw.txt -E UTF8 --locale=C
+   ```
+3. Start the server (needed after every reboot):
+   ```
+   "%PG%\bin\pg_ctl" -D "%PG%\data" -l "%PG%\postgres.log" start
+   ```
+   Stop it with `"%PG%\bin\pg_ctl" -D "%PG%\data" stop`. Check it with `"%PG%\bin\pg_isready" -h localhost`.
+4. Create the database once:
+   ```
+   "%PG%\bin\psql" -h localhost -U postgres -c "CREATE DATABASE \"MarketAnalytics\";"
+   ```
 
-## 📝 Nice to Have (Not Critical for Basic Functionality)
+### Option B: regular installer
 
-### 6. **Error Handling Enhancement**
-   - Global exception middleware
-   - More detailed error responses
-   - Currently has basic try-catch in controllers
+Install PostgreSQL from https://www.postgresql.org/download/windows/ (requires admin), set the `postgres`
+password to match the user secret, and create the `MarketAnalytics` database.
 
-### 7. **Validation**
-   - FluentValidation for API request models
-   - Input validation attributes
-   - Currently relies on basic parameter validation
+## 3. Database schema
 
-### 8. **Testing**
-   - Unit tests for services
-   - Integration tests for API endpoints
-   - Frontend component tests
+From the `backend` folder:
 
-### 9. **Logging Enhancement**
-   - Structured logging (Serilog)
-   - Log levels configuration
-   - Currently uses built-in ILogger
+```
+dotnet ef database update --project MarketAnalytics.Infrastructure --startup-project MarketAnalytics.Api
+```
 
-### 10. **Documentation**
-   - API Swagger documentation (partially configured)
-   - Setup instructions in README
-   - Architecture documentation
+This creates the tables and seeds the 9 instruments.
 
-## 🚀 Quick Start Steps
+## 4. Load market data (Worker)
 
-1. **Fix project reference** (Item #1 above)
-2. **Add connection string to Worker** (Item #2 above)
-3. **Install PostgreSQL and create database**
-4. **Run database migrations** (Item #3 above)
-5. **Install frontend dependencies** (Item #5 above)
-6. **Run API**: `cd backend/MarketAnalytics.Api && dotnet run`
-7. **Run Worker**: `cd backend/MarketAnalytics.Worker && dotnet run` (optional, for background updates)
-8. **Run Frontend**: `cd frontend && npm run dev`
+```
+cd backend/MarketAnalytics.Worker
+dotnet run
+```
+
+The Worker fetches data for every instrument on startup, then again every 24 hours while it keeps running.
+The first run loads about a year of history: from sarmaaya.pk for KSE100, KMI30, KMIF, MIF, MBF, MGF, USDPKR
+and GOLDPK, and from the free, keyless [fawazahmed0 currency-api](https://github.com/fawazahmed0/exchange-api)
+daily snapshots for **GOLDINT (XAU/USD)**. (Investing.com, the original GOLDINT source, blocks automated
+requests with HTTP 403.)
+
+### Optional: import older history from CSV
+
+The APIs only serve about a year. To load several years more (e.g. from the psx-trading-analysis project's
+`data/prices` folder, with files named `<SYMBOL>.csv` and a `date,price` header):
+
+```
+cd backend/MarketAnalytics.Worker
+dotnet run -- --import-csv D:\repos\psx-trading-analysis\data\prices
+```
+
+The import only adds dates that aren't already stored, so prices from the live sources always win, and it
+exits when done. It is safe to run again.
+
+## 5. Run the API and frontend
+
+```
+cd backend/MarketAnalytics.Api
+dotnet run --urls http://localhost:5000
+```
+
+```
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:3000. The Vite dev server proxies `/api` to the API on port 5000.
+
+## Pages
+
+- **Dashboard**: latest price, SMA-20 and Bollinger Bands for every instrument
+- **Instrument view**: price chart with SMA-20, Bollinger Bands and interval-specific moving averages
+  (MA-4W for weekly, MA-6M / MA-12M for monthly). Indicators are computed on the full history before the
+  timeframe is applied, so they cover the whole window; each line's latest value is shown in the legend.
+- **Comparison**: % change of several instruments on one chart, plus a performance table
+- **Settings**: default interval/timeframe (saved in the browser), suggested presets, and data source
+  update status
+
+## Nice to have
+
+- **Error handling**: global exception middleware and more detailed error responses
+- **Validation**: FluentValidation for API request models
+- **Testing**: unit tests for indicator/resampling services, API integration tests, frontend component tests
+- **Logging**: structured logging (Serilog)

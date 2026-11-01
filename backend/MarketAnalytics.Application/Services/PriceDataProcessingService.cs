@@ -4,6 +4,7 @@ using MarketAnalytics.Application.Interfaces.Services;
 using MarketAnalytics.Domain.Entities;
 using MarketAnalytics.Domain.Enums;
 using MarketAnalytics.Domain.ValueObjects;
+using Microsoft.Extensions.Logging;
 
 namespace MarketAnalytics.Application.Services;
 
@@ -18,19 +19,22 @@ public class PriceDataProcessingService : IPriceDataProcessingService
     private readonly IResamplingService _resamplingService;
     private readonly ITimeframeFilterService _timeframeFilterService;
     private readonly IIndicatorCalculationService _indicatorCalculationService;
+    private readonly ILogger<PriceDataProcessingService> _logger;
 
     public PriceDataProcessingService(
         IPricePointRepository pricePointRepository,
         IInstrumentRepository instrumentRepository,
         IResamplingService resamplingService,
         ITimeframeFilterService timeframeFilterService,
-        IIndicatorCalculationService indicatorCalculationService)
+        IIndicatorCalculationService indicatorCalculationService,
+        ILogger<PriceDataProcessingService> logger)
     {
         _pricePointRepository = pricePointRepository;
         _instrumentRepository = instrumentRepository;
         _resamplingService = resamplingService;
         _timeframeFilterService = timeframeFilterService;
         _indicatorCalculationService = indicatorCalculationService;
+        _logger = logger;
     }
 
     /// <summary>
@@ -73,7 +77,13 @@ public class PriceDataProcessingService : IPriceDataProcessingService
         var resampledData = _resamplingService.ResamplePriceData(priceDataPoints, interval);
         var resampledList = resampledData.ToList();
 
-        // 6. Filter by timeframe
+        // 6. Compute indicators on the full resampled history, so the bands and moving averages
+        //    cover the whole timeframe window instead of starting 20 periods into it
+        var sma20 = _indicatorCalculationService.ComputeSma20(resampledList);
+        var (upperBand, lowerBand) = _indicatorCalculationService.ComputeBollingerBands(resampledList);
+        var intervalMAs = _indicatorCalculationService.ComputeIntervalSpecificMovingAverages(resampledList, interval);
+
+        // 7. Filter by timeframe
         var filteredData = _timeframeFilterService.FilterByTimeframe(resampledList, timeframe);
         var filteredList = filteredData.ToList();
 
@@ -81,11 +91,6 @@ public class PriceDataProcessingService : IPriceDataProcessingService
         {
             return Enumerable.Empty<PriceDataDto>();
         }
-
-        // 7. Compute indicators
-        var sma20 = _indicatorCalculationService.ComputeSma20(filteredList);
-        var (upperBand, lowerBand) = _indicatorCalculationService.ComputeBollingerBands(filteredList);
-        var intervalMAs = _indicatorCalculationService.ComputeIntervalSpecificMovingAverages(filteredList, interval);
 
         // 8. Combine into DTOs
         var result = filteredList.Select(dp =>
@@ -158,10 +163,10 @@ public class PriceDataProcessingService : IPriceDataProcessingService
                     });
                 }
             }
-            catch
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                // Skip instruments that fail (log in production)
-                continue;
+                // Skip instruments that fail so one bad instrument doesn't break the whole summary
+                _logger.LogError(ex, "Error building summary for instrument {Symbol}", instrument.Symbol);
             }
         }
 

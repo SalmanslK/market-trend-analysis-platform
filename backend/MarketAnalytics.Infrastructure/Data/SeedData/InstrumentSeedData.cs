@@ -109,8 +109,8 @@ public static class InstrumentSeedData
                 Symbol = "GOLDINT",
                 Name = "Gold (International) - XAU/USD",
                 Type = InstrumentType.Commodity,
-                DataSourceUrl = "https://www.investing.com/currencies/xau-usd-historical-data",
-                DataSourceType = DataSourceType.HtmlScraper,
+                DataSourceUrl = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@{date}/v1/currencies/xau.json",
+                DataSourceType = DataSourceType.CurrencyApi,
                 IsActive = true,
                 CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                 UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)

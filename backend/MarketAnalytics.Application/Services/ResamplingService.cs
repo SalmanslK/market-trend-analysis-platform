@@ -1,3 +1,4 @@
+using System.Globalization;
 using MarketAnalytics.Application.Interfaces.Services;
 using MarketAnalytics.Domain.Enums;
 using MarketAnalytics.Domain.ValueObjects;
@@ -35,9 +36,10 @@ public class ResamplingService : IResamplingService
 
     private IEnumerable<PriceDataPoint> ResampleWeekly(IList<PriceDataPoint> dataPoints)
     {
-        // Group by week (ISO week) and take last value per week
+        // Group by ISO week (Mon-Sun, matches pandas "W") and take last value per week.
+        // Use the ISO week-numbering year, not the calendar year, so weeks spanning New Year stay together.
         return dataPoints
-            .GroupBy(dp => new { dp.DateTime.Year, Week = GetIsoWeek(dp.DateTime) })
+            .GroupBy(dp => new { Year = ISOWeek.GetYear(dp.DateTime), Week = ISOWeek.GetWeekOfYear(dp.DateTime) })
             .OrderBy(g => g.Key.Year)
             .ThenBy(g => g.Key.Week)
             .Select(g => g.Last());
@@ -70,17 +72,5 @@ public class ResamplingService : IResamplingService
             .GroupBy(dp => dp.DateTime.Year)
             .OrderBy(g => g.Key)
             .Select(g => g.Last());
-    }
-
-    private int GetIsoWeek(DateTime date)
-    {
-        // ISO 8601 week calculation
-        var day = (int)date.DayOfWeek;
-        day = day == 0 ? 7 : day; // Make Sunday 7
-        var jan4 = new DateTime(date.Year, 1, 4);
-        var daysOffset = day - (int)jan4.DayOfWeek;
-        daysOffset = daysOffset == 0 ? 7 : daysOffset;
-        var weekNum = (date.DayOfYear - daysOffset + 10) / 7;
-        return weekNum;
     }
 }

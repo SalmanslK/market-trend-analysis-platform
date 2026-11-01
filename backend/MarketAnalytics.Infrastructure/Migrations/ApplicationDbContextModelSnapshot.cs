@@ -192,8 +192,8 @@ namespace MarketAnalytics.Infrastructure.Migrations
                         {
                             Id = 8,
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DataSourceType = 1,
-                            DataSourceUrl = "https://www.investing.com/currencies/xau-usd-historical-data",
+                            DataSourceType = 2,
+                            DataSourceUrl = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@{date}/v1/currencies/xau.json",
                             IsActive = true,
                             Name = "Gold (International) - XAU/USD",
                             Symbol = "GOLDINT",

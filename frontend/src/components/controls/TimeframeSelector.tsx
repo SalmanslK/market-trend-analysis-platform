@@ -1,19 +1,9 @@
 import { Timeframe } from '../../services/types/marketData'
+import { timeframeLabels } from '../../services/labels'
 
 interface TimeframeSelectorProps {
   selectedTimeframe: Timeframe
   onTimeframeChange: (timeframe: Timeframe) => void
-}
-
-const timeframeLabels: Record<Timeframe, string> = {
-  [Timeframe.Day]: 'Day',
-  [Timeframe.Week]: 'Week',
-  [Timeframe.Month]: 'Month',
-  [Timeframe.Quarter]: 'Quarter',
-  [Timeframe.HalfYear]: 'Half-Year',
-  [Timeframe.Year]: 'Year',
-  [Timeframe.Ytd]: 'YTD',
-  [Timeframe.All]: 'All',
 }
 
 export default function TimeframeSelector({

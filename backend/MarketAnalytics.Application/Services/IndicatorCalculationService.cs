@@ -70,10 +70,10 @@ public class IndicatorCalculationService : IIndicatorCalculationService
             }
             else
             {
-                // Calculate rolling standard deviation
+                // Calculate rolling sample standard deviation (ddof=1, matches pandas rolling().std())
                 var window = sortedData.Skip(i - period + 1).Take(period).Select(d => d.Price);
                 var mean = (double)sma.Value;
-                var variance = window.Average(v => Math.Pow((double)v - mean, 2));
+                var variance = window.Sum(v => Math.Pow((double)v - mean, 2)) / (period - 1);
                 var std = Math.Sqrt(variance);
 
                 // Upper and lower bands

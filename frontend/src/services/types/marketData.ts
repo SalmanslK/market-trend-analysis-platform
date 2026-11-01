@@ -102,3 +102,72 @@ export interface InstrumentAnalyticsDto {
   percentB?: number;
   signal: TechnicalSignal;
 }
+
+export type SentimentLabel = 'Positive' | 'Neutral' | 'Negative' | 'Background';
+
+export interface NewsTopic {
+  key: string;
+  label: string;
+  whyItMatters: string;
+  symbols: string[];
+}
+
+export interface ArticleSentiment {
+  score: number;
+  confidence: number;
+  label: SentimentLabel;
+  positiveWords: string[];
+  negativeWords: string[];
+}
+
+export interface InstrumentChange {
+  symbol: string;
+  tradingDate?: string;
+  change?: number;
+  /** Directly about this instrument; otherwise background context with no score */
+  isDirect: boolean;
+  sentimentScore: number;
+  sentimentLabel: SentimentLabel;
+}
+
+export interface NewsArticle {
+  id: number;
+  source: string;
+  title: string;
+  summary: string;
+  url: string;
+  publishedAt: string;
+  topics: NewsTopic[];
+  sentiment: ArticleSentiment;
+  instruments: InstrumentChange[];
+}
+
+export interface NewsSentimentSummary {
+  symbol: string;
+  days: number;
+  articles: number;
+  backgroundArticles: number;
+  positive: number;
+  neutral: number;
+  negative: number;
+  score: number;
+  confidence: number;
+  label: SentimentLabel;
+}
+
+export interface PriceMove {
+  date: string;
+  price: number;
+  change: number;
+  timesTypical?: number;
+  newsFrom: string;
+  newsTo: string;
+  articles: NewsArticle[];
+}
+
+export interface InstrumentMoves {
+  symbol: string;
+  typicalDailyMove?: number;
+  newsAvailableSince?: string;
+  moves: PriceMove[];
+}

@@ -1,5 +1,7 @@
 import { InstrumentAnalyticsDto } from '../../services/types/marketData'
 import { COLORS, formatDate, SIGNAL_DISCLAIMER } from '../../services/format'
+import { signalMeaning } from '../../services/plainLanguage'
+import InfoTip from '../help/InfoTip'
 import SignalBadge from './SignalBadge'
 
 interface SignalPanelProps {
@@ -19,11 +21,14 @@ export default function SignalPanel({ analytics }: SignalPanelProps) {
   return (
     <section style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-        <h2 style={{ fontSize: '1.2rem' }}>Technical Signal</h2>
+        <h2 style={{ fontSize: '1.2rem' }}>Technical Signal<InfoTip term="signal" /></h2>
         <SignalBadge signal={signal} large />
       </div>
+      <p style={{ marginBottom: '6px', lineHeight: 1.45 }}>
+        <strong>{signalMeaning[signal.action].headline}.</strong> {signalMeaning[signal.action].detail}
+      </p>
       <p style={{ color: COLORS.muted, fontSize: '13px', marginBottom: '12px' }}>
-        Each indicator adds +1 (bullish), -1 (bearish) or 0. Based on daily prices up to {formatDate(analytics.lastDate)}.
+        Each indicator below votes ▲ up (+1), ▼ down (-1) or ● no view (0).<InfoTip term="score" /> Based on daily prices up to {formatDate(analytics.lastDate)}.
       </p>
 
       <ul style={{ listStyle: 'none' }}>

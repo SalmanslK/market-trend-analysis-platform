@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { PriceDataDto } from '../../services/types/marketData'
+import InfoTip from '../help/InfoTip'
 
 interface PriceChartProps {
   data: PriceDataDto[]
@@ -78,7 +79,13 @@ export default function PriceChart({ data, instrument, interval, timeframe }: Pr
   return (
     <div style={{ width: '100%', height: '600px', padding: '20px', backgroundColor: 'white' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-        <h2>{instrument} | {interval} Prices ({timeframe})</h2>
+        <div>
+          <h2>{instrument} | {interval} Prices ({timeframe})</h2>
+          <p style={{ fontSize: '13px', color: '#546e7a', marginTop: '4px', maxWidth: '640px', lineHeight: 1.4 }}>
+            Black is the price. When it's above the blue average line the trend is up.<InfoTip term="sma20" />{' '}
+            The dashed bands are the normal range: near the top is expensive, near the bottom cheap.<InfoTip term="bollinger" />
+          </p>
+        </div>
 
         {/* Last 3 Prices Info Box */}
         <div style={{

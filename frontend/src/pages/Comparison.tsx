@@ -17,6 +17,7 @@ import IntervalSelector from '../components/controls/IntervalSelector'
 import TimeframeSelector from '../components/controls/TimeframeSelector'
 import { intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences } from '../services/preferences'
+import PlainSummary from '../components/help/PlainSummary'
 
 // Distinct colors for up to 9 instruments
 const SERIES_COLORS = ['#1976d2', '#d32f2f', '#388e3c', '#f57c00', '#7b1fa2', '#0097a7', '#5d4037', '#c2185b', '#616161']
@@ -177,6 +178,15 @@ export default function Comparison() {
       </div>
 
       {error && <div style={{ color: '#d32f2f', marginBottom: '15px' }}>{error}</div>}
+
+      {stats.length >= 2 && (
+        <PlainSummary
+          points={[
+            `Over this period (${timeframeLabels[timeframe].toLowerCase()}), ${stats[0].symbol} did best (${stats[0].changePercent >= 0 ? '+' : ''}${stats[0].changePercent.toFixed(1)}%) and ${stats[stats.length - 1].symbol} did worst (${stats[stats.length - 1].changePercent >= 0 ? '+' : ''}${stats[stats.length - 1].changePercent.toFixed(1)}%).`,
+            `Lines start at 0% on the same day, so a line above another means that instrument grew more (or fell less) since then. The gap between ${stats[0].symbol} and ${stats[stats.length - 1].symbol} is ${(stats[0].changePercent - stats[stats.length - 1].changePercent).toFixed(1)} percentage points.`,
+          ]}
+        />
+      )}
 
       {selected.length === 0 ? (
         <div>Select one or more instruments to compare.</div>

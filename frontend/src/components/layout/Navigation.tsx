@@ -1,26 +1,33 @@
 import { Link, useLocation } from 'react-router-dom'
 
+const LINKS = [
+  { path: '/', label: 'Overview' },
+  { path: '/news', label: 'News' },
+  { path: '/comparison', label: 'Comparison' },
+  { path: '/guide', label: 'Guide' },
+  { path: '/settings', label: 'Settings' },
+]
+
 export default function Navigation() {
   const location = useLocation()
 
   const isActive = (path: string) => {
     if (path === '/') {
-      return location.pathname === '/'
+      // Instrument pages belong to the overview
+      return location.pathname === '/' || location.pathname.startsWith('/instrument')
     }
     return location.pathname.startsWith(path)
   }
 
   return (
-    <nav style={{
-      backgroundColor: '#333',
-      padding: '1rem',
-      marginBottom: '2rem',
-    }}>
+    <nav style={{ backgroundColor: '#333', padding: '0.75rem 0' }}>
       <div style={{
         maxWidth: '1200px',
         margin: '0 auto',
+        padding: '0 20px',
         display: 'flex',
-        gap: '2rem',
+        flexWrap: 'wrap',
+        gap: '0.5rem 1.5rem',
         alignItems: 'center',
       }}>
         <Link
@@ -34,46 +41,23 @@ export default function Navigation() {
         >
           Market Analytics
         </Link>
-        
-        <div style={{ display: 'flex', gap: '1.5rem', marginLeft: 'auto' }}>
-          <Link
-            to="/"
-            style={{
-              color: isActive('/') ? '#4CAF50' : '#fff',
-              textDecoration: 'none',
-              padding: '0.5rem 1rem',
-              borderRadius: '4px',
-              backgroundColor: isActive('/') ? 'rgba(255,255,255,0.1)' : 'transparent',
-            }}
-          >
-            Dashboard
-          </Link>
-          
-          <Link
-            to="/comparison"
-            style={{
-              color: isActive('/comparison') ? '#4CAF50' : '#fff',
-              textDecoration: 'none',
-              padding: '0.5rem 1rem',
-              borderRadius: '4px',
-              backgroundColor: isActive('/comparison') ? 'rgba(255,255,255,0.1)' : 'transparent',
-            }}
-          >
-            Comparison
-          </Link>
-          
-          <Link
-            to="/settings"
-            style={{
-              color: isActive('/settings') ? '#4CAF50' : '#fff',
-              textDecoration: 'none',
-              padding: '0.5rem 1rem',
-              borderRadius: '4px',
-              backgroundColor: isActive('/settings') ? 'rgba(255,255,255,0.1)' : 'transparent',
-            }}
-          >
-            Settings
-          </Link>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginLeft: 'auto' }}>
+          {LINKS.map(({ path, label }) => (
+            <Link
+              key={path}
+              to={path}
+              style={{
+                color: isActive(path) ? '#4CAF50' : '#fff',
+                textDecoration: 'none',
+                padding: '0.5rem 0.9rem',
+                borderRadius: '4px',
+                backgroundColor: isActive(path) ? 'rgba(255,255,255,0.1)' : 'transparent',
+              }}
+            >
+              {label}
+            </Link>
+          ))}
         </div>
       </div>
     </nav>

@@ -7,6 +7,8 @@ import PriceChart from '../components/charts/PriceChart'
 import InstrumentSelector from '../components/controls/InstrumentSelector'
 import IntervalSelector from '../components/controls/IntervalSelector'
 import TimeframeSelector from '../components/controls/TimeframeSelector'
+import { intervalLabels, timeframeLabels } from '../services/labels'
+import { loadPreferences } from '../services/preferences'
 
 export default function InstrumentView() {
   const { symbol } = useParams<{ symbol: string }>()
@@ -16,8 +18,8 @@ export default function InstrumentView() {
   const [selectedInstrument, setSelectedInstrument] = useState<string>(symbol || '')
   const [priceData, setPriceData] = useState<PriceDataDto[]>([])
   const [loading, setLoading] = useState(true)
-  const [interval, setInterval] = useState<Interval>(Interval.Daily)
-  const [timeframe, setTimeframe] = useState<Timeframe>(Timeframe.Quarter)
+  const [interval, setInterval] = useState<Interval>(() => loadPreferences().interval)
+  const [timeframe, setTimeframe] = useState<Timeframe>(() => loadPreferences().timeframe)
 
   useEffect(() => {
     loadInstruments()
@@ -62,25 +64,6 @@ export default function InstrumentView() {
 
   if (loading && !priceData.length) {
     return <div style={{ padding: '20px' }}>Loading...</div>
-  }
-
-  const intervalLabels: Record<Interval, string> = {
-    [Interval.Daily]: 'Daily',
-    [Interval.Weekly]: 'Weekly',
-    [Interval.Monthly]: 'Monthly',
-    [Interval.Quarterly]: 'Quarterly',
-    [Interval.Yearly]: 'Yearly',
-  }
-
-  const timeframeLabels: Record<Timeframe, string> = {
-    [Timeframe.Day]: 'Day',
-    [Timeframe.Week]: 'Week',
-    [Timeframe.Month]: 'Month',
-    [Timeframe.Quarter]: 'Quarter',
-    [Timeframe.HalfYear]: 'Half-Year',
-    [Timeframe.Year]: 'Year',
-    [Timeframe.Ytd]: 'YTD',
-    [Timeframe.All]: 'All',
   }
 
   return (

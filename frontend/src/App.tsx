@@ -7,7 +7,7 @@ import Navigation from './components/layout/Navigation'
 
 function App() {
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="app">
         <Navigation />
         <Routes>

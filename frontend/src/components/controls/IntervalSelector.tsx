@@ -1,16 +1,9 @@
 import { Interval } from '../../services/types/marketData'
+import { intervalLabels } from '../../services/labels'
 
 interface IntervalSelectorProps {
   selectedInterval: Interval
   onIntervalChange: (interval: Interval) => void
-}
-
-const intervalLabels: Record<Interval, string> = {
-  [Interval.Daily]: 'Daily',
-  [Interval.Weekly]: 'Weekly',
-  [Interval.Monthly]: 'Monthly',
-  [Interval.Quarterly]: 'Quarterly',
-  [Interval.Yearly]: 'Yearly',
 }
 
 export default function IntervalSelector({

@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { summaryApi } from '../services/api/summaryApi'
 import { SummaryDto, Interval, Timeframe } from '../services/types/marketData'
+import { loadPreferences } from '../services/preferences'
 
 export default function Dashboard() {
   const [summary, setSummary] = useState<SummaryDto[]>([])
   const [loading, setLoading] = useState(true)
-  const [interval, setInterval] = useState<Interval>(Interval.Daily)
-  const [timeframe, setTimeframe] = useState<Timeframe>(Timeframe.Quarter)
+  const [interval, setInterval] = useState<Interval>(() => loadPreferences().interval)
+  const [timeframe, setTimeframe] = useState<Timeframe>(() => loadPreferences().timeframe)
 
   useEffect(() => {
     loadData()

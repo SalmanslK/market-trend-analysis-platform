@@ -74,7 +74,8 @@ export default function PriceChart({ data, instrument, interval, timeframe }: Pr
             dataKey="Price"
             stroke="#000000"
             strokeWidth={2}
-            dot={false}
+            // A single point has no line segment to draw, so mark it with a dot
+            dot={data.length < 2}
             isAnimationActive={false}
           />
           

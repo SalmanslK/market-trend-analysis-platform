@@ -30,7 +30,8 @@ public class InstrumentsController : ControllerBase
     public async Task<ActionResult<IEnumerable<InstrumentDto>>> GetInstruments(CancellationToken cancellationToken)
     {
         var instruments = await _instrumentRepository.GetActiveInstrumentsAsync(cancellationToken);
-        
+        var lastUpdates = await _instrumentRepository.GetLastSuccessfulUpdateTimesAsync(cancellationToken);
+
         var result = instruments.Select(i => new InstrumentDto
         {
             Id = i.Id,
@@ -38,7 +39,7 @@ public class InstrumentsController : ControllerBase
             Name = i.Name,
             Type = i.Type,
             IsActive = i.IsActive,
-            LastUpdateDate = null // TODO: Get from latest price point or update log
+            LastUpdateDate = lastUpdates.TryGetValue(i.Id, out var lastUpdate) ? lastUpdate : null
         });
 
         return Ok(result);
@@ -57,6 +58,8 @@ public class InstrumentsController : ControllerBase
             return NotFound($"Instrument with symbol '{symbol}' not found.");
         }
 
+        var lastUpdates = await _instrumentRepository.GetLastSuccessfulUpdateTimesAsync(cancellationToken);
+
         var result = new InstrumentDto
         {
             Id = instrument.Id,
@@ -64,7 +67,7 @@ public class InstrumentsController : ControllerBase
             Name = instrument.Name,
             Type = instrument.Type,
             IsActive = instrument.IsActive,
-            LastUpdateDate = null // TODO: Get from latest price point or update log
+            LastUpdateDate = lastUpdates.TryGetValue(instrument.Id, out var lastUpdate) ? lastUpdate : null
         };
 
         return Ok(result);

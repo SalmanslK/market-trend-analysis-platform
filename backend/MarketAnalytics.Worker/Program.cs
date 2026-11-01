@@ -16,6 +16,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Register data fetchers as typed HTTP clients
 builder.Services.AddHttpClient<JsonApiDataFetcher>();
 builder.Services.AddHttpClient<HtmlScraperDataFetcher>();
+builder.Services.AddHttpClient<GoldApiDataFetcher>();
 builder.Services.AddScoped<InstrumentDataFetcherFactory>();
 
 // Register background service

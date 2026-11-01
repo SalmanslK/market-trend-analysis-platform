@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MarketAnalytics.Application.Interfaces.IRepositories;
 using MarketAnalytics.Domain.Entities;
+using MarketAnalytics.Domain.Enums;
 using MarketAnalytics.Infrastructure.Data;
 
 namespace MarketAnalytics.Infrastructure.Repositories;
@@ -42,5 +43,14 @@ public class InstrumentRepository : IInstrumentRepository
             .Where(i => i.IsActive)
             .OrderBy(i => i.Symbol)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Dictionary<int, DateTime>> GetLastSuccessfulUpdateTimesAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.DataUpdateLogs
+            .Where(u => u.Status == UpdateStatus.Success)
+            .GroupBy(u => u.InstrumentId)
+            .Select(g => new { InstrumentId = g.Key, LastUpdate = g.Max(u => u.CreatedAt) })
+            .ToDictionaryAsync(x => x.InstrumentId, x => x.LastUpdate, cancellationToken);
     }
 }

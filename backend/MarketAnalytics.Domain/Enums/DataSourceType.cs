@@ -7,5 +7,5 @@ public enum DataSourceType
 {
     JsonApi = 0,
     HtmlScraper = 1,
-    GoldApi = 2
+    CurrencyApi = 2
 }

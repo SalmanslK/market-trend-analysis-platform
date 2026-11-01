@@ -9,16 +9,16 @@ public class InstrumentDataFetcherFactory
 {
     private readonly JsonApiDataFetcher _jsonApiFetcher;
     private readonly HtmlScraperDataFetcher _htmlScraperFetcher;
-    private readonly GoldApiDataFetcher _goldApiFetcher;
+    private readonly CurrencyApiDataFetcher _currencyApiFetcher;
 
     public InstrumentDataFetcherFactory(
         JsonApiDataFetcher jsonApiFetcher,
         HtmlScraperDataFetcher htmlScraperFetcher,
-        GoldApiDataFetcher goldApiFetcher)
+        CurrencyApiDataFetcher currencyApiFetcher)
     {
         _jsonApiFetcher = jsonApiFetcher;
         _htmlScraperFetcher = htmlScraperFetcher;
-        _goldApiFetcher = goldApiFetcher;
+        _currencyApiFetcher = currencyApiFetcher;
     }
 
     /// <summary>
@@ -30,7 +30,7 @@ public class InstrumentDataFetcherFactory
         {
             DataSourceType.JsonApi => _jsonApiFetcher,
             DataSourceType.HtmlScraper => _htmlScraperFetcher,
-            DataSourceType.GoldApi => _goldApiFetcher,
+            DataSourceType.CurrencyApi => _currencyApiFetcher,
             _ => throw new ArgumentException($"Unknown data source type: {dataSourceType}", nameof(dataSourceType))
         };
     }

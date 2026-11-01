@@ -27,7 +27,7 @@ builder.Services.AddScoped<IPricePointRepository, PricePointRepository>();
 // Register data fetchers as typed HTTP clients
 builder.Services.AddHttpClient<JsonApiDataFetcher>();
 builder.Services.AddHttpClient<HtmlScraperDataFetcher>();
-builder.Services.AddHttpClient<GoldApiDataFetcher>();
+builder.Services.AddHttpClient<CurrencyApiDataFetcher>();
 builder.Services.AddScoped<InstrumentDataFetcherFactory>();
 
 // Register application services

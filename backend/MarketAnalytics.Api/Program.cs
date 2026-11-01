@@ -24,13 +24,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IInstrumentRepository, InstrumentRepository>();
 builder.Services.AddScoped<IPricePointRepository, PricePointRepository>();
 
-// Register HTTP clients for data fetchers
+// Register data fetchers as typed HTTP clients
 builder.Services.AddHttpClient<JsonApiDataFetcher>();
 builder.Services.AddHttpClient<HtmlScraperDataFetcher>();
-
-// Register data fetchers
-builder.Services.AddScoped<JsonApiDataFetcher>();
-builder.Services.AddScoped<HtmlScraperDataFetcher>();
 builder.Services.AddScoped<InstrumentDataFetcherFactory>();
 
 // Register application services

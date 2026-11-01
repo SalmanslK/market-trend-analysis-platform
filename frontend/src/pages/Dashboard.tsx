@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { instrumentsApi } from '../services/api/instrumentsApi'
 import { summaryApi } from '../services/api/summaryApi'
-import { InstrumentDto, SummaryDto, Interval, Timeframe } from '../services/types/marketData'
+import { SummaryDto, Interval, Timeframe } from '../services/types/marketData'
 
 export default function Dashboard() {
-  const [instruments, setInstruments] = useState<InstrumentDto[]>([])
   const [summary, setSummary] = useState<SummaryDto[]>([])
   const [loading, setLoading] = useState(true)
   const [interval, setInterval] = useState<Interval>(Interval.Daily)
@@ -18,11 +16,7 @@ export default function Dashboard() {
   const loadData = async () => {
     try {
       setLoading(true)
-      const [instrumentsData, summaryData] = await Promise.all([
-        instrumentsApi.getAll(),
-        summaryApi.getSummary(interval, timeframe),
-      ])
-      setInstruments(instrumentsData)
+      const summaryData = await summaryApi.getSummary(interval, timeframe)
       setSummary(summaryData)
     } catch (error) {
       console.error('Error loading data:', error)

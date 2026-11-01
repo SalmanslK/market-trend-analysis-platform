@@ -39,14 +39,33 @@ export default function PriceChart({ data, instrument, interval, timeframe }: Pr
 
   return (
     <div style={{ width: '100%', height: '600px', padding: '20px', backgroundColor: 'white' }}>
-      <h2>{instrument} | {interval} Prices ({timeframe})</h2>
-      
-      <ResponsiveContainer width="100%" height="90%">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+        <h2>{instrument} | {interval} Prices ({timeframe})</h2>
+
+        {/* Last 3 Prices Info Box */}
+        <div style={{
+          padding: '10px',
+          backgroundColor: 'white',
+          border: '1px solid black',
+          borderRadius: '5px',
+          fontSize: '12px',
+        }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Last Prices</div>
+          {last3Prices.map((p, idx) => (
+            <div key={idx}>{p.date}: {p.price.toFixed(2)}</div>
+          ))}
+        </div>
+      </div>
+
+      <ResponsiveContainer width="100%" height="82%">
         <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="date" />
-          <YAxis />
-          <Tooltip />
+          {/* Fit the axis to the data so price moves are visible instead of squashed against a zero baseline */}
+          <YAxis domain={['auto', 'auto']} tickFormatter={(value: number) => value.toLocaleString()} />
+          <Tooltip
+            formatter={(value) => (typeof value === 'number' ? value.toFixed(2) : value)}
+          />
           <Legend />
           
           {/* Price line (black) */}
@@ -56,6 +75,7 @@ export default function PriceChart({ data, instrument, interval, timeframe }: Pr
             stroke="#000000"
             strokeWidth={2}
             dot={false}
+            isAnimationActive={false}
           />
           
           {/* SMA-20 line (blue) */}
@@ -66,6 +86,7 @@ export default function PriceChart({ data, instrument, interval, timeframe }: Pr
               stroke="#0000FF"
               strokeWidth={1.5}
               dot={false}
+              isAnimationActive={false}
             />
           )}
           
@@ -78,6 +99,7 @@ export default function PriceChart({ data, instrument, interval, timeframe }: Pr
               strokeWidth={1}
               strokeDasharray="5 5"
               dot={false}
+              isAnimationActive={false}
             />
           )}
           
@@ -89,6 +111,7 @@ export default function PriceChart({ data, instrument, interval, timeframe }: Pr
               strokeWidth={1}
               strokeDasharray="5 5"
               dot={false}
+              isAnimationActive={false}
             />
           )}
           
@@ -101,6 +124,7 @@ export default function PriceChart({ data, instrument, interval, timeframe }: Pr
               strokeWidth={1}
               strokeDasharray="5 5"
               dot={false}
+              isAnimationActive={false}
             />
           )}
           
@@ -112,6 +136,7 @@ export default function PriceChart({ data, instrument, interval, timeframe }: Pr
               strokeWidth={1}
               strokeDasharray="5 5"
               dot={false}
+              isAnimationActive={false}
             />
           )}
           
@@ -123,27 +148,11 @@ export default function PriceChart({ data, instrument, interval, timeframe }: Pr
               strokeWidth={1}
               strokeDasharray="5 5"
               dot={false}
+              isAnimationActive={false}
             />
           )}
         </LineChart>
       </ResponsiveContainer>
-      
-      {/* Last 3 Prices Info Box */}
-      <div style={{
-        position: 'absolute',
-        bottom: '30px',
-        right: '30px',
-        padding: '10px',
-        backgroundColor: 'white',
-        border: '1px solid black',
-        borderRadius: '5px',
-        fontSize: '12px',
-      }}>
-        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Last Prices</div>
-        {last3Prices.map((p, idx) => (
-          <div key={idx}>{p.date}: {p.price.toFixed(2)}</div>
-        ))}
-      </div>
     </div>
   )
 }

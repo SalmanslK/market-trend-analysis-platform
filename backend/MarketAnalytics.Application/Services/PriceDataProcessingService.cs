@@ -4,6 +4,7 @@ using MarketAnalytics.Application.Interfaces.Services;
 using MarketAnalytics.Domain.Entities;
 using MarketAnalytics.Domain.Enums;
 using MarketAnalytics.Domain.ValueObjects;
+using Microsoft.Extensions.Logging;
 
 namespace MarketAnalytics.Application.Services;
 
@@ -18,19 +19,22 @@ public class PriceDataProcessingService : IPriceDataProcessingService
     private readonly IResamplingService _resamplingService;
     private readonly ITimeframeFilterService _timeframeFilterService;
     private readonly IIndicatorCalculationService _indicatorCalculationService;
+    private readonly ILogger<PriceDataProcessingService> _logger;
 
     public PriceDataProcessingService(
         IPricePointRepository pricePointRepository,
         IInstrumentRepository instrumentRepository,
         IResamplingService resamplingService,
         ITimeframeFilterService timeframeFilterService,
-        IIndicatorCalculationService indicatorCalculationService)
+        IIndicatorCalculationService indicatorCalculationService,
+        ILogger<PriceDataProcessingService> logger)
     {
         _pricePointRepository = pricePointRepository;
         _instrumentRepository = instrumentRepository;
         _resamplingService = resamplingService;
         _timeframeFilterService = timeframeFilterService;
         _indicatorCalculationService = indicatorCalculationService;
+        _logger = logger;
     }
 
     /// <summary>
@@ -158,10 +162,10 @@ public class PriceDataProcessingService : IPriceDataProcessingService
                     });
                 }
             }
-            catch
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                // Skip instruments that fail (log in production)
-                continue;
+                // Skip instruments that fail so one bad instrument doesn't break the whole summary
+                _logger.LogError(ex, "Error building summary for instrument {Symbol}", instrument.Symbol);
             }
         }
 

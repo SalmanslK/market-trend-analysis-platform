@@ -63,12 +63,23 @@ dotnet run
 ```
 
 The Worker fetches data for every instrument on startup, then again every 24 hours while it keeps running.
-The first run loads about a year of history for the sarmaaya.pk instruments (KSE100, KMI30, KMIF, MIF, MBF,
-MGF, USDPKR, GOLDPK).
+The first run loads about a year of history: from sarmaaya.pk for KSE100, KMI30, KMIF, MIF, MBF, MGF, USDPKR
+and GOLDPK, and from the free, keyless [fawazahmed0 currency-api](https://github.com/fawazahmed0/exchange-api)
+daily snapshots for **GOLDINT (XAU/USD)**. (Investing.com, the original GOLDINT source, blocks automated
+requests with HTTP 403.)
 
-**GOLDINT (XAU/USD)** comes from gold-api.com's free, keyless real-time endpoint. It returns only the current
-spot price, so GOLDINT history grows by one point per day the Worker runs. (Investing.com, the original source,
-blocks automated requests with HTTP 403.)
+### Optional: import older history from CSV
+
+The APIs only serve about a year. To load several years more (e.g. from the psx-trading-analysis project's
+`data/prices` folder, with files named `<SYMBOL>.csv` and a `date,price` header):
+
+```
+cd backend/MarketAnalytics.Worker
+dotnet run -- --import-csv D:\repos\psx-trading-analysis\data\prices
+```
+
+The import only adds dates that aren't already stored, so prices from the live sources always win, and it
+exits when done. It is safe to run again.
 
 ## 5. Run the API and frontend
 
@@ -89,14 +100,14 @@ Open http://localhost:3000. The Vite dev server proxies `/api` to the API on por
 
 - **Dashboard**: latest price, SMA-20 and Bollinger Bands for every instrument
 - **Instrument view**: price chart with SMA-20, Bollinger Bands and interval-specific moving averages
-  (MA-4W for weekly, MA-6M / MA-12M for monthly)
+  (MA-4W for weekly, MA-6M / MA-12M for monthly). Indicators are computed on the full history before the
+  timeframe is applied, so they cover the whole window; each line's latest value is shown in the legend.
 - **Comparison**: % change of several instruments on one chart, plus a performance table
-- **Settings**: default interval/timeframe (saved in the browser) and data source update status
+- **Settings**: default interval/timeframe (saved in the browser), suggested presets, and data source
+  update status
 
 ## Nice to have
 
-- **Gold history backfill**: gold-api.com's history endpoint needs a free API key (10 requests/hour on the
-  free plan). Adding it would let GOLDINT backfill a year of history instead of growing daily.
 - **Error handling**: global exception middleware and more detailed error responses
 - **Validation**: FluentValidation for API request models
 - **Testing**: unit tests for indicator/resampling services, API integration tests, frontend component tests

@@ -16,8 +16,19 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Register data fetchers as typed HTTP clients
 builder.Services.AddHttpClient<JsonApiDataFetcher>();
 builder.Services.AddHttpClient<HtmlScraperDataFetcher>();
-builder.Services.AddHttpClient<GoldApiDataFetcher>();
+builder.Services.AddHttpClient<CurrencyApiDataFetcher>();
 builder.Services.AddScoped<InstrumentDataFetcherFactory>();
+
+// "--import-csv <directory>" runs a one-off historical CSV import instead of the scheduled updates
+var importDirectory = builder.Configuration["import-csv"];
+if (!string.IsNullOrWhiteSpace(importDirectory))
+{
+    builder.Services.AddScoped<CsvPriceImporter>();
+    using var importHost = builder.Build();
+    using var scope = importHost.Services.CreateScope();
+    await scope.ServiceProvider.GetRequiredService<CsvPriceImporter>().ImportDirectoryAsync(importDirectory);
+    return;
+}
 
 // Register background service
 builder.Services.AddHostedService<DataUpdateBackgroundService>();

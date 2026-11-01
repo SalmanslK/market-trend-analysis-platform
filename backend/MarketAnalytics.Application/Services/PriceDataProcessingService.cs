@@ -77,7 +77,13 @@ public class PriceDataProcessingService : IPriceDataProcessingService
         var resampledData = _resamplingService.ResamplePriceData(priceDataPoints, interval);
         var resampledList = resampledData.ToList();
 
-        // 6. Filter by timeframe
+        // 6. Compute indicators on the full resampled history, so the bands and moving averages
+        //    cover the whole timeframe window instead of starting 20 periods into it
+        var sma20 = _indicatorCalculationService.ComputeSma20(resampledList);
+        var (upperBand, lowerBand) = _indicatorCalculationService.ComputeBollingerBands(resampledList);
+        var intervalMAs = _indicatorCalculationService.ComputeIntervalSpecificMovingAverages(resampledList, interval);
+
+        // 7. Filter by timeframe
         var filteredData = _timeframeFilterService.FilterByTimeframe(resampledList, timeframe);
         var filteredList = filteredData.ToList();
 
@@ -85,11 +91,6 @@ public class PriceDataProcessingService : IPriceDataProcessingService
         {
             return Enumerable.Empty<PriceDataDto>();
         }
-
-        // 7. Compute indicators
-        var sma20 = _indicatorCalculationService.ComputeSma20(filteredList);
-        var (upperBand, lowerBand) = _indicatorCalculationService.ComputeBollingerBands(filteredList);
-        var intervalMAs = _indicatorCalculationService.ComputeIntervalSpecificMovingAverages(filteredList, interval);
 
         // 8. Combine into DTOs
         var result = filteredList.Select(dp =>

@@ -1,0 +1,228 @@
+using System.Net;
+using System.Text;
+using MarketAnalytics.Application.Services;
+using MarketAnalytics.Infrastructure.News;
+using Microsoft.Extensions.Logging.Abstractions;
+
+namespace MarketAnalytics.Tests;
+
+public class NewsTopicClassifierTests
+{
+    [Fact]
+    public void PakistanStockNews_IsTaggedAsPakistanStocks()
+    {
+        var topics = NewsTopicClassifier.Classify("PSX sheds 3,560 points amid panic selling in jittery October", "");
+
+        Assert.Contains("pakistan-stocks", topics);
+    }
+
+    [Fact]
+    public void ForeignStockNews_IsNotTaggedAsPakistanStocks()
+    {
+        var topics = NewsTopicClassifier.Classify("European stocks fall as bond yields climb", "Shares in Frankfurt and Paris slipped.");
+
+        Assert.DoesNotContain("pakistan-stocks", topics);
+    }
+
+    [Fact]
+    public void GlobalGoldNews_IsTaggedWithoutPakistanContext()
+    {
+        var topics = NewsTopicClassifier.Classify("Gold prices plunge to one-year low below $3,900", "");
+
+        Assert.Equal(new[] { "gold" }, topics);
+    }
+
+    [Fact]
+    public void Topics_LinkToTheirInstruments()
+    {
+        var linked = NewsTopicClassifier.TopicsForSymbol("gold,rupee-dollar", "GOLDPK").Select(t => t.Key);
+
+        Assert.Equal(new[] { "gold", "rupee-dollar" }, linked);
+        Assert.Contains("rupee-dollar", NewsTopicClassifier.TopicKeysForSymbol("USDPKR"));
+    }
+}
+
+public class NewsSentimentAnalyzerTests
+{
+    [Fact]
+    public void NegativeHeadline_ScoresNegative()
+    {
+        var result = NewsSentimentAnalyzer.Analyze("PSX sheds 3,560 points amid panic selling in jittery October", "");
+
+        Assert.Equal("Negative", result.Label);
+        Assert.Equal(-100, result.Score);
+        Assert.Contains("sheds", result.NegativeWords);
+        Assert.True(result.Confidence > 80);
+    }
+
+    [Fact]
+    public void PositiveHeadline_ScoresPositive()
+    {
+        var result = NewsSentimentAnalyzer.Analyze("KSE-100 surges to record high as bulls return", "");
+
+        Assert.Equal("Positive", result.Label);
+        Assert.Equal(100, result.Score);
+    }
+
+    [Theory]
+    [InlineData("Rupee continues upward trend against dollar", "Positive")]
+    [InlineData("PSX slips 348 points on profit-taking", "Negative")]
+    [InlineData("KSE-100 closes in the green as bulls return", "Positive")]
+    [InlineData("Profit-taking snaps four-day rally at PSX", "Negative")]
+    [InlineData("KSE-100 ends three-day losing streak", "Positive")]
+    [InlineData("PSX Benchmark Index Up 2.5% WoW", "Positive")]
+    [InlineData("A look at Top Stocks at PSX as Market ends October in Red", "Negative")]
+    public void CommonMarketPhrasing_IsRecognised(string title, string expected)
+    {
+        Assert.Equal(expected, NewsSentimentAnalyzer.Analyze(title, "").Label);
+    }
+
+    [Fact]
+    public void BackgroundTopics_AreNotDirectForUnrelatedInstruments()
+    {
+        // Oil news is shown for USD/PKR as context, but its tone isn't about the rupee
+        Assert.False(NewsTopicClassifier.IsDirectTopic("oil,gold", "USDPKR"));
+        Assert.True(NewsTopicClassifier.IsDirectTopic("oil,gold", "GOLDINT"));
+        Assert.True(NewsTopicClassifier.IsDirectTopic("rupee-dollar", "USDPKR"));
+        Assert.False(NewsTopicClassifier.IsDirectTopic("rupee-dollar", "GOLDPK"));
+    }
+
+    [Fact]
+    public void EndedRally_IsNoLongerReadAsPositive()
+    {
+        // Known limit: "oil surge" still reads as positive wording, so this lands on Neutral rather than Negative
+        var result = NewsSentimentAnalyzer.Analyze("PSX ends four-session rally on oil surge", "");
+
+        Assert.NotEqual("Positive", result.Label);
+        Assert.Contains(result.NegativeWords, w => w.Contains("rally"));
+    }
+
+    [Fact]
+    public void MixedWording_HasLowConfidence()
+    {
+        var result = NewsSentimentAnalyzer.Analyze("Stocks rebound after early losses", "");
+
+        Assert.Equal(0, result.Score);
+        Assert.Equal(0, result.Confidence);
+        Assert.Equal("Neutral", result.Label);
+    }
+
+    [Fact]
+    public void HeadlineWithoutMarketWords_IsNeutralWithNoConfidence()
+    {
+        var result = NewsSentimentAnalyzer.Analyze("State Bank eyes open banking ecosystem", "");
+
+        Assert.Equal(new SentimentResult(0, 0, "Neutral", new(), new()).Label, result.Label);
+        Assert.Equal(0, result.Confidence);
+    }
+
+    [Theory]
+    [InlineData("Rupee gains against US dollar", -1)]   // rupee stronger -> USD/PKR falls
+    [InlineData("Dollar falls against rupee", 1)]       // dollar is the subject -> tone applies as is
+    [InlineData("Remittances rise 10% in October", 1)]  // rupee not mentioned
+    public void UsdPkrDirection_FlipsWhenRupeeIsTheSubject(string title, int expected)
+    {
+        Assert.Equal(expected, NewsSentimentAnalyzer.DirectionFor("USDPKR", title));
+        Assert.Equal(1, NewsSentimentAnalyzer.DirectionFor("KSE100", title));
+    }
+
+    [Fact]
+    public void Summary_IsConfidentOnlyWhenArticlesAgree()
+    {
+        var agreeing = NewsService.Summarize("KSE100", 7, Enumerable.Repeat((-80, 0.9, "Negative"), 5).ToList());
+        var split = NewsService.Summarize("KSE100", 7, new List<(int, double, string)>
+        {
+            (-80, 0.9, "Negative"), (80, 0.9, "Positive"), (-60, 0.8, "Negative"), (70, 0.8, "Positive"),
+        });
+
+        Assert.Equal("Negative", agreeing.Label);
+        Assert.Equal(5, agreeing.Negative);
+        Assert.True(agreeing.Confidence > 70);
+        Assert.True(split.Confidence < 40);
+    }
+
+    [Fact]
+    public void Summary_WithNoArticles_IsNeutral()
+    {
+        var summary = NewsService.Summarize("GOLDINT", 7, new());
+
+        Assert.Equal("Neutral", summary.Label);
+        Assert.Equal(0, summary.Articles);
+        Assert.Equal(0, summary.Confidence);
+    }
+}
+
+public class RssNewsFetcherTests
+{
+    private const string Feed = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <rss version="2.0"><channel>
+          <item>
+            <title>Refineries to sell petrol 'below cost'</title>
+            <link>https://tribune.com.pk/story/1</link>
+            <description>&lt;p&gt;Oil &amp;amp; gas firms &lt;b&gt;warn&lt;/b&gt;&lt;/p&gt;</description>
+            <pubDate>Sun, 01 Nov 26 07:18:13 +0500</pubDate>
+          </item>
+          <item>
+            <title>PSX: KSE-100 sheds over 1,100 points - Business Recorder</title>
+            <link>https://news.google.com/rss/articles/abc</link>
+            <description>PSX: KSE-100 sheds over 1,100 points Business Recorder</description>
+            <pubDate>Fri, 30 Oct 2026 12:30:00 GMT</pubDate>
+            <source url="https://www.brecorder.com">Business Recorder</source>
+          </item>
+          <item><title>No date</title><link>https://example.com/x</link></item>
+        </channel></rss>
+        """;
+
+    private sealed class StubHandler(string body) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body, Encoding.UTF8, "application/xml") });
+    }
+
+    private static RssNewsFetcher Fetcher() =>
+        new(new HttpClient(new StubHandler(Feed)), NullLogger<RssNewsFetcher>.Instance);
+
+    [Fact]
+    public async Task PublisherFeed_ParsesTwoDigitYearsAndStripsHtml()
+    {
+        var items = await Fetcher().FetchAsync(new NewsFeed("Express Tribune", "https://tribune.com.pk/feed/business"));
+
+        var first = items[0];
+        Assert.Equal("Express Tribune", first.Source);
+        Assert.Equal(new DateTime(2026, 11, 1, 2, 18, 13, DateTimeKind.Utc), first.PublishedAt);
+        Assert.Equal("Oil & gas firms warn", first.Summary);
+        Assert.Equal(2, items.Count); // the item without a date is skipped
+    }
+
+    [Fact]
+    public async Task GoogleNewsSearch_UsesPublisherAndCleansTitle()
+    {
+        var items = await Fetcher().SearchAsync(RssNewsFetcher.InstrumentSearches[0]);
+
+        var google = items.Single(i => i.Url.Contains("news.google.com"));
+        Assert.Equal("Business Recorder", google.Source);
+        Assert.Equal("PSX: KSE-100 sheds over 1,100 points", google.Title);
+        Assert.Equal(string.Empty, google.Summary);
+        Assert.Equal(new DateTime(2026, 10, 30, 12, 30, 0, DateTimeKind.Utc), google.PublishedAt);
+    }
+
+    [Theory]
+    [InlineData("Phillips 66 $PSX Stock Holdings Cut by Profund Advisors LLC")]
+    [InlineData("KMI 30 Index Today: Live Chart & Price (KMI30)")]
+    [InlineData("KSE100PR - KSE 100 Price Action Index Constituents")]
+    public void NonNewsAndForeignTickerResults_AreExcluded(string title)
+    {
+        Assert.Matches(RssNewsFetcher.Excluded, title);
+    }
+
+    [Fact]
+    public void SearchResults_AreOnlyLinked_WhenTheTitleIsAboutTheInstrument()
+    {
+        var kse = RssNewsFetcher.InstrumentSearches.Single(s => s.Symbols.Contains("KSE100"));
+
+        Assert.Matches(kse.Relevant, "PSX sheds 3,560 points amid panic selling");
+        Assert.DoesNotMatch(kse.Relevant, "New Job Listing Signals Bigger Plans For Sony's Intelligent Pricing");
+        Assert.DoesNotMatch(RssNewsFetcher.Excluded, "PSX sheds 3,560 points amid panic selling");
+    }
+}

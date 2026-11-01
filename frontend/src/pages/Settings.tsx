@@ -4,8 +4,18 @@ import { instrumentsApi } from '../services/api/instrumentsApi'
 import { InstrumentDto, Interval, Timeframe } from '../services/types/marketData'
 import IntervalSelector from '../components/controls/IntervalSelector'
 import TimeframeSelector from '../components/controls/TimeframeSelector'
-import { instrumentTypeLabels } from '../services/labels'
+import { instrumentTypeLabels, intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences, savePreferences } from '../services/preferences'
+
+// Suggested interval/timeframe combinations for common use cases
+const PRESETS: { label: string; interval: Interval; timeframe: Timeframe }[] = [
+  { label: 'Short-term swing trades', interval: Interval.Daily, timeframe: Timeframe.Quarter },
+  { label: 'Medium-term trend', interval: Interval.Weekly, timeframe: Timeframe.HalfYear },
+  { label: 'Long-term investment view', interval: Interval.Monthly, timeframe: Timeframe.All },
+  { label: 'Portfolio backtesting', interval: Interval.Quarterly, timeframe: Timeframe.All },
+  { label: 'Gold or index tracking', interval: Interval.Weekly, timeframe: Timeframe.Year },
+  { label: 'Mutual fund NAV trend', interval: Interval.Daily, timeframe: Timeframe.Month },
+]
 
 // The worker refreshes daily; flag sources that haven't updated in over two days
 const STALE_AFTER_MS = 2 * 24 * 60 * 60 * 1000
@@ -83,6 +93,37 @@ export default function Settings() {
           </button>
         </div>
         {saveMessage && <p style={{ marginTop: '10px', color: '#555' }}>{saveMessage}</p>}
+
+        <h3 style={{ marginTop: '20px' }}>Suggested settings</h3>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+          {PRESETS.map((preset) => {
+            const isCurrent = preset.interval === interval && preset.timeframe === timeframe
+            return (
+              <button
+                key={preset.label}
+                onClick={() => {
+                  setInterval(preset.interval)
+                  setTimeframe(preset.timeframe)
+                  setSaveMessage(null)
+                }}
+                style={{
+                  padding: '8px 12px',
+                  fontSize: '14px',
+                  backgroundColor: isCurrent ? '#e3f2fd' : 'white',
+                  border: `1px solid ${isCurrent ? '#1976d2' : '#ccc'}`,
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                <div style={{ fontWeight: 'bold' }}>{preset.label}</div>
+                <div style={{ color: '#555' }}>
+                  {intervalLabels[preset.interval]}, {timeframeLabels[preset.timeframe]}
+                </div>
+              </button>
+            )
+          })}
+        </div>
       </section>
 
       <section style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white' }}>

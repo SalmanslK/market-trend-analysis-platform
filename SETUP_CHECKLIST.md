@@ -96,6 +96,14 @@ npm run dev
 
 Open http://localhost:3000. The Vite dev server proxies `/api` to the API on port 5000.
 
+## Start and stop everything (after setup)
+
+Double-click **`start-app.cmd`** in the repo root. It starts PostgreSQL, builds the backend, starts the API, Worker
+and website in the background, and opens http://localhost:3000. It keeps running after you close the window, and
+anything already running is left alone. **`stop-app.cmd`** stops it all. Logs are in the `logs` folder.
+
+It doesn't start automatically after a reboot, and .NET updates may close the API and Worker; run `start-app.cmd` again.
+
 ## Tests
 
 ```
@@ -119,6 +127,7 @@ Covers the indicator maths (Bollinger, EMA, RSI, MACD, SMA, weekly resampling) a
   plain reading of each, RSI / MACD panels, the news mood, the biggest moves with the news around them, and the
   latest news.
 - **Comparison**: % change of several instruments on one chart, plus a performance table
+- **Track Record**: how following the signals would have done against simply holding, per instrument
 - **Settings**: default interval/timeframe (saved in the browser), suggested presets, and data source
   update status
 
@@ -169,10 +178,26 @@ skipped. One-day price spikes that immediately reverse (data errors in the sourc
 are read. Mutual fund NAVs drop when dividends are paid out and are not adjusted for this, so fund returns and
 signals around payout dates understate performance. Signals are not financial advice.
 
+## Track record (backtest)
+
+`BacktestService` replays the signal over stored daily prices, using the same rules as the live signal
+(`SignalRules`). Strategy: invested after a positive score, in cash after a negative one, unchanged on zero.
+
+- No look-ahead: indicators use only prices up to their own day, and trades happen at the next day's close.
+- Costs: each trade pays `costPercent` (default 0.5%, adjustable on the page). Holding pays one purchase.
+- Testing starts once all five rules can be evaluated (200 periods), and needs at least 250 further days.
+- Verdict: **Helped** (at least the return of holding), **LowerRisk** (less return, but worst fall at least a third
+  smaller and more return per unit of fall), otherwise **DidNotHelp**. Under 3 years is flagged as too short to judge.
+- Limits: prices exclude dividends, cash earns nothing in the main result (a 10% a year variant is also shown), and
+  the history is mostly a rising market.
+
+Result on the data as of Nov 2026, at 0.5% per trade: no instrument beat holding, GOLDPK lowered risk at a lower
+return, and the other 8 did worse. With no costs, 4 of 9 came out slightly ahead, so frequent trading is a large part
+of the shortfall. The rules were deliberately not tuned to improve this, since that would only fit them to the past.
+
 ## Nice to have
 
 - **Dividend-adjusted fund returns**: needs payout data for the Meezan funds
-- **Backtesting**: measure how the signal rules would have performed on the stored history
 - **Alerts**: notify when an instrument's signal changes
 
 - **Error handling**: global exception middleware and more detailed error responses

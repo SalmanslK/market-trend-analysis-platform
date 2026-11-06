@@ -59,7 +59,7 @@ export default function NewsSignalComparison({ results, detail, cost, onSelect }
       <h2 style={{ fontSize: '1.2rem' }}>Technical, news or both?</h2>
       <p style={{ fontSize: '13px', color: '#546e7a', margin: '4px 0 10px', lineHeight: 1.45 }}>
         The three Buy/Sell signals<InfoTip term="combinedSignal" /> against simply holding, for each instrument over the same dates, starting when its news begins.
-        Their rules were fixed before seeing these results.
+        The technical and news rules were fixed before seeing these results. The combined rule (act only when both agree) was chosen after an earlier test, so its figures may flatter it.
       </p>
 
       <PlainSummary points={describeNewsTests(results, cost)} />

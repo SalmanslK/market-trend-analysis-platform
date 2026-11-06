@@ -173,7 +173,8 @@ export function describeInstrument(a: InstrumentAnalyticsDto, mood?: NewsSentime
 
   const labels: Record<SignalAction, string> = { StrongBuy: 'Strong Buy', Buy: 'Buy', Hold: 'Hold', Sell: 'Sell', StrongSell: 'Strong Sell' }
   const newsText = a.newsSignal.articles >= 3 ? labels[a.newsSignal.action] : `Hold (only ${a.newsSignal.articles} recent ${a.newsSignal.articles === 1 ? 'story' : 'stories'})`
-  points.unshift(`Combined signal: ${labels[a.combinedSignal.action]}. Technical says ${labels[a.signal.action]}, news says ${newsText}.`)
+  const combinedText = a.combinedSignal.action === 'Hold' ? 'Hold, because technical and news don\'t clearly agree' : labels[a.combinedSignal.action]
+  points.unshift(`Combined signal: ${combinedText}. Technical says ${labels[a.signal.action]}, news says ${newsText}.`)
 
   return {
     headline: `${signalMeaning[a.signal.action].headline}. ${a.name} is at ${formatNumber(a.lastPrice)} (${priceMeaning(a)}).`,
@@ -213,7 +214,7 @@ export function describeMarket(all: InstrumentAnalyticsDto[], moods: NewsSentime
   const leaning = (action: string) => action === 'StrongBuy' || action === 'Buy' ? 'buy' : action === 'StrongSell' || action === 'Sell' ? 'sell' : 'hold'
   const buys = all.filter((a) => leaning(a.combinedSignal.action) === 'buy').length
   const sells = all.filter((a) => leaning(a.combinedSignal.action) === 'sell').length
-  sentences.push(`Combined signals (technical and news together): ${buys} of ${all.length} lean towards Buy, ${sells} towards Sell and ${all.length - buys - sells} are Hold.`)
+  sentences.push(`Combined signals (Buy or Sell only when technical and news agree): ${buys} of ${all.length} lean towards Buy, ${sells} towards Sell and ${all.length - buys - sells} are Hold.`)
 
   const trendsUp = all.filter((a) => a.longTermTrend.direction === 'Up').length
   const trendsDown = all.filter((a) => a.longTermTrend.direction === 'Down').length

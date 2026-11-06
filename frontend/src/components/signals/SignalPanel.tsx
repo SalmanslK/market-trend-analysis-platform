@@ -48,7 +48,7 @@ export default function SignalPanel({ analytics }: SignalPanelProps) {
         <strong>{signalMeaning[signal.action].headline}.</strong> {signalMeaning[signal.action].detail}
       </p>
       <p style={{ color: COLORS.muted, fontSize: '13px', marginBottom: '12px' }}>
-        Each indicator below votes ▲ up (+1), ▼ down (-1) or ● no view (0).<InfoTip term="score" /> Based on daily prices up to {formatDate(analytics.lastDate)}.
+        Each indicator below votes ▲ up, ▼ down or ● no view, giving {signal.score > 0 ? '+' : ''}{signal.score} of {signal.maxScore} votes.<InfoTip term="score" /> Based on daily prices up to {formatDate(analytics.lastDate)}.
       </p>
 
       <ul style={{ listStyle: 'none' }}>

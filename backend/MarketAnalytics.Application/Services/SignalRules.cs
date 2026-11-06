@@ -49,14 +49,27 @@ public static class SignalRules
     public static double NewsScore(int moodScore, int articles) => articles >= MinNewsArticles ? moodScore : 0;
 
     /// <summary>
-    /// The combined signal's score, -100 to +100: technical and news weighted equally,
-    /// or technical alone without enough articles.
+    /// The technical signal's score on the same -100 to +100 scale as the news and combined signals.
+    /// </summary>
+    public static double TechnicalScaledScore(int technicalScore, int technicalMax) =>
+        technicalMax > 0 ? (double)technicalScore / technicalMax * 100 : 0;
+
+    /// <summary>
+    /// The combined signal's score, -100 to +100: the average of technical and news when both clearly point the
+    /// same way, otherwise 0 (Hold). News swings about twice as much as technical, so simply averaging them let
+    /// news decide; requiring agreement keeps either one from overruling the other.
     /// </summary>
     public static double CombinedScore(int technicalScore, int technicalMax, int moodScore, int articles)
     {
-        var technical = technicalMax > 0 ? (double)technicalScore / technicalMax * 100 : 0;
-        return articles >= MinNewsArticles ? (technical + moodScore) / 2 : technical;
+        if (articles < MinNewsArticles)
+            return 0;
+
+        var technical = TechnicalScaledScore(technicalScore, technicalMax);
+        var bothClear = Math.Abs(technical) >= BuySellThreshold && Math.Abs(moodScore) >= BuySellThreshold;
+        return bothClear && Math.Sign(technical) == Math.Sign(moodScore) ? (technical + moodScore) / 2 : 0;
     }
+
+    private const double BuySellThreshold = 20;
 
     /// <summary>Action for a score from -100 to +100, used by the news and combined signals.</summary>
     public static string ActionForScaledScore(double score) => score switch

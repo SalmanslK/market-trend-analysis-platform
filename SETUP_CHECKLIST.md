@@ -179,8 +179,9 @@ Score >= 3 Strong Buy, 1 to 2 Buy, 0 Hold, -1 to -2 Sell, <= -3 Strong Sell. Rul
 **News signal**: the confidence-weighted average sentiment of direct news over the last 7 days (the news mood), from
 -100 to +100. +20 Buy, +60 Strong Buy, -20 Sell, -60 Strong Sell; with fewer than 3 articles, Hold.
 
-**Combined signal**: technical (score as a % of its maximum) and news weighted equally, with the same cut-offs; with
-fewer than 3 articles, technical alone. Rules live in `SignalRules`, shared by the live signals and the backtest.
+**Combined signal**: Buy or Sell only when technical and news clearly point the same way (each at least +20, or each at
+most -20), scored as their average; otherwise Hold, which keeps any existing position. Rules live in `SignalRules`, shared
+by the live signals and the backtest. All three signals display on the same -100 to +100 scale.
 
 **Long-term trend**, shown beside them: Up while the 50-period average is above the 200-period average (golden cross),
 otherwise Down, with the date it last changed.
@@ -230,10 +231,28 @@ instruments by trading far less, but mostly matched or trailed holding (KSE-100:
 +26.6% holding and +13.4% for the signal). They make few trades, so this is weak evidence. Golden cross is shown as the long-term trend beside
 the signal; it was picked after seeing this test, so its figures may flatter it.
 
-Technical, news and combined signals, tested on the same dates from when each instrument's news begins (Nov 2026, 0.5%
-per trade): all three trailed holding on all 6 instruments with at least 3 years of history, and combined beat technical
-alone on none of them (KSE-100: holding +26.6% a year, technical +13.3%, news +14.3%, combined +8.9%). Older news is a sample
-of a few stories per week, and sentiment is read from headline wording. The rules were fixed before these results.
+### Which rule does best
+
+`scripts/research/signal-research.cs` compares every rule with holding: costs of 0%, 0.5% and 1%, cash at 0% or 10%, first
+half against second half, picking rules each quarter with no hindsight, and a luck check by reshuffling blocks of days.
+Results on the 6 instruments with at least 3 years of news (Nov 2026, 0.5% per trade, cash earning nothing):
+
+| Rule | Return per year | Worst fall | Sharpe | Trades per year |
+| --- | --- | --- | --- | --- |
+| Holding | +21.8% | -25.6% | 0.98 | 0 |
+| Golden cross | +18.4% | -22.7% | 0.95 | 1.6 |
+| Monthly trend check | +17.0% | -23.7% | 0.91 | 2.0 |
+| Both agree (the combined signal) | +14.6% | -19.1% | 0.90 | 6.4 |
+| Balanced average of technical and news | +11.1% | -32.9% | 0.66 | 12.4 |
+| Technical | +7.7% | -34.0% | 0.47 | 19.3 |
+| News | +4.5% | -25.7% | 0.34 | 19.9 |
+| Simple average of technical and news (old combined) | +2.9% | -37.2% | 0.19 | 23.2 |
+
+Holding did best on return. No rule beat it reliably, and choosing rules quarter by quarter did worse (+24.7% against +27.5%
+over the same period). Technical, news and the simple average trailed by more than luck explains. With cash at an assumed
+10% a year, golden cross roughly matches holding (+21.4% against +21.8%). Both agree had the smallest falls. It and the
+choice of golden cross were picked after earlier tests on this data. Older news is a sample of a few stories per week,
+sentiment is read from headline wording, dividends are excluded, and the history is mostly a rising market.
 
 ## Nice to have
 

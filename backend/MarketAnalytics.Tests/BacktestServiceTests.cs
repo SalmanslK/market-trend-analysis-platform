@@ -173,12 +173,17 @@ public class BacktestServiceTests
         Assert.Equal(0, SignalRules.NewsScore(80, 2));
         Assert.Equal(80, SignalRules.NewsScore(80, 3));
 
-        // Combined is the average of technical (as % of its maximum) and news
+        // When both clearly point the same way, combined is their average
         Assert.Equal((40.0 + 80) / 2, SignalRules.CombinedScore(2, 5, 80, 3));
-        // Without enough news it is technical alone
-        Assert.Equal(40, SignalRules.CombinedScore(2, 5, 80, 2));
-        // They can cancel out
-        Assert.Equal(0, SignalRules.CombinedScore(-3, 5, 60, 10));
+        Assert.Equal((-40.0 - 80) / 2, SignalRules.CombinedScore(-2, 5, -80, 3));
+        // Not enough news: Hold
+        Assert.Equal(0, SignalRules.CombinedScore(2, 5, 80, 2));
+        // They disagree: Hold, however strong either one is
+        Assert.Equal(0, SignalRules.CombinedScore(-3, 5, 90, 10));
+        Assert.Equal(0, SignalRules.CombinedScore(5, 5, -21, 10));
+        // One has no clear view: Hold
+        Assert.Equal(0, SignalRules.CombinedScore(0, 5, 90, 10));
+        Assert.Equal(0, SignalRules.CombinedScore(5, 5, 19, 10));
 
         Assert.Equal("StrongBuy", SignalRules.ActionForScaledScore(60));
         Assert.Equal("Buy", SignalRules.ActionForScaledScore(20));
@@ -188,10 +193,24 @@ public class BacktestServiceTests
     }
 
     [Fact]
-    public void CombinedAction_MatchesTechnicalAction_WithoutNews()
+    public void TechnicalScaledScore_GivesTheSameActionAsItsVotes()
     {
         foreach (var score in Enumerable.Range(-5, 11))
-            Assert.Equal(SignalRules.ActionFor(score), SignalRules.ActionForScaledScore(SignalRules.CombinedScore(score, 5, 0, 0)));
+            Assert.Equal(SignalRules.ActionFor(score), SignalRules.ActionForScaledScore(SignalRules.TechnicalScaledScore(score, 5)));
+    }
+
+    [Fact]
+    public void CombinedSignal_KeepsItsPosition_WhileTechnicalAndNewsDisagree()
+    {
+        // Agree up, then disagree, then agree down: bought after day 0, held through the disagreement, sold after day 4
+        var scores = new[] { (2, 80), (-2, 80), (2, -80), (-2, 80), (-2, -80), (-2, -80) }
+            .Select(d => SignalRules.PositionForScaledScore(SignalRules.CombinedScore(d.Item1, 5, d.Item2, 5))).ToList();
+        var closes = new double[] { 100, 100, 110, 120, 130, 140 };
+
+        Assert.Equal(new[] { 1, 0, 0, 0, -1, -1 }, scores);
+        var run = BacktestService.Simulate(Dates(6), closes, scores, cost: 0, cashInterest: 0);
+        Assert.Equal(1.4, run.Equity[^1], 10);
+        Assert.Equal(2, run.Trades);
     }
 
     [Fact]

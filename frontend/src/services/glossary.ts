@@ -33,8 +33,8 @@ export const glossary = {
   },
   combinedSignal: {
     title: 'Combined signal',
-    what: 'The technical and news signals weighted equally, from -100 to +100, with the same cut-offs as the news signal. With fewer than 3 stories it uses technical alone.',
-    howToRead: 'It is strongest when price and news agree. When they disagree they cancel out towards Hold. The Track Record page shows how it did in the past.',
+    what: 'Buy or Sell only when the technical and news signals clearly point the same way (each at least +20, or each at most -20). Its score is their average. Otherwise it says Hold.',
+    howToRead: 'It trades less than either signal alone and had smaller falls in testing, but it earned less than simply holding. On Hold, the idea is to stay as you are: it isn\'t a reason to buy or to sell. The Track Record page has the results.',
   },
   signal: {
     title: 'Technical signal',
@@ -43,8 +43,8 @@ export const glossary = {
   },
   score: {
     title: 'Signal score',
-    what: 'The total of the indicator votes, e.g. "-1/5" means five indicators were checked and one more pointed down than up.',
-    howToRead: '+3 or more is Strong Buy, +1 to +2 Buy, 0 Hold, -1 to -2 Sell, -3 or less Strong Sell. The closer to zero, the more mixed the picture.',
+    what: 'All three signals use the same scale, from -100 to +100. For the technical signal it is the indicator votes as a share of those checked: 2 more votes up than down, out of 5, is +40.',
+    howToRead: '+60 or more is Strong Buy, +20 or more Buy, -20 or less Sell, -60 or less Strong Sell, and anything between is Hold. The closer to zero, the more mixed the picture.',
   },
   trend: {
     title: 'Price vs its averages',

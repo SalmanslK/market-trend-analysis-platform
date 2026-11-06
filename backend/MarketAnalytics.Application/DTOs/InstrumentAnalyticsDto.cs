@@ -52,7 +52,7 @@ public class InstrumentAnalyticsDto
     /// <summary>Buy/Sell from the last 7 days of news about this instrument.</summary>
     public ScaledSignalDto NewsSignal { get; set; } = new();
 
-    /// <summary>Buy/Sell from the technical signal and the news signal together.</summary>
+    /// <summary>Buy or Sell only when the technical and news signals clearly agree, otherwise Hold.</summary>
     public ScaledSignalDto CombinedSignal { get; set; } = new();
 
     /// <summary>All the standard metrics that can be calculated from closing prices.</summary>

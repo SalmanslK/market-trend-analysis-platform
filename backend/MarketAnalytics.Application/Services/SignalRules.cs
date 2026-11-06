@@ -39,6 +39,51 @@ public static class SignalRules
     public static decimal? PercentB(decimal price, decimal upperBand, decimal lowerBand) =>
         upperBand > lowerBand ? (price - lowerBand) / (upperBand - lowerBand) : null;
 
+    /// <summary>Days of news counted in the news signal.</summary>
+    public const int NewsWindowDays = 7;
+
+    /// <summary>With fewer direct articles than this, the news signal stays on Hold.</summary>
+    public const int MinNewsArticles = 3;
+
+    /// <summary>The news signal's score, -100 to +100: the news mood, or 0 without enough articles.</summary>
+    public static double NewsScore(int moodScore, int articles) => articles >= MinNewsArticles ? moodScore : 0;
+
+    /// <summary>
+    /// The technical signal's score on the same -100 to +100 scale as the news and combined signals.
+    /// </summary>
+    public static double TechnicalScaledScore(int technicalScore, int technicalMax) =>
+        technicalMax > 0 ? (double)technicalScore / technicalMax * 100 : 0;
+
+    /// <summary>
+    /// The combined signal's score, -100 to +100: the average of technical and news when both clearly point the
+    /// same way, otherwise 0 (Hold). News swings about twice as much as technical, so simply averaging them let
+    /// news decide; requiring agreement keeps either one from overruling the other.
+    /// </summary>
+    public static double CombinedScore(int technicalScore, int technicalMax, int moodScore, int articles)
+    {
+        if (articles < MinNewsArticles)
+            return 0;
+
+        var technical = TechnicalScaledScore(technicalScore, technicalMax);
+        var bothClear = Math.Abs(technical) >= BuySellThreshold && Math.Abs(moodScore) >= BuySellThreshold;
+        return bothClear && Math.Sign(technical) == Math.Sign(moodScore) ? (technical + moodScore) / 2 : 0;
+    }
+
+    private const double BuySellThreshold = 20;
+
+    /// <summary>Action for a score from -100 to +100, used by the news and combined signals.</summary>
+    public static string ActionForScaledScore(double score) => score switch
+    {
+        >= 60 => "StrongBuy",
+        >= 20 => "Buy",
+        <= -60 => "StrongSell",
+        <= -20 => "Sell",
+        _ => "Hold",
+    };
+
+    /// <summary>+1 for any Buy, -1 for any Sell, 0 for Hold.</summary>
+    public static int PositionForScaledScore(double score) => score >= 20 ? 1 : score <= -20 ? -1 : 0;
+
     public static string ActionFor(int score) => score switch
     {
         >= 3 => "StrongBuy",

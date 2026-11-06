@@ -135,7 +135,7 @@ namespace MarketAnalytics.Infrastructure.Migrations
                             DataSourceType = 0,
                             DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/mutual-funds/nav-history/a0aac2a4-0ec4-4718-b2e5-4580f5cd8ddd?days=365",
                             IsActive = true,
-                            Name = "KMI Islamic Fund",
+                            Name = "KSE Meezan Index Fund",
                             Symbol = "KMIF",
                             Type = 1,
                             UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
@@ -171,7 +171,7 @@ namespace MarketAnalytics.Infrastructure.Migrations
                             DataSourceType = 0,
                             DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/mutual-funds/nav-history/7e59207d-798c-43ab-bc76-4a44d2f90a64?days=365",
                             IsActive = true,
-                            Name = "Meezan Growth Fund",
+                            Name = "Meezan Gold Fund",
                             Symbol = "MGF",
                             Type = 1,
                             UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
@@ -255,8 +255,8 @@ namespace MarketAnalytics.Infrastructure.Migrations
 
                     b.Property<string>("Url")
                         .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.HasKey("Id");
 

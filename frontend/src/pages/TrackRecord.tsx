@@ -17,6 +17,7 @@ import { changeColor, COLORS, formatDate, formatPercent, signalStyles } from '..
 import { compareWithHolding, describeBacktests, describeRuleRecord, describeTrendRules, MIN_RELIABLE_YEARS, ruleNames, verdictStyles } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
 import PlainSummary from '../components/help/PlainSummary'
+import NewsSignalComparison from '../components/signals/NewsSignalComparison'
 
 const COST_OPTIONS = [0, 0.25, 0.5, 1, 2]
 const DEFAULT_COST = 0.5
@@ -215,8 +216,6 @@ export default function TrackRecord() {
         Would acting on the app's signals have worked? This replays them over past prices.<InfoTip term="backtest" />
       </p>
 
-      {tested.length > 0 && <PlainSummary points={describeTrendRules(tested, shownCost)} />}
-
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
         <label htmlFor="cost">Cost per trade<InfoTip term="tradingCost" /></label>
         <select id="cost" value={cost} onChange={(e) => setCost(Number(e.target.value))} style={{ padding: '8px', fontSize: '15px' }}>
@@ -226,6 +225,18 @@ export default function TrackRecord() {
       </div>
 
       {error && <div style={{ color: COLORS.down, marginBottom: '12px' }}>{error}</div>}
+
+      {tested.length > 0 && (
+        <NewsSignalComparison
+          results={tested}
+          detail={detail}
+          cost={shownCost}
+          onSelect={(symbol) => setParams({ symbol }, { replace: true })}
+        />
+      )}
+
+      <h2 style={{ fontSize: '1.2rem', margin: '20px 0 8px' }}>Technical signal and trend rules, over all price history</h2>
+      {tested.length > 0 && <PlainSummary points={describeTrendRules(tested, shownCost)} />}
 
       <div style={{ overflowX: 'auto', backgroundColor: 'white', borderRadius: '6px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
@@ -288,7 +299,6 @@ export default function TrackRecord() {
           <li><strong>Dividends aren't included.</strong> Index and fund prices leave out dividends, so real returns from holding were higher, especially for funds like MIF, whose price drops at each payout.</li>
           <li><strong>Cash earns nothing here,</strong> which is harsh on every rule when interest rates are high.</li>
           <li><strong>The history is mostly a rising market,</strong> which favours holding. A long falling market could look different, and past results don't guarantee future ones.</li>
-          <li>The news mood isn't part of this test: news has only been collected recently.</li>
         </ul>
         <p style={{ marginTop: '8px' }}>This is not financial advice. See the <Link to="/guide" style={{ color: COLORS.link }}>Guide</Link> for what each term means.</p>
       </section>

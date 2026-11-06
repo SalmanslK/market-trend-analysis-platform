@@ -7,13 +7,13 @@ import { GlossaryKey } from '../services/glossary'
 import { describeMarket } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
 import PlainSummary from '../components/help/PlainSummary'
-import SentimentChip from '../components/news/SentimentChip'
 import { changeColor, COLORS, formatDate, formatNumber, formatPercent, signalStyles, TREND_DISCLAIMER } from '../services/format'
+import ScaledSignalBadge from '../components/signals/ScaledSignalBadge'
 import SignalBadge from '../components/signals/SignalBadge'
 import TrendBadge from '../components/trend/TrendBadge'
 import RangeBar from '../components/analytics/RangeBar'
 
-type SortKey = 'symbol' | 'change1D' | 'change1M' | 'changeYtd' | 'change1Y' | 'rsi14' | 'signal' | 'trend' | 'news'
+type SortKey = 'symbol' | 'change1D' | 'change1M' | 'changeYtd' | 'change1Y' | 'rsi14' | 'signal' | 'combined' | 'trend' | 'news'
 
 const SIGNAL_ORDER: SignalAction[] = ['StrongBuy', 'Buy', 'Hold', 'Sell', 'StrongSell']
 
@@ -42,14 +42,13 @@ export default function Dashboard() {
     newsApi.getSentiment(7).then(setMoods).catch((err) => console.error('Error loading news sentiment:', err))
   }, [])
 
-  const moodFor = (symbol: string) => moods.find((m) => m.symbol === symbol)
-
   const sorted = useMemo(() => {
     const value = (a: InstrumentAnalyticsDto): string | number => {
       if (sortKey === 'symbol') return a.symbol
       if (sortKey === 'signal') return a.signal.score
       if (sortKey === 'trend') return TREND_SORT_ORDER[a.longTermTrend.direction]
-      if (sortKey === 'news') return moodFor(a.symbol)?.articles ? moodFor(a.symbol)!.score : Number.NEGATIVE_INFINITY
+      if (sortKey === 'combined') return a.combinedSignal.score
+      if (sortKey === 'news') return a.newsSignal.score
       return a[sortKey] ?? Number.NEGATIVE_INFINITY
     }
     const rows = [...analytics].sort((x, y) => {
@@ -62,7 +61,7 @@ export default function Dashboard() {
   }, [analytics, moods, sortKey, sortDescending])
 
   const signalCounts = SIGNAL_ORDER
-    .map((action) => ({ action, count: analytics.filter((a) => a.signal.action === action).length }))
+    .map((action) => ({ action, count: analytics.filter((a) => a.combinedSignal.action === action).length }))
     .filter((s) => s.count > 0)
 
   const latestDate = analytics.reduce<string | null>((latest, a) => (!latest || a.lastDate > latest ? a.lastDate : latest), null)
@@ -102,7 +101,8 @@ export default function Dashboard() {
       {error && <div style={{ color: COLORS.down, marginBottom: '15px' }}>{error}</div>}
 
       {signalCounts.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+          <span style={{ fontSize: '13px', color: COLORS.muted }}>Combined signals:</span>
           {signalCounts.map(({ action, count }) => (
             <div
               key={action}
@@ -135,9 +135,10 @@ export default function Dashboard() {
                 {header('change1Y', '1Y')}
                 {header('rsi14', 'RSI', 'right', 'rsi')}
                 <th style={{ ...headerStyle, cursor: 'default', textAlign: 'center' }}>52-Week Range<InfoTip term="range52w" /></th>
-                {header('signal', 'Signal', 'center', 'signal')}
+                {header('combined', 'Combined', 'center', 'combinedSignal')}
+                {header('signal', 'Technical', 'center', 'signal')}
+                {header('news', 'News', 'center', 'newsSignal')}
                 {header('trend', 'Long-term trend', 'center', 'longTermTrend')}
-                {header('news', 'News (7d)', 'center', 'newsMood')}
               </tr>
             </thead>
             <tbody>
@@ -168,22 +169,21 @@ export default function Dashboard() {
                     <RangeBar low={a.low52W} high={a.high52W} position={a.rangePosition52W} />
                   </td>
                   <td style={{ ...cellStyle, textAlign: 'center' }}>
+                    <ScaledSignalBadge signal={a.combinedSignal} title="Technical and news together, from -100 to +100" />
+                  </td>
+                  <td style={{ ...cellStyle, textAlign: 'center' }}>
                     <SignalBadge signal={a.signal} />
                   </td>
                   <td style={{ ...cellStyle, textAlign: 'center' }}>
-                    <TrendBadge trend={a.longTermTrend} />
+                    <Link to={`/news?symbol=${a.symbol}`} style={{ textDecoration: 'none' }}>
+                      <ScaledSignalBadge
+                        signal={a.newsSignal}
+                        title={`${a.newsSignal.articles} stories in the last 7 days, ${a.newsSignal.newsConfidence}% sure. Click to read them.`}
+                      />
+                    </Link>
                   </td>
                   <td style={{ ...cellStyle, textAlign: 'center' }}>
-                    {(() => {
-                      const mood = moodFor(a.symbol)
-                      if (!mood) return '-'
-                      if (mood.articles === 0) return <span style={{ fontSize: '12px', color: COLORS.muted }}>No news</span>
-                      return (
-                        <Link to={`/news?symbol=${a.symbol}`} style={{ textDecoration: 'none' }} title={`${mood.articles} stories, ${mood.confidence}% sure. Click to read them.`}>
-                          <SentimentChip label={mood.label} score={mood.score} compact />
-                        </Link>
-                      )
-                    })()}
+                    <TrendBadge trend={a.longTermTrend} />
                   </td>
                 </tr>
               ))}

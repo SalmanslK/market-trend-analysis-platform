@@ -47,6 +47,9 @@ public class BacktestResultDto
     /// <summary>The current signal and the slower trend rules, tested over the same dates with the same costs.</summary>
     public List<RuleResultDto> Rules { get; set; } = new();
 
+    /// <summary>The technical, news and combined signals over the dates with news.</summary>
+    public NewsBacktestDto NewsTest { get; set; } = new();
+
     /// <summary>Growth of 100 under each approach, thinned to at most a few hundred points for charting.</summary>
     public List<EquityPointDto> EquityCurve { get; set; } = new();
 }
@@ -64,6 +67,47 @@ public class RuleResultDto
     public string Verdict { get; set; } = "DidNotHelp";
     public decimal FirstHalfAnnual { get; set; }
     public decimal SecondHalfAnnual { get; set; }
+}
+
+/// <summary>
+/// Technical, news and combined signals compared with holding on the same dates, starting when news begins.
+/// </summary>
+public class NewsBacktestDto
+{
+    /// <summary>False when news covers too little of the history for a test.</summary>
+    public bool HasEnoughNews { get; set; }
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    public decimal Years { get; set; }
+    public int TradingDays { get; set; }
+    /// <summary>Direct articles about this instrument in the stored history.</summary>
+    public int Articles { get; set; }
+    /// <summary>Share of tested days with enough news for a news reading.</summary>
+    public decimal CoveragePercent { get; set; }
+    public PerformanceDto Holding { get; set; } = new();
+    public List<NewsRuleResultDto> Rules { get; set; } = new();
+    public List<NewsEquityPointDto> EquityCurve { get; set; } = new();
+}
+
+public class NewsRuleResultDto
+{
+    /// <summary>technical, news or combined.</summary>
+    public string Key { get; set; } = string.Empty;
+    public PerformanceDto Performance { get; set; } = new();
+    public string Verdict { get; set; } = "DidNotHelp";
+    /// <summary>Average 30-day change after Buy minus after Sell; positive means the signal told them apart.</summary>
+    public decimal? BuyMinusSell30D { get; set; }
+    public int BuyDays { get; set; }
+    public int SellDays { get; set; }
+}
+
+public class NewsEquityPointDto
+{
+    public DateTime Date { get; set; }
+    public decimal Holding { get; set; }
+    public decimal Technical { get; set; }
+    public decimal News { get; set; }
+    public decimal Combined { get; set; }
 }
 
 public class PerformanceDto

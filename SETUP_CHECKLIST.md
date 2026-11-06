@@ -176,7 +176,14 @@ published from the day before to the next trading day (so weekend reports of a F
 
 Score >= 3 Strong Buy, 1 to 2 Buy, 0 Hold, -1 to -2 Sell, <= -3 Strong Sell. Rules without enough history are skipped.
 
-**Long-term trend**, shown beside it: Up while the 50-period average is above the 200-period average (golden cross),
+**News signal**: the confidence-weighted average sentiment of direct news over the last 7 days (the news mood), from
+-100 to +100. +20 Buy, +60 Strong Buy, -20 Sell, -60 Strong Sell; with fewer than 3 articles, Hold.
+
+**Combined signal**: Buy or Sell only when technical and news clearly point the same way (each at least +20, or each at
+most -20), scored as their average; otherwise Hold, which keeps any existing position. Rules live in `SignalRules`, shared
+by the live signals and the backtest. All three signals display on the same -100 to +100 scale.
+
+**Long-term trend**, shown beside them: Up while the 50-period average is above the 200-period average (golden cross),
 otherwise Down, with the date it last changed.
 
 **All metrics** (`TechnicalMetrics`), on each instrument's page: SMA and EMA (10, 20, 50, 100, 200); RSI, Stochastic RSI,
@@ -193,6 +200,14 @@ Mutual fund NAVs drop when dividends are paid out and are not adjusted for this,
 understate performance.
 
 ## Track record (backtest)
+
+Older news for this test comes from a one-off, slow download (safe to re-run, stops if refused):
+
+```
+cd backend/MarketAnalytics.Worker
+dotnet run -- --backfill-news 2021-05-01
+```
+
 
 `BacktestService` replays the signal over stored daily prices, using the same rules as the live signal
 (`SignalRules`). Strategy: invested after a positive score, in cash after a negative one, unchanged on zero.
@@ -215,6 +230,29 @@ invested if the price is above its 200-period average). At 0.5% per trade both b
 instruments by trading far less, but mostly matched or trailed holding (KSE-100: golden cross +26.8% a year against
 +26.6% holding and +13.4% for the signal). They make few trades, so this is weak evidence. Golden cross is shown as the long-term trend beside
 the signal; it was picked after seeing this test, so its figures may flatter it.
+
+### Which rule does best
+
+`scripts/research/signal-research.cs` compares every rule with holding: costs of 0%, 0.5% and 1%, cash at 0% or 10%, first
+half against second half, picking rules each quarter with no hindsight, and a luck check by reshuffling blocks of days.
+Results on the 6 instruments with at least 3 years of news (Nov 2026, 0.5% per trade, cash earning nothing):
+
+| Rule | Return per year | Worst fall | Sharpe | Trades per year |
+| --- | --- | --- | --- | --- |
+| Holding | +21.8% | -25.6% | 0.98 | 0 |
+| Golden cross | +18.4% | -22.7% | 0.95 | 1.6 |
+| Monthly trend check | +17.0% | -23.7% | 0.91 | 2.0 |
+| Both agree (the combined signal) | +14.6% | -19.1% | 0.90 | 6.4 |
+| Balanced average of technical and news | +11.1% | -32.9% | 0.66 | 12.4 |
+| Technical | +7.7% | -34.0% | 0.47 | 19.3 |
+| News | +4.5% | -25.7% | 0.34 | 19.9 |
+| Simple average of technical and news (old combined) | +2.9% | -37.2% | 0.19 | 23.2 |
+
+Holding did best on return. No rule beat it reliably, and choosing rules quarter by quarter did worse (+24.7% against +27.5%
+over the same period). Technical, news and the simple average trailed by more than luck explains. With cash at an assumed
+10% a year, golden cross roughly matches holding (+21.4% against +21.8%). Both agree had the smallest falls. It and the
+choice of golden cross were picked after earlier tests on this data. Older news is a sample of a few stories per week,
+sentiment is read from headline wording, dividends are excluded, and the history is mostly a rising market.
 
 ## Nice to have
 

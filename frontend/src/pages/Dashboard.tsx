@@ -2,19 +2,19 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { analyticsApi } from '../services/api/analyticsApi'
 import { newsApi } from '../services/api/newsApi'
-import { InstrumentAnalyticsDto, NewsSentimentSummary, SignalAction } from '../services/types/marketData'
+import { InstrumentAnalyticsDto, NewsSentimentSummary } from '../services/types/marketData'
 import { GlossaryKey } from '../services/glossary'
 import { describeMarket } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
 import PlainSummary from '../components/help/PlainSummary'
 import SentimentChip from '../components/news/SentimentChip'
-import { changeColor, COLORS, formatDate, formatNumber, formatPercent, SIGNAL_DISCLAIMER, signalStyles } from '../services/format'
-import SignalBadge from '../components/signals/SignalBadge'
+import { changeColor, COLORS, formatDate, formatNumber, formatPercent, TREND_DISCLAIMER } from '../services/format'
+import TrendBadge from '../components/trend/TrendBadge'
 import RangeBar from '../components/analytics/RangeBar'
 
-type SortKey = 'symbol' | 'change1D' | 'change1M' | 'changeYtd' | 'change1Y' | 'rsi14' | 'signal' | 'news'
+type SortKey = 'symbol' | 'change1D' | 'change1M' | 'changeYtd' | 'change1Y' | 'rsi14' | 'trend' | 'news'
 
-const SIGNAL_ORDER: SignalAction[] = ['StrongBuy', 'Buy', 'Hold', 'Sell', 'StrongSell']
+const TREND_SORT_ORDER = { Up: 1, Down: 0, Unknown: -1 }
 
 const cellStyle = { padding: '10px', borderBottom: `1px solid ${COLORS.border}`, textAlign: 'right' as const }
 const headerStyle = { ...cellStyle, backgroundColor: '#f5f5f5', cursor: 'pointer', userSelect: 'none' as const, whiteSpace: 'nowrap' as const }
@@ -44,7 +44,7 @@ export default function Dashboard() {
   const sorted = useMemo(() => {
     const value = (a: InstrumentAnalyticsDto): string | number => {
       if (sortKey === 'symbol') return a.symbol
-      if (sortKey === 'signal') return a.signal.score
+      if (sortKey === 'trend') return TREND_SORT_ORDER[a.longTermTrend.direction]
       if (sortKey === 'news') return moodFor(a.symbol)?.articles ? moodFor(a.symbol)!.score : Number.NEGATIVE_INFINITY
       return a[sortKey] ?? Number.NEGATIVE_INFINITY
     }
@@ -57,9 +57,8 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [analytics, moods, sortKey, sortDescending])
 
-  const signalCounts = SIGNAL_ORDER
-    .map((action) => ({ action, count: analytics.filter((a) => a.signal.action === action).length }))
-    .filter((s) => s.count > 0)
+  const trendsUp = analytics.filter((a) => a.longTermTrend.direction === 'Up').length
+  const trendsDown = analytics.filter((a) => a.longTermTrend.direction === 'Down').length
 
   const latestDate = analytics.reduce<string | null>((latest, a) => (!latest || a.lastDate > latest ? a.lastDate : latest), null)
 
@@ -85,7 +84,7 @@ export default function Dashboard() {
       <h1>Market Overview</h1>
       <p style={{ color: COLORS.muted, margin: '6px 0 20px' }}>
         {latestDate ? `Latest prices up to ${formatDate(latestDate)}. ` : ''}
-        Click a column to sort, an instrument for its charts and news, or hover a signal to see why.
+        Click a column to sort, or an instrument for its charts and news.
       </p>
 
       {analytics.length > 0 && (
@@ -97,22 +96,16 @@ export default function Dashboard() {
 
       {error && <div style={{ color: COLORS.down, marginBottom: '15px' }}>{error}</div>}
 
-      {signalCounts.length > 0 && (
+      {analytics.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
-          {signalCounts.map(({ action, count }) => (
-            <div
-              key={action}
-              style={{
-                padding: '10px 16px',
-                borderRadius: '6px',
-                backgroundColor: signalStyles[action].background,
-                color: signalStyles[action].color,
-              }}
-            >
-              <div style={{ fontSize: '22px', fontWeight: 'bold' }}>{count}</div>
-              <div style={{ fontSize: '13px' }}>{signalStyles[action].label}</div>
-            </div>
-          ))}
+          <div style={{ padding: '10px 16px', borderRadius: '6px', backgroundColor: '#e6f4ea', color: '#1b5e20' }}>
+            <div style={{ fontSize: '22px', fontWeight: 'bold' }}>{trendsUp}</div>
+            <div style={{ fontSize: '13px' }}>Long-term trend up</div>
+          </div>
+          <div style={{ padding: '10px 16px', borderRadius: '6px', backgroundColor: '#fdeee9', color: '#a23a12' }}>
+            <div style={{ fontSize: '22px', fontWeight: 'bold' }}>{trendsDown}</div>
+            <div style={{ fontSize: '13px' }}>Long-term trend down</div>
+          </div>
         </div>
       )}
 
@@ -131,7 +124,7 @@ export default function Dashboard() {
                 {header('change1Y', '1Y')}
                 {header('rsi14', 'RSI', 'right', 'rsi')}
                 <th style={{ ...headerStyle, cursor: 'default', textAlign: 'center' }}>52-Week Range<InfoTip term="range52w" /></th>
-                {header('signal', 'Signal', 'center', 'signal')}
+                {header('trend', 'Long-term trend', 'center', 'longTermTrend')}
                 {header('news', 'News (7d)', 'center', 'newsMood')}
               </tr>
             </thead>
@@ -163,7 +156,7 @@ export default function Dashboard() {
                     <RangeBar low={a.low52W} high={a.high52W} position={a.rangePosition52W} />
                   </td>
                   <td style={{ ...cellStyle, textAlign: 'center' }}>
-                    <SignalBadge signal={a.signal} />
+                    <TrendBadge trend={a.longTermTrend} />
                   </td>
                   <td style={{ ...cellStyle, textAlign: 'center' }}>
                     {(() => {
@@ -185,7 +178,7 @@ export default function Dashboard() {
       )}
 
       <p style={{ color: COLORS.muted, fontSize: '12px', marginTop: '12px' }}>
-        {SIGNAL_DISCLAIMER} <Link to="/track-record" style={{ color: COLORS.link }}>See how the signals performed in the past.</Link>
+        {TREND_DISCLAIMER} <Link to="/track-record" style={{ color: COLORS.link }}>See how acting on it would have done in the past.</Link>
       </p>
     </div>
   )

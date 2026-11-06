@@ -83,6 +83,40 @@ public class MarketAnalyticsServiceTests
     }
 
     [Fact]
+    public void LongTermTrend_IsUnknown_WithoutEnoughHistory()
+    {
+        var a = _service.ComputeAnalytics(Daily(Enumerable.Range(0, 150).Select(i => 100m + i)));
+
+        Assert.Equal("Unknown", a.LongTermTrend.Direction);
+        Assert.Null(a.LongTermTrend.Since);
+    }
+
+    [Fact]
+    public void LongTermTrend_HasNoChangeDate_WhenItNeverChanged()
+    {
+        var a = _service.ComputeAnalytics(Daily(Enumerable.Range(0, 300).Select(i => 100m + i)));
+
+        Assert.Equal("Up", a.LongTermTrend.Direction);
+        Assert.Null(a.LongTermTrend.Since);
+    }
+
+    [Fact]
+    public void LongTermTrend_ReportsTheDayTheAveragesCrossed()
+    {
+        // Rises for 300 days, then falls steeply until the 50-day average drops below the 200-day average
+        var prices = Daily(Enumerable.Range(0, 300).Select(i => 100m + i)
+            .Concat(Enumerable.Range(1, 150).Select(i => 399m - 2 * i)));
+        var sma50 = new IndicatorCalculationService().ComputeSma(prices, 50);
+        var sma200 = new IndicatorCalculationService().ComputeSma(prices, 200);
+        var firstDown = prices.First(p => sma200[p.DateTime].HasValue && sma50[p.DateTime] < sma200[p.DateTime]).DateTime;
+
+        var a = _service.ComputeAnalytics(prices);
+
+        Assert.Equal("Down", a.LongTermTrend.Direction);
+        Assert.Equal(firstDown, a.LongTermTrend.Since);
+    }
+
+    [Fact]
     public void SpikeFilter_DropsOneDayReversals_ButKeepsLastingDrops()
     {
         // 83.40 -> 53.85 -> 83.36 is a data error; 76 -> 58 that stays down (dividend payout) is real
@@ -101,8 +135,8 @@ public class MarketAnalyticsServiceTests
         // 60 points: enough for the 50-period average but not the 200-period one
         var a = _service.ComputeAnalytics(Daily(Enumerable.Range(0, 60).Select(i => 100m + i % 5)));
 
-        Assert.DoesNotContain(a.Signal.Reasons, r => r.Indicator == "Long-term trend");
-        Assert.Contains(a.Signal.Reasons, r => r.Indicator == "Medium-term trend");
+        Assert.DoesNotContain(a.Signal.Reasons, r => r.Indicator == "Price vs 200-day average");
+        Assert.Contains(a.Signal.Reasons, r => r.Indicator == "Price vs 50-day average");
         Assert.Equal(4, a.Signal.MaxScore);
     }
 }

@@ -10,8 +10,8 @@ import IndicatorCharts from '../components/charts/IndicatorCharts'
 import InstrumentSelector from '../components/controls/InstrumentSelector'
 import IntervalSelector from '../components/controls/IntervalSelector'
 import TimeframeSelector from '../components/controls/TimeframeSelector'
-import SignalBadge from '../components/signals/SignalBadge'
-import SignalPanel from '../components/signals/SignalPanel'
+import TrendBadge from '../components/trend/TrendBadge'
+import TrendPanel from '../components/trend/TrendPanel'
 import KeyStats from '../components/analytics/KeyStats'
 import PlainSummary from '../components/help/PlainSummary'
 import InstrumentNews from '../components/news/InstrumentNews'
@@ -90,7 +90,7 @@ export default function InstrumentView() {
             {formatPercent(analytics.change1D)} <span style={{ fontSize: '13px', color: COLORS.muted }}>1D</span>
           </span>
           <span style={{ color: COLORS.muted }}>as of {formatDate(analytics.lastDate)}</span>
-          <SignalBadge signal={analytics.signal} large />
+          <TrendBadge trend={analytics.longTermTrend} large />
         </div>
       )}
 
@@ -117,7 +117,7 @@ export default function InstrumentView() {
 
       {analytics && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(420px, 100%), 1fr))', gap: '12px', marginBottom: '12px' }}>
-          <SignalPanel analytics={analytics} />
+          <TrendPanel analytics={analytics} />
           <KeyStats analytics={analytics} />
         </div>
       )}

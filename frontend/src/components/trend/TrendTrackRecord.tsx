@@ -2,15 +2,15 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { backtestApi } from '../../services/api/backtestApi'
 import { BacktestResult } from '../../services/types/marketData'
-import { describeBacktest, verdictStyles } from '../../services/plainLanguage'
+import { describeTrendRecord } from '../../services/plainLanguage'
 import InfoTip from '../help/InfoTip'
 
-interface SignalTrackRecordProps {
+interface TrendTrackRecordProps {
   symbol: string
 }
 
-/** Shows next to a signal how far that signal could have been trusted in the past. */
-export default function SignalTrackRecord({ symbol }: SignalTrackRecordProps) {
+/** Shows next to the trend label how acting on it would have compared with simply holding. */
+export default function TrendTrackRecord({ symbol }: TrendTrackRecordProps) {
   const [result, setResult] = useState<BacktestResult | null>(null)
 
   useEffect(() => {
@@ -23,12 +23,11 @@ export default function SignalTrackRecord({ symbol }: SignalTrackRecordProps) {
   }, [symbol])
 
   if (!result?.hasEnoughData) return null
-  const style = verdictStyles[result.verdict]
 
   return (
-    <div style={{ marginTop: '12px', padding: '10px 12px', backgroundColor: style.background, color: style.color, borderRadius: '6px', fontSize: '13px', lineHeight: 1.45 }}>
-      <strong>How far to trust this signal: {style.label.toLowerCase()}.<InfoTip term="backtest" /></strong>{' '}
-      {describeBacktest(result)}{' '}
+    <div style={{ margin: '12px 0', padding: '10px 12px', backgroundColor: '#f5f5f5', borderRadius: '6px', fontSize: '13px', lineHeight: 1.45 }}>
+      <strong>If you had acted on this label:<InfoTip term="backtest" /></strong>{' '}
+      {describeTrendRecord(result)}{' '}
       <Link to={`/track-record?symbol=${symbol}`} style={{ color: 'inherit', textDecoration: 'underline' }}>See the details</Link>
     </div>
   )

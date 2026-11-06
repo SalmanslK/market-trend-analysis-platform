@@ -157,12 +157,38 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         analytics.MacdSignal = signal[lastDate];
         analytics.MacdHistogram = histogram[lastDate];
 
-        analytics.Sma50 = _indicators.ComputeSma(prices, SignalRules.MediumTrendPeriod)[lastDate];
-        analytics.Sma200 = _indicators.ComputeSma(prices, SignalRules.LongTrendPeriod)[lastDate];
+        var sma50 = _indicators.ComputeSma(prices, SignalRules.MediumTrendPeriod);
+        var sma200 = _indicators.ComputeSma(prices, SignalRules.LongTrendPeriod);
+        analytics.Sma50 = sma50[lastDate];
+        analytics.Sma200 = sma200[lastDate];
+        analytics.LongTermTrend = ComputeLongTermTrend(prices, sma50, sma200);
 
         var (upper, lower) = _indicators.ComputeBollingerBands(prices);
         if (upper[lastDate] is decimal upperBand && lower[lastDate] is decimal lowerBand)
             analytics.PercentB = SignalRules.PercentB(analytics.LastPrice, upperBand, lowerBand);
+    }
+
+    private static LongTermTrendDto ComputeLongTermTrend(
+        List<PriceDataPoint> prices,
+        Dictionary<DateTime, decimal?> sma50,
+        Dictionary<DateTime, decimal?> sma200)
+    {
+        var directions = prices
+            .Where(p => sma50[p.DateTime].HasValue && sma200[p.DateTime].HasValue)
+            .Select(p => (p.DateTime, Score: SignalRules.GoldenCross(sma50[p.DateTime]!.Value, sma200[p.DateTime]!.Value)))
+            .ToList();
+
+        if (directions.Count == 0)
+            return new LongTermTrendDto();
+
+        var current = directions[^1].Score;
+        var lastDifferent = directions.FindLastIndex(d => d.Score != current);
+
+        return new LongTermTrendDto
+        {
+            Direction = current > 0 ? "Up" : "Down",
+            Since = lastDifferent >= 0 ? directions[lastDifferent + 1].DateTime : null,
+        };
     }
 
     private static TechnicalSignalDto BuildSignal(InstrumentAnalyticsDto a)
@@ -175,9 +201,9 @@ public class MarketAnalyticsService : IMarketAnalyticsService
             var above = impact > 0;
             reasons.Add(new SignalReasonDto
             {
-                Indicator = "Long-term trend",
+                Indicator = "Price vs 200-day average",
                 Impact = impact,
-                Detail = $"Price is {Math.Abs(PercentChange(sma200, a.LastPrice)):0.0}% {(above ? "above" : "below")} its 200-period average ({(above ? "uptrend" : "downtrend")})",
+                Detail = $"Price is {Math.Abs(PercentChange(sma200, a.LastPrice)):0.0}% {(above ? "above" : "below")} its 200-period average",
             });
         }
 
@@ -187,7 +213,7 @@ public class MarketAnalyticsService : IMarketAnalyticsService
             var above = impact > 0;
             reasons.Add(new SignalReasonDto
             {
-                Indicator = "Medium-term trend",
+                Indicator = "Price vs 50-day average",
                 Impact = impact,
                 Detail = $"Price is {Math.Abs(PercentChange(sma50, a.LastPrice)):0.0}% {(above ? "above" : "below")} its 50-period average",
             });

@@ -41,5 +41,5 @@ export const signalStyles: Record<SignalAction, { label: string; background: str
   StrongSell: { label: 'Strong Sell', background: '#b71c1c', color: 'white' },
 }
 
-export const SIGNAL_DISCLAIMER =
-  'Signals summarize technical indicators on daily prices. They are not financial advice and do not account for fundamentals, news or dividends.'
+export const TREND_DISCLAIMER =
+  'The trend and indicators describe past prices. They are not predictions or financial advice, and do not account for fundamentals, news or dividends.'

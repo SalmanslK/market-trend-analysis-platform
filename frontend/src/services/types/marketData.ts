@@ -75,6 +75,12 @@ export interface TechnicalSignal {
   reasons: SignalReason[];
 }
 
+export interface LongTermTrend {
+  direction: 'Up' | 'Down' | 'Unknown';
+  /** The day the trend last changed; absent if it hasn't changed in the stored history */
+  since?: string;
+}
+
 export interface InstrumentAnalyticsDto {
   symbol: string;
   name: string;
@@ -100,6 +106,7 @@ export interface InstrumentAnalyticsDto {
   sma50?: number;
   sma200?: number;
   percentB?: number;
+  longTermTrend: LongTermTrend;
   signal: TechnicalSignal;
 }
 

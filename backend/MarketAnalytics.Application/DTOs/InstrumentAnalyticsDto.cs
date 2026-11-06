@@ -43,7 +43,23 @@ public class InstrumentAnalyticsDto
     /// <summary>Bollinger %B: 0 = at the lower band, 1 = at the upper band.</summary>
     public decimal? PercentB { get; set; }
 
+    /// <summary>The headline label shown for the instrument: the direction of its long-term trend.</summary>
+    public LongTermTrendDto LongTermTrend { get; set; } = new();
+
+    /// <summary>What each indicator shows right now; kept as detail behind the trend label.</summary>
     public TechnicalSignalDto Signal { get; set; } = new();
+}
+
+/// <summary>
+/// Long-term trend by the golden cross rule: Up while the 50-period average is above the 200-period average.
+/// It describes the trend so far and reacts slowly; it isn't a prediction or a recommendation.
+/// </summary>
+public class LongTermTrendDto
+{
+    /// <summary>Up, Down, or Unknown when there are fewer than 200 prices.</summary>
+    public string Direction { get; set; } = "Unknown";
+    /// <summary>The day the trend last changed to this direction; null if it hasn't changed in the stored history.</summary>
+    public DateTime? Since { get; set; }
 }
 
 /// <summary>

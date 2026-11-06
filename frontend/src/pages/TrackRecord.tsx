@@ -14,7 +14,7 @@ import {
 import { backtestApi } from '../services/api/backtestApi'
 import { BacktestResult, RuleResult, SignalAction, SignalOutcome } from '../services/types/marketData'
 import { changeColor, COLORS, formatDate, formatPercent, signalStyles } from '../services/format'
-import { compareWithHolding, describeBacktest, describeBacktests, describeSlowerRules, MIN_RELIABLE_YEARS, ruleNames, verdictStyles } from '../services/plainLanguage'
+import { compareWithHolding, describeBacktests, describeTrendRecord, describeTrendRules, MIN_RELIABLE_YEARS, ruleNames, verdictStyles } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
 import PlainSummary from '../components/help/PlainSummary'
 
@@ -25,6 +25,9 @@ const OUTCOME_HORIZON_DAYS = 30
 const cellStyle = { padding: '10px', borderBottom: `1px solid ${COLORS.border}`, textAlign: 'right' as const }
 const headerStyle = { ...cellStyle, backgroundColor: '#f5f5f5', whiteSpace: 'nowrap' as const }
 const cardStyle = { padding: '20px', backgroundColor: 'white', borderRadius: '6px', marginTop: '12px' }
+const noteStyle = { fontSize: '13px', color: '#546e7a', lineHeight: 1.45 }
+
+const RULE_COLORS = { ahead: COLORS.up, tied: COLORS.neutral, behind: COLORS.down }
 
 function VerdictChip({ result }: { result: BacktestResult }) {
   const style = verdictStyles[result.verdict]
@@ -34,8 +37,6 @@ function VerdictChip({ result }: { result: BacktestResult }) {
     </span>
   )
 }
-
-const RULE_COLORS = { ahead: COLORS.up, tied: COLORS.neutral, behind: COLORS.down }
 
 function RuleCell({ result, ruleKey }: { result: BacktestResult; ruleKey: RuleResult['key'] }) {
   const rule = result.rules.find((r) => r.key === ruleKey)
@@ -51,27 +52,69 @@ function RuleCell({ result, ruleKey }: { result: BacktestResult; ruleKey: RuleRe
   )
 }
 
-function SlowerRules({ results }: { results: BacktestResult[] }) {
+function InstrumentDetail({ result }: { result: BacktestResult }) {
+  const curve = result.equityCurve.map((p) => ({
+    date: new Date(p.date).toLocaleDateString(),
+    'Simply holding': p.buyAndHold,
+    [ruleNames.goldenCross]: p.goldenCross,
+    [ruleNames.monthlyTrend]: p.monthlyTrend,
+    [ruleNames.signal]: p.strategy,
+  }))
+
   return (
     <section style={cardStyle}>
-      <h2 style={{ fontSize: '1.2rem' }}>Would a slower rule do better?</h2>
-      <p style={{ fontSize: '13px', color: '#546e7a', margin: '4px 0 10px', lineHeight: 1.45 }}>
-        The current signal changes its mind often, and every trade costs money. These two standard rules react only to long trends:
-        the <strong>golden cross</strong><InfoTip term="goldenCross" /> and the <strong>monthly trend check</strong><InfoTip term="monthlyTrend" />.
-        Both were chosen before seeing how they did, and use the same dates and costs.
+      <h2 style={{ fontSize: '1.2rem' }}>{result.symbol}: what 100 would have become</h2>
+      <p style={{ ...noteStyle, margin: '4px 0 10px' }}>
+        {describeTrendRecord(result)} Tested from {formatDate(result.startDate)} to {formatDate(result.endDate)}.
+      </p>
+      <div style={{ width: '100%', height: '320px' }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={curve} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" minTickGap={50} />
+            <YAxis domain={['auto', 'auto']} tickFormatter={(value: number) => value.toLocaleString()} />
+            <Tooltip formatter={(value) => (typeof value === 'number' ? value.toFixed(1) : value)} />
+            <Legend />
+            <ReferenceLine y={100} stroke="#999" />
+            <Line type="monotone" dataKey="Simply holding" stroke="#000000" strokeWidth={2} dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey={ruleNames.goldenCross} stroke="#2e7d32" strokeWidth={2} dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey={ruleNames.monthlyTrend} stroke="#ef6c00" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey={ruleNames.signal} stroke="#1976d2" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </section>
+  )
+}
+
+function outcomeLabel(outcome: SignalOutcome): string {
+  return outcome.action === 'All' ? 'Any day (for comparison)' : signalStyles[outcome.action as SignalAction].label
+}
+
+function OldScoreSection({ results, detail, cost }: { results: BacktestResult[]; detail?: BacktestResult; cost: number }) {
+  const horizonFor = (o: SignalOutcome) => o.horizons.find((h) => h.horizonDays === OUTCOME_HORIZON_DAYS)
+  const spread = detail?.buyMinusSell30D
+  const first = detail?.buyMinusSell30DFirstHalf
+  const second = detail?.buyMinusSell30DSecondHalf
+
+  return (
+    <section style={cardStyle}>
+      <h2 style={{ fontSize: '1.2rem' }}>Why the app no longer shows Buy or Sell</h2>
+      <p style={{ ...noteStyle, margin: '4px 0 10px' }}>
+        The app used to add up five indicators into a Buy, Hold or Sell score. These are its results, kept here for the record.
       </p>
 
-      <PlainSummary points={describeSlowerRules(results)} />
+      <PlainSummary points={describeBacktests(results, cost)} />
 
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
           <thead>
             <tr>
-              <th style={{ ...headerStyle, textAlign: 'left' }}>Return per year</th>
-              <th style={headerStyle}>Holding</th>
-              <th style={headerStyle}>{ruleNames.signal}</th>
-              <th style={headerStyle}>{ruleNames.goldenCross}</th>
-              <th style={headerStyle}>{ruleNames.monthlyTrend}</th>
+              <th style={{ ...headerStyle, textAlign: 'left' }}>Instrument</th>
+              <th style={headerStyle}>Holding, per year</th>
+              <th style={headerStyle}>Old score, per year</th>
+              <th style={headerStyle}>Trades</th>
+              <th style={{ ...headerStyle, textAlign: 'center' }}>Result</th>
             </tr>
           </thead>
           <tbody>
@@ -81,116 +124,59 @@ function SlowerRules({ results }: { results: BacktestResult[] }) {
                   <strong>{r.symbol}</strong>
                   {r.years < MIN_RELIABLE_YEARS && <div style={{ fontSize: '12px', color: COLORS.down }}>too short to judge</div>}
                 </td>
-                <td style={cellStyle}>
-                  <strong>{formatPercent(r.buyAndHold.annualReturn, 1)}</strong>
-                  <div style={{ fontSize: '12px', color: COLORS.muted }}>fall {r.buyAndHold.maxDrawdown.toFixed(0)}%</div>
-                </td>
-                <RuleCell result={r} ruleKey="signal" />
-                <RuleCell result={r} ruleKey="goldenCross" />
-                <RuleCell result={r} ruleKey="monthlyTrend" />
+                <td style={{ ...cellStyle, color: changeColor(r.buyAndHold.annualReturn) }}>{formatPercent(r.buyAndHold.annualReturn, 1)}</td>
+                <td style={{ ...cellStyle, color: changeColor(r.strategy.annualReturn) }}>{formatPercent(r.strategy.annualReturn, 1)}</td>
+                <td style={cellStyle}>{r.strategy.trades}</td>
+                <td style={{ ...cellStyle, textAlign: 'center' }}><VerdictChip result={r} /></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <p style={{ fontSize: '13px', color: '#546e7a', marginTop: '10px', lineHeight: 1.45 }}>
-        Green is more than 1 point a year ahead of holding, red more than 1 point behind, grey about the same.{' '}
-        <strong>Treat this as weak evidence:</strong> these rules made only a handful of trades, so one or two well-timed moves can decide the result,
-        and this is one stretch of history. A rule that looks best here may not stay best.
-      </p>
+      {detail && (
+        <>
+          <h3 style={{ fontSize: '1rem', marginTop: '20px' }}>{detail.symbol}: what happened in the {OUTCOME_HORIZON_DAYS} days after each old score</h3>
+          <p style={{ ...noteStyle, margin: '4px 0 10px' }}>
+            A useful signal would show clearly better results after Buy than after Sell.
+            {spread != null && ` Here, Buy-type scores were followed by changes ${Math.abs(spread).toFixed(1)} percentage points ${spread >= 0 ? 'better' : 'worse'} than Sell-type scores.`}
+            {first != null && second != null && ` (${formatPercent(first, 1)} in the first half of the period, ${formatPercent(second, 1)} in the second.)`}
+          </p>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+              <thead>
+                <tr>
+                  <th style={{ ...headerStyle, textAlign: 'left' }}>After a...</th>
+                  <th style={headerStyle}>Average change</th>
+                  <th style={headerStyle}>Typical (median)</th>
+                  <th style={headerStyle}>Times it rose</th>
+                  <th style={headerStyle}>Days</th>
+                  <th style={headerStyle}>
+                    Separate periods
+                    <InfoTip title="Separate periods" text="Days next to each other share most of their 30-day window, so they aren't independent. The number of separate runs of a score is a better guide to how much evidence there is." />
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {detail.outcomes.map((o) => {
+                  const horizon = horizonFor(o)
+                  return (
+                    <tr key={o.action} style={o.action === 'All' ? { fontWeight: 'bold', backgroundColor: '#fafafa' } : undefined}>
+                      <td style={{ ...cellStyle, textAlign: 'left' }}>{outcomeLabel(o)}</td>
+                      <td style={{ ...cellStyle, color: changeColor(horizon?.averageChange) }}>{formatPercent(horizon?.averageChange)}</td>
+                      <td style={{ ...cellStyle, color: changeColor(horizon?.medianChange) }}>{formatPercent(horizon?.medianChange)}</td>
+                      <td style={cellStyle}>{horizon ? `${horizon.percentPositive.toFixed(0)}%` : '-'}</td>
+                      <td style={cellStyle}>{o.days.toLocaleString()}</td>
+                      <td style={cellStyle}>{o.action === 'All' ? '-' : o.periods}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </section>
-  )
-}
-
-function outcomeLabel(outcome: SignalOutcome): string {
-  return outcome.action === 'All' ? 'Any day (for comparison)' : signalStyles[outcome.action as SignalAction].label
-}
-
-function InstrumentDetail({ result }: { result: BacktestResult }) {
-  const curve = result.equityCurve.map((p) => ({
-    date: new Date(p.date).toLocaleDateString(),
-    'Simply holding': p.buyAndHold,
-    'Following the signal': p.strategy,
-    'Golden cross': p.goldenCross,
-    'Monthly trend check': p.monthlyTrend,
-  }))
-  const horizonFor = (o: SignalOutcome) => o.horizons.find((h) => h.horizonDays === OUTCOME_HORIZON_DAYS)
-  const spread = result.buyMinusSell30D
-  const first = result.buyMinusSell30DFirstHalf
-  const second = result.buyMinusSell30DSecondHalf
-
-  return (
-    <>
-      <section style={cardStyle}>
-        <h2 style={{ fontSize: '1.2rem' }}>{result.symbol}: what 100 would have become</h2>
-        <p style={{ fontSize: '13px', color: '#546e7a', margin: '4px 0 10px', lineHeight: 1.45 }}>
-          {describeBacktest(result)} Tested from {formatDate(result.startDate)} to {formatDate(result.endDate)}, with {result.strategy.trades} trades,
-          invested {result.strategy.timeInvested.toFixed(0)}% of the time.
-        </p>
-        <div style={{ width: '100%', height: '320px' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={curve} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" minTickGap={50} />
-              <YAxis domain={['auto', 'auto']} tickFormatter={(value: number) => value.toLocaleString()} />
-              <Tooltip formatter={(value) => (typeof value === 'number' ? value.toFixed(1) : value)} />
-              <Legend />
-              <ReferenceLine y={100} stroke="#999" />
-              <Line type="monotone" dataKey="Simply holding" stroke="#000000" strokeWidth={2} dot={false} isAnimationActive={false} />
-              <Line type="monotone" dataKey="Following the signal" stroke="#1976d2" strokeWidth={2} dot={false} isAnimationActive={false} />
-              <Line type="monotone" dataKey="Golden cross" stroke="#2e7d32" strokeWidth={1.5} dot={false} isAnimationActive={false} />
-              <Line type="monotone" dataKey="Monthly trend check" stroke="#ef6c00" strokeWidth={1.5} dot={false} isAnimationActive={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-        <p style={{ fontSize: '13px', color: '#546e7a', marginTop: '8px' }}>
-          If cash had earned {result.cashInterestPercent}% a year while out of the market (an assumption, as real rates vary),
-          following the signal would have earned {formatPercent(result.strategyWithInterest.annualReturn, 1)} a year.
-        </p>
-      </section>
-
-      <section style={cardStyle}>
-        <h2 style={{ fontSize: '1.2rem' }}>What happened in the {OUTCOME_HORIZON_DAYS} days after each signal</h2>
-        <p style={{ fontSize: '13px', color: '#546e7a', margin: '4px 0 10px', lineHeight: 1.45 }}>
-          A useful signal would show clearly better results after Buy than after Sell.
-          {spread != null && ` Here, Buy-type signals were followed by changes ${Math.abs(spread).toFixed(1)} percentage points ${spread >= 0 ? 'better' : 'worse'} than Sell-type signals.`}
-          {first != null && second != null && ` (${formatPercent(first, 1)} in the first half of the period, ${formatPercent(second, 1)} in the second.)`}
-        </p>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-            <thead>
-              <tr>
-                <th style={{ ...headerStyle, textAlign: 'left' }}>After a...</th>
-                <th style={headerStyle}>Average change</th>
-                <th style={headerStyle}>Typical (median)</th>
-                <th style={headerStyle}>Times it rose</th>
-                <th style={headerStyle}>Days</th>
-                <th style={headerStyle}>
-                  Separate periods
-                  <InfoTip title="Separate periods" text="Days next to each other share most of their 30-day window, so they aren't independent. The number of separate runs of a signal is a better guide to how much evidence there is." />
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.outcomes.map((o) => {
-                const horizon = horizonFor(o)
-                return (
-                  <tr key={o.action} style={o.action === 'All' ? { fontWeight: 'bold', backgroundColor: '#fafafa' } : undefined}>
-                    <td style={{ ...cellStyle, textAlign: 'left' }}>{outcomeLabel(o)}</td>
-                    <td style={{ ...cellStyle, color: changeColor(horizon?.averageChange) }}>{formatPercent(horizon?.averageChange)}</td>
-                    <td style={{ ...cellStyle, color: changeColor(horizon?.medianChange) }}>{formatPercent(horizon?.medianChange)}</td>
-                    <td style={cellStyle}>{horizon ? `${horizon.percentPositive.toFixed(0)}%` : '-'}</td>
-                    <td style={cellStyle}>{o.days.toLocaleString()}</td>
-                    <td style={cellStyle}>{o.action === 'All' ? '-' : o.periods}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </>
   )
 }
 
@@ -218,16 +204,18 @@ export default function TrackRecord() {
 
   const tested = results.filter((r) => r.hasEnoughData)
   const notTested = results.filter((r) => !r.hasEnoughData)
+  // The cost the figures on screen were calculated with; the dropdown changes before new figures arrive
+  const shownCost = tested[0]?.costPercent ?? cost
   const detail = tested.find((r) => r.symbol === selected) ?? tested.find((r) => r.symbol === 'KSE100') ?? tested[0]
 
   return (
     <div style={{ padding: '20px' }}>
       <h1>Track Record</h1>
       <p style={{ color: COLORS.muted, margin: '6px 0 16px' }}>
-        Would following the Buy and Sell signals have worked? This replays them over past prices.<InfoTip term="backtest" />
+        Would acting on the app's labels have worked? This replays them over past prices.<InfoTip term="backtest" />
       </p>
 
-      {tested.length > 0 && <PlainSummary points={describeBacktests(tested, cost)} />}
+      {tested.length > 0 && <PlainSummary points={describeTrendRules(tested, shownCost)} />}
 
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
         <label htmlFor="cost">Cost per trade<InfoTip term="tradingCost" /></label>
@@ -243,14 +231,12 @@ export default function TrackRecord() {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
           <thead>
             <tr>
-              <th style={{ ...headerStyle, textAlign: 'left' }}>Instrument</th>
+              <th style={{ ...headerStyle, textAlign: 'left' }}>Return per year<InfoTip term="annualReturn" /></th>
               <th style={headerStyle}>Years tested</th>
-              <th style={headerStyle}>Holding, per year<InfoTip term="annualReturn" /></th>
-              <th style={headerStyle}>Signal, per year</th>
-              <th style={headerStyle}>Worst fall, holding<InfoTip term="drawdown" /></th>
-              <th style={headerStyle}>Worst fall, signal</th>
-              <th style={headerStyle}>Trades</th>
-              <th style={{ ...headerStyle, textAlign: 'center' }}>Result</th>
+              <th style={headerStyle}>Holding<InfoTip term="drawdown" /></th>
+              <th style={headerStyle}>{ruleNames.goldenCross}<InfoTip term="goldenCross" /></th>
+              <th style={headerStyle}>{ruleNames.monthlyTrend}<InfoTip term="monthlyTrend" /></th>
+              <th style={headerStyle}>{ruleNames.signal}<InfoTip term="signal" /></th>
             </tr>
           </thead>
           <tbody>
@@ -268,12 +254,13 @@ export default function TrackRecord() {
                   {r.years.toFixed(1)}
                   {r.years < MIN_RELIABLE_YEARS && <div style={{ fontSize: '12px', color: COLORS.down }}>too short to judge</div>}
                 </td>
-                <td style={{ ...cellStyle, color: changeColor(r.buyAndHold.annualReturn) }}>{formatPercent(r.buyAndHold.annualReturn, 1)}</td>
-                <td style={{ ...cellStyle, color: changeColor(r.strategy.annualReturn) }}>{formatPercent(r.strategy.annualReturn, 1)}</td>
-                <td style={cellStyle}>{r.buyAndHold.maxDrawdown.toFixed(0)}%</td>
-                <td style={cellStyle}>{r.strategy.maxDrawdown.toFixed(0)}%</td>
-                <td style={cellStyle}>{r.strategy.trades}</td>
-                <td style={{ ...cellStyle, textAlign: 'center' }}><VerdictChip result={r} /></td>
+                <td style={cellStyle}>
+                  <strong>{formatPercent(r.buyAndHold.annualReturn, 1)}</strong>
+                  <div style={{ fontSize: '12px', color: COLORS.muted }}>fall {r.buyAndHold.maxDrawdown.toFixed(0)}%</div>
+                </td>
+                <RuleCell result={r} ruleKey="goldenCross" />
+                <RuleCell result={r} ruleKey="monthlyTrend" />
+                <RuleCell result={r} ruleKey="signal" />
               </tr>
             ))}
           </tbody>
@@ -282,19 +269,24 @@ export default function TrackRecord() {
       {notTested.length > 0 && (
         <p style={{ color: COLORS.muted, fontSize: '13px', marginTop: '8px' }}>Not enough history to test: {notTested.map((r) => r.symbol).join(', ')}.</p>
       )}
-      <p style={{ color: COLORS.muted, fontSize: '13px', marginTop: '8px' }}>Click an instrument for its details.</p>
-
-      {tested.length > 0 && <SlowerRules results={tested} />}
+      <p style={{ ...noteStyle, marginTop: '8px' }}>
+        Green is more than 1 point a year ahead of holding, red more than 1 point behind, grey about the same. "Fall" is the worst drop from a peak.
+        Click an instrument for its chart.
+      </p>
 
       {detail && <InstrumentDetail result={detail} />}
+
+      {tested.length > 0 && <OldScoreSection results={tested} detail={detail} cost={shownCost} />}
 
       <section style={{ ...cardStyle, backgroundColor: '#fff8e1', lineHeight: 1.5 }}>
         <h2 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>How this test works, and its limits</h2>
         <ul style={{ paddingLeft: '20px' }}>
-          <li><strong>The rule tested:</strong> invest after a Buy signal, move to cash after a Sell signal, stay put on Hold. "Holding" means buying once and doing nothing.</li>
-          <li><strong>Fair test:</strong> each day uses only the prices known that day, trades happen at the next day's close, and every trade pays the cost above. The signal's rules use standard settings and were not adjusted to fit this data.</li>
+          <li><strong>What is compared:</strong> being invested only while a rule says so, otherwise in cash, against buying once and doing nothing ("holding").</li>
+          <li><strong>Fair test:</strong> each day uses only the prices known that day, trades happen at the next day's close, and every trade pays the cost above. All rules use standard settings and were not adjusted to fit this data.</li>
+          <li><strong>The trend label was picked after seeing this test,</strong> so its figures may flatter it. The real test is how it does from here on.</li>
+          <li><strong>Few trades means weak evidence.</strong> The slower rules made only a handful of trades, so one or two well-timed moves can decide the result.</li>
           <li><strong>Dividends aren't included.</strong> Index and fund prices leave out dividends, so real returns from holding were higher, especially for funds like MIF, whose price drops at each payout.</li>
-          <li><strong>Cash earns nothing</strong> in the main result, which is harsh on the signal when interest rates are high. The figure with interest under each chart shows the difference.</li>
+          <li><strong>Cash earns nothing here,</strong> which is harsh on every rule when interest rates are high.</li>
           <li><strong>The history is mostly a rising market,</strong> which favours holding. A long falling market could look different, and past results don't guarantee future ones.</li>
           <li>The news mood isn't part of this test: news has only been collected recently.</li>
         </ul>

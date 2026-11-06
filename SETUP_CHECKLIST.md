@@ -116,18 +116,18 @@ Covers the indicator maths (Bollinger, EMA, RSI, MACD, SMA, weekly resampling) a
 
 ## Pages
 
-- **Dashboard (Market Overview)**: a plain-language market summary; price, 1D/1M/YTD/1Y change, RSI, 52-week range and a Buy/Hold/Sell
-  technical signal and 7-day news mood for every instrument; sortable columns, hover a signal for its reasons
+- **Dashboard (Market Overview)**: a plain-language market summary; price, 1D/1M/YTD/1Y change, RSI, 52-week range,
+  long-term trend and 7-day news mood for every instrument; sortable columns
 - **News**: all collected news with sentiment, filterable by instrument, topic and mood
 - **Guide**: plain-language explanation of every number, chart and signal (also available as ⓘ tooltips)
 - **Instrument view**: price chart with SMA-20, Bollinger Bands and interval-specific moving averages
   (MA-4W for weekly, MA-6M / MA-12M for monthly). Indicators are computed on the full history before the
   timeframe is applied, so they cover the whole window; each line's latest value is shown in the legend.
-  Also shows an "In plain words" summary, the technical signal with its reasons, performance and risk stats with a
+  Also shows an "In plain words" summary, the long-term trend, what each indicator shows, performance and risk stats with a
   plain reading of each, RSI / MACD panels, the news mood, the biggest moves with the news around them, and the
   latest news.
 - **Comparison**: % change of several instruments on one chart, plus a performance table
-- **Track Record**: how following the signals would have done against simply holding, per instrument
+- **Track Record**: how acting on the trend label and the old Buy/Sell score would have done against simply holding
 - **Settings**: default interval/timeframe (saved in the browser), suggested presets, and data source
   update status
 
@@ -161,22 +161,27 @@ paid API key.
 **Biggest moves**: for each of an instrument's largest daily moves in the last 30 days, the API returns the news
 published from the day before to the next trading day (so weekend reports of a Friday move are included).
 
-## How the technical signal works
+## Long-term trend label
 
-Computed from daily prices (`MarketAnalyticsService`). Each rule adds +1 (bullish), -1 (bearish) or 0:
+The headline label on the Overview and Instrument pages is the long-term trend, by the golden cross rule: **Up**
+while the 50-period average is above the 200-period average, otherwise **Down** (`LongTermTrendDto`, computed in
+`MarketAnalyticsService`). It describes the trend so far and is not a recommendation. The app used to show a
+Buy/Hold/Sell score; it was replaced after the backtest below showed that acting on it did worse than holding.
 
-| Rule | +1 | -1 |
+The five indicators remain on the Instrument page as detail, and scoring stays in `SignalRules` so the backtest can
+keep reporting the old score:
+
+| Indicator | Points up | Points down |
 | --- | --- | --- |
-| Long-term trend | price above 200-period SMA | below |
-| Medium-term trend | price above 50-period SMA | below |
+| Price vs 200-day average | price above 200-period SMA | below |
+| Price vs 50-day average | price above 50-period SMA | below |
 | Momentum | MACD above its signal line | below |
 | RSI (14) | below 30 (oversold) | above 70 (overbought) |
 | Bollinger Bands | below the lower band | above the upper band |
 
-Score >= 3 Strong Buy, 1 to 2 Buy, 0 Hold, -1 to -2 Sell, <= -3 Strong Sell. Rules without enough history are
-skipped. One-day price spikes that immediately reverse (data errors in the sources) are filtered out when prices
-are read. Mutual fund NAVs drop when dividends are paid out and are not adjusted for this, so fund returns and
-signals around payout dates understate performance. Signals are not financial advice.
+One-day price spikes that immediately reverse (data errors in the sources) are filtered out when prices are read.
+Mutual fund NAVs drop when dividends are paid out and are not adjusted for this, so fund returns around payout dates
+understate performance.
 
 ## Track record (backtest)
 
@@ -199,8 +204,8 @@ Two slower rules, fixed before seeing their results, are tested the same way: **
 50-period average is above the 200-period) and **monthly trend check** (on the first trading day of each month,
 invested if the price is above its 200-period average). At 0.5% per trade both beat the current signal on 8 of 9
 instruments by trading far less, but mostly matched or trailed holding (KSE-100: golden cross +26.8% a year against
-+26.6% holding and +13.4% for the signal). They make few trades, so this is weak evidence. The app's live signal is
-unchanged.
++26.6% holding and +13.4% for the signal). They make few trades, so this is weak evidence. Golden cross became the app's trend label; it was
+picked after seeing this test, so its figures may flatter it.
 
 ## Nice to have
 

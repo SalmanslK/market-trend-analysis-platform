@@ -10,8 +10,10 @@ import IndicatorCharts from '../components/charts/IndicatorCharts'
 import InstrumentSelector from '../components/controls/InstrumentSelector'
 import IntervalSelector from '../components/controls/IntervalSelector'
 import TimeframeSelector from '../components/controls/TimeframeSelector'
+import TrendBadge from '../components/trend/TrendBadge'
 import SignalBadge from '../components/signals/SignalBadge'
 import SignalPanel from '../components/signals/SignalPanel'
+import AllMetrics from '../components/analytics/AllMetrics'
 import KeyStats from '../components/analytics/KeyStats'
 import PlainSummary from '../components/help/PlainSummary'
 import InstrumentNews from '../components/news/InstrumentNews'
@@ -91,6 +93,9 @@ export default function InstrumentView() {
           </span>
           <span style={{ color: COLORS.muted }}>as of {formatDate(analytics.lastDate)}</span>
           <SignalBadge signal={analytics.signal} large />
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: COLORS.muted, fontSize: '14px' }}>
+            Long-term trend <TrendBadge trend={analytics.longTermTrend} />
+          </span>
         </div>
       )}
 
@@ -121,6 +126,8 @@ export default function InstrumentView() {
           <KeyStats analytics={analytics} />
         </div>
       )}
+
+      {analytics && <AllMetrics analytics={analytics} />}
 
       {priceData.length > 0 ? (
         <>

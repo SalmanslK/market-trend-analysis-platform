@@ -8,13 +8,16 @@ import { describeMarket } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
 import PlainSummary from '../components/help/PlainSummary'
 import SentimentChip from '../components/news/SentimentChip'
-import { changeColor, COLORS, formatDate, formatNumber, formatPercent, SIGNAL_DISCLAIMER, signalStyles } from '../services/format'
+import { changeColor, COLORS, formatDate, formatNumber, formatPercent, signalStyles, TREND_DISCLAIMER } from '../services/format'
 import SignalBadge from '../components/signals/SignalBadge'
+import TrendBadge from '../components/trend/TrendBadge'
 import RangeBar from '../components/analytics/RangeBar'
 
-type SortKey = 'symbol' | 'change1D' | 'change1M' | 'changeYtd' | 'change1Y' | 'rsi14' | 'signal' | 'news'
+type SortKey = 'symbol' | 'change1D' | 'change1M' | 'changeYtd' | 'change1Y' | 'rsi14' | 'signal' | 'trend' | 'news'
 
 const SIGNAL_ORDER: SignalAction[] = ['StrongBuy', 'Buy', 'Hold', 'Sell', 'StrongSell']
+
+const TREND_SORT_ORDER = { Up: 1, Down: 0, Unknown: -1 }
 
 const cellStyle = { padding: '10px', borderBottom: `1px solid ${COLORS.border}`, textAlign: 'right' as const }
 const headerStyle = { ...cellStyle, backgroundColor: '#f5f5f5', cursor: 'pointer', userSelect: 'none' as const, whiteSpace: 'nowrap' as const }
@@ -45,6 +48,7 @@ export default function Dashboard() {
     const value = (a: InstrumentAnalyticsDto): string | number => {
       if (sortKey === 'symbol') return a.symbol
       if (sortKey === 'signal') return a.signal.score
+      if (sortKey === 'trend') return TREND_SORT_ORDER[a.longTermTrend.direction]
       if (sortKey === 'news') return moodFor(a.symbol)?.articles ? moodFor(a.symbol)!.score : Number.NEGATIVE_INFINITY
       return a[sortKey] ?? Number.NEGATIVE_INFINITY
     }
@@ -132,6 +136,7 @@ export default function Dashboard() {
                 {header('rsi14', 'RSI', 'right', 'rsi')}
                 <th style={{ ...headerStyle, cursor: 'default', textAlign: 'center' }}>52-Week Range<InfoTip term="range52w" /></th>
                 {header('signal', 'Signal', 'center', 'signal')}
+                {header('trend', 'Long-term trend', 'center', 'longTermTrend')}
                 {header('news', 'News (7d)', 'center', 'newsMood')}
               </tr>
             </thead>
@@ -166,6 +171,9 @@ export default function Dashboard() {
                     <SignalBadge signal={a.signal} />
                   </td>
                   <td style={{ ...cellStyle, textAlign: 'center' }}>
+                    <TrendBadge trend={a.longTermTrend} />
+                  </td>
+                  <td style={{ ...cellStyle, textAlign: 'center' }}>
                     {(() => {
                       const mood = moodFor(a.symbol)
                       if (!mood) return '-'
@@ -184,7 +192,9 @@ export default function Dashboard() {
         </div>
       )}
 
-      <p style={{ color: COLORS.muted, fontSize: '12px', marginTop: '12px' }}>{SIGNAL_DISCLAIMER}</p>
+      <p style={{ color: COLORS.muted, fontSize: '12px', marginTop: '12px' }}>
+        {TREND_DISCLAIMER} <Link to="/track-record" style={{ color: COLORS.link }}>See how they performed in the past.</Link>
+      </p>
     </div>
   )
 }

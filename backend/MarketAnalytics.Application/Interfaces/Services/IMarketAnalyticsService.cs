@@ -21,5 +21,5 @@ public interface IMarketAnalyticsService
     /// <summary>
     /// Computes analytics from daily prices (exposed for testing).
     /// </summary>
-    InstrumentAnalyticsDto ComputeAnalytics(IReadOnlyList<PriceDataPoint> dailyPrices);
+    InstrumentAnalyticsDto ComputeAnalytics(IReadOnlyList<PriceDataPoint> dailyPrices, IReadOnlyList<PriceDataPoint>? benchmarkPrices = null);
 }

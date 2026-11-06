@@ -21,10 +21,15 @@ export const glossary = {
     what: 'How much the price has gone up (green) or down (red) compared with an earlier date.',
     howToRead: '1D = since the previous trading day, 1W = a week ago, 1M = a month ago, 3M = three months ago, YTD = since the start of this year, 1Y = a year ago.',
   },
+  longTermTrend: {
+    title: 'Long-term trend',
+    what: 'Up means prices over the last 50 days have averaged higher than over the last 200 days. Down means they have averaged lower. This is called the golden cross rule.',
+    howToRead: 'It tells you the direction so far, not what happens next, and it reacts slowly: it can stay Up for weeks after prices start falling. It looks only at past prices, so it knows nothing about company results, news, dividends or your own goals.',
+  },
   signal: {
-    title: 'Technical signal',
+    title: 'Buy/Sell signal',
     what: 'A summary of five common chart indicators. Each one votes +1 (points up), -1 (points down) or 0 (no view). The total gives Strong Buy, Buy, Hold, Sell or Strong Sell.',
-    howToRead: 'Treat it as a quick read of the price trend, not a recommendation. It looks only at past prices: it knows nothing about company results, news, dividends or your own goals.',
+    howToRead: 'It is a quick read of what the indicators show right now. It looks only at past prices, so it knows nothing about company results, news, dividends or your own goals. The Track Record page shows how it did in the past.',
   },
   score: {
     title: 'Signal score',
@@ -32,9 +37,9 @@ export const glossary = {
     howToRead: '+3 or more is Strong Buy, +1 to +2 Buy, 0 Hold, -1 to -2 Sell, -3 or less Strong Sell. The closer to zero, the more mixed the picture.',
   },
   trend: {
-    title: 'Trend (moving averages)',
-    what: 'A moving average is the average price over the last N days. The 200-day average shows the long-term direction, the 50-day the medium term.',
-    howToRead: 'Price above its average = uptrend (prices have been rising). Price below = downtrend.',
+    title: 'Price vs its averages',
+    what: 'A moving average is the average price over the last N days. Comparing today\'s price with its 50-day and 200-day averages shows whether it is above or below where it has recently been.',
+    howToRead: 'This reacts faster than the long-term trend label, so the two can disagree: after a dip, the price can already be back above its averages while the label still says Down.',
   },
   sma20: {
     title: 'SMA-20 (blue line)',
@@ -70,6 +75,31 @@ export const glossary = {
     title: '52-week range',
     what: 'The lowest and highest price over the last year, with a marker showing where today\'s price sits.',
     howToRead: 'Marker at the left = near the year\'s low; at the right = near the year\'s high.',
+  },
+  backtest: {
+    title: 'Track record (backtest)',
+    what: 'A replay of a rule over past prices: invested while the rule says so, in cash otherwise, paying a cost on every trade. Each day uses only the prices known on that day, and trades happen at the next day\'s close.',
+    howToRead: 'Compare it with "holding": buying once and doing nothing. If the rule earned less, it would not have been worth acting on in that period. Past results don\'t guarantee future ones.',
+  },
+  goldenCross: {
+    title: 'Golden cross (the trend label)',
+    what: 'The rule behind the long-term trend label: stay invested while the 50-day average price is above the 200-day average, and hold cash when it is below.',
+    howToRead: 'It only reacts to long trends, so it trades about once or twice a year. It usually gets out after a fall has started and back in after a rise has started.',
+  },
+  monthlyTrend: {
+    title: 'Monthly trend check',
+    what: 'A slow trend rule: once a month, on the first trading day, invest if the price is above its 200-day average, otherwise hold cash.',
+    howToRead: 'Checking only once a month avoids reacting to daily noise. Between checks, nothing changes, even if the price moves a lot.',
+  },
+  annualReturn: {
+    title: 'Return per year',
+    what: 'The steady yearly growth that would turn the starting amount into the final amount.',
+    howToRead: '+20% a year means 100 would have grown by a fifth each year on average, reaching about 249 after five years.',
+  },
+  tradingCost: {
+    title: 'Cost per trade',
+    what: 'The broker fees, taxes and price gap paid each time you buy or sell, as a % of the amount.',
+    howToRead: 'Check your own broker or fund. Mutual funds can charge much more than shares through entry or exit fees. The more often a strategy trades, the more this matters.',
   },
   newsMood: {
     title: 'News mood (sentiment)',

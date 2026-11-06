@@ -1,8 +1,10 @@
 import { InstrumentAnalyticsDto } from '../../services/types/marketData'
-import { COLORS, formatDate, SIGNAL_DISCLAIMER } from '../../services/format'
-import { signalMeaning } from '../../services/plainLanguage'
+import { COLORS, formatDate, TREND_DISCLAIMER } from '../../services/format'
+import { describeTrend, directionNote, signalMeaning } from '../../services/plainLanguage'
 import InfoTip from '../help/InfoTip'
+import TrendBadge from '../trend/TrendBadge'
 import SignalBadge from './SignalBadge'
+import SignalTrackRecord from './SignalTrackRecord'
 
 interface SignalPanelProps {
   analytics: InstrumentAnalyticsDto
@@ -16,12 +18,13 @@ const impactStyle = (impact: number) =>
       : { icon: '●', color: COLORS.neutral, label: 'Neutral' }
 
 export default function SignalPanel({ analytics }: SignalPanelProps) {
-  const { signal } = analytics
+  const { signal, longTermTrend } = analytics
+  const note = directionNote(analytics.symbol)
 
   return (
     <section style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-        <h2 style={{ fontSize: '1.2rem' }}>Technical Signal<InfoTip term="signal" /></h2>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+        <h2 style={{ fontSize: '1.2rem' }}>Buy/Sell signal<InfoTip term="signal" /></h2>
         <SignalBadge signal={signal} large />
       </div>
       <p style={{ marginBottom: '6px', lineHeight: 1.45 }}>
@@ -47,7 +50,16 @@ export default function SignalPanel({ analytics }: SignalPanelProps) {
         })}
       </ul>
 
-      <p style={{ color: COLORS.muted, fontSize: '12px', marginTop: '12px' }}>{SIGNAL_DISCLAIMER}</p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
+        <h3 style={{ fontSize: '1rem' }}>Long-term trend<InfoTip term="longTermTrend" /></h3>
+        <TrendBadge trend={longTermTrend} />
+      </div>
+      <p style={{ lineHeight: 1.45, marginTop: '6px', fontSize: '14px' }}>{describeTrend(analytics)}</p>
+      {note && <p style={{ lineHeight: 1.45, marginTop: '6px', fontSize: '13px', color: '#546e7a' }}>{note}</p>}
+
+      <SignalTrackRecord symbol={analytics.symbol} />
+
+      <p style={{ color: COLORS.muted, fontSize: '12px', marginTop: '12px' }}>{TREND_DISCLAIMER}</p>
     </section>
   )
 }

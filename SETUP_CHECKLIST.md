@@ -96,6 +96,14 @@ npm run dev
 
 Open http://localhost:3000. The Vite dev server proxies `/api` to the API on port 5000.
 
+## Start and stop everything (after setup)
+
+Double-click **`start-app.cmd`** in the repo root. It starts PostgreSQL, builds the backend, starts the API, Worker
+and website in the background, and opens http://localhost:3000. It keeps running after you close the window, and
+anything already running is left alone. **`stop-app.cmd`** stops it all. Logs are in the `logs` folder.
+
+It doesn't start automatically after a reboot, and .NET updates may close the API and Worker; run `start-app.cmd` again.
+
 ## Tests
 
 ```
@@ -108,17 +116,18 @@ Covers the indicator maths (Bollinger, EMA, RSI, MACD, SMA, weekly resampling) a
 
 ## Pages
 
-- **Dashboard (Market Overview)**: a plain-language market summary; price, 1D/1M/YTD/1Y change, RSI, 52-week range and a Buy/Hold/Sell
-  technical signal and 7-day news mood for every instrument; sortable columns, hover a signal for its reasons
+- **Dashboard (Market Overview)**: a plain-language market summary; price, 1D/1M/YTD/1Y change, RSI, 52-week range,
+  Buy/Sell signal, long-term trend and 7-day news mood for every instrument; sortable columns
 - **News**: all collected news with sentiment, filterable by instrument, topic and mood
 - **Guide**: plain-language explanation of every number, chart and signal (also available as ⓘ tooltips)
 - **Instrument view**: price chart with SMA-20, Bollinger Bands and interval-specific moving averages
   (MA-4W for weekly, MA-6M / MA-12M for monthly). Indicators are computed on the full history before the
   timeframe is applied, so they cover the whole window; each line's latest value is shown in the legend.
-  Also shows an "In plain words" summary, the technical signal with its reasons, performance and risk stats with a
+  Also shows an "In plain words" summary, the Buy/Sell signal and its reasons, the long-term trend, all standard metrics, performance and risk stats with a
   plain reading of each, RSI / MACD panels, the news mood, the biggest moves with the news around them, and the
   latest news.
 - **Comparison**: % change of several instruments on one chart, plus a performance table
+- **Track Record**: how acting on the Buy/Sell signal and the long-term trend would have done against simply holding
 - **Settings**: default interval/timeframe (saved in the browser), suggested presets, and data source
   update status
 
@@ -152,27 +161,64 @@ paid API key.
 **Biggest moves**: for each of an instrument's largest daily moves in the last 30 days, the API returns the news
 published from the day before to the next trading day (so weekend reports of a Friday move are included).
 
-## How the technical signal works
+## Signals and metrics
 
-Computed from daily prices (`MarketAnalyticsService`). Each rule adds +1 (bullish), -1 (bearish) or 0:
+**Buy/Sell signal** (`MarketAnalyticsService`, rules in `SignalRules`), computed from daily prices. Each rule adds +1
+(bullish), -1 (bearish) or 0:
 
 | Rule | +1 | -1 |
 | --- | --- | --- |
-| Long-term trend | price above 200-period SMA | below |
-| Medium-term trend | price above 50-period SMA | below |
+| Price vs 200-day average | price above 200-period SMA | below |
+| Price vs 50-day average | price above 50-period SMA | below |
 | Momentum | MACD above its signal line | below |
 | RSI (14) | below 30 (oversold) | above 70 (overbought) |
 | Bollinger Bands | below the lower band | above the upper band |
 
-Score >= 3 Strong Buy, 1 to 2 Buy, 0 Hold, -1 to -2 Sell, <= -3 Strong Sell. Rules without enough history are
-skipped. One-day price spikes that immediately reverse (data errors in the sources) are filtered out when prices
-are read. Mutual fund NAVs drop when dividends are paid out and are not adjusted for this, so fund returns and
-signals around payout dates understate performance. Signals are not financial advice.
+Score >= 3 Strong Buy, 1 to 2 Buy, 0 Hold, -1 to -2 Sell, <= -3 Strong Sell. Rules without enough history are skipped.
+
+**Long-term trend**, shown beside it: Up while the 50-period average is above the 200-period average (golden cross),
+otherwise Down, with the date it last changed.
+
+**All metrics** (`TechnicalMetrics`), on each instrument's page: SMA and EMA (10, 20, 50, 100, 200); RSI, Stochastic RSI,
+Stochastic %K/%D, Williams %R, CCI, MACD, PPO, rate of change, momentum, TRIX; Bollinger bands, %B and bandwidth, Donchian
+channels, 20-period volatility; CAGR (1, 3, 5, 10 years), volatility, max drawdown, Sharpe, Sortino, Calmar, Value at Risk,
+best and worst period, share of periods up, and beta, correlation and alpha against the KSE-100. Sharpe, Sortino and alpha
+assume cash earns 10% a year.
+
+Sources provide only one closing price per day, so ATR, ADX, Parabolic SAR, Ichimoku (need highs and lows) and OBV, VWAP,
+MFI (need volume) are not available, and Stochastic, Williams %R, CCI and Donchian use closes instead of highs and lows.
+
+One-day price spikes that immediately reverse (data errors in the sources) are filtered out when prices are read.
+Mutual fund NAVs drop when dividends are paid out and are not adjusted for this, so fund returns around payout dates
+understate performance.
+
+## Track record (backtest)
+
+`BacktestService` replays the signal over stored daily prices, using the same rules as the live signal
+(`SignalRules`). Strategy: invested after a positive score, in cash after a negative one, unchanged on zero.
+
+- No look-ahead: indicators use only prices up to their own day, and trades happen at the next day's close.
+- Costs: each trade pays `costPercent` (default 0.5%, adjustable on the page). Holding pays one purchase.
+- Testing starts once all five rules can be evaluated (200 periods), and needs at least 250 further days.
+- Verdict: **Helped** (at least the return of holding), **LowerRisk** (less return, but worst fall at least a third
+  smaller and more return per unit of fall), otherwise **DidNotHelp**. Under 3 years is flagged as too short to judge.
+- Limits: prices exclude dividends, cash earns nothing in the main result (a 10% a year variant is also shown), and
+  the history is mostly a rising market.
+
+Result on the data as of Nov 2026, at 0.5% per trade: no instrument beat holding, GOLDPK lowered risk at a lower
+return, and the other 8 did worse. With no costs, 4 of 9 came out slightly ahead, so frequent trading is a large part
+of the shortfall. The rules were deliberately not tuned to improve this, since that would only fit them to the past.
+
+Two slower rules, fixed before seeing their results, are tested the same way: **golden cross** (invested while the
+50-period average is above the 200-period) and **monthly trend check** (on the first trading day of each month,
+invested if the price is above its 200-period average). At 0.5% per trade both beat the current signal on 8 of 9
+instruments by trading far less, but mostly matched or trailed holding (KSE-100: golden cross +26.8% a year against
++26.6% holding and +13.4% for the signal). They make few trades, so this is weak evidence. Golden cross is shown as the long-term trend beside
+the signal; it was picked after seeing this test, so its figures may flatter it.
 
 ## Nice to have
 
 - **Dividend-adjusted fund returns**: needs payout data for the Meezan funds
-- **Backtesting**: measure how the signal rules would have performed on the stored history
 - **Alerts**: notify when an instrument's signal changes
 
 - **Error handling**: global exception middleware and more detailed error responses

@@ -75,6 +75,23 @@ export interface TechnicalSignal {
   reasons: SignalReason[];
 }
 
+export interface LongTermTrend {
+  direction: 'Up' | 'Down' | 'Unknown';
+  /** The day the trend last changed; absent if it hasn't changed in the stored history */
+  since?: string;
+}
+
+export interface Metric {
+  group: string;
+  name: string;
+  value: number;
+  unit: 'price' | 'percent' | 'number';
+  /** Positive, Negative or Neutral; empty when the metric has no good or bad direction */
+  reading: string;
+  note: string;
+  description: string;
+}
+
 export interface InstrumentAnalyticsDto {
   symbol: string;
   name: string;
@@ -100,7 +117,9 @@ export interface InstrumentAnalyticsDto {
   sma50?: number;
   sma200?: number;
   percentB?: number;
+  longTermTrend: LongTermTrend;
   signal: TechnicalSignal;
+  metrics: Metric[];
 }
 
 export type SentimentLabel = 'Positive' | 'Neutral' | 'Negative' | 'Background';
@@ -170,4 +189,64 @@ export interface InstrumentMoves {
   typicalDailyMove?: number;
   newsAvailableSince?: string;
   moves: PriceMove[];
+}
+
+export type BacktestVerdict = 'Helped' | 'LowerRisk' | 'DidNotHelp';
+
+export interface Performance {
+  totalReturn: number;
+  annualReturn: number;
+  maxDrawdown: number;
+  trades: number;
+  timeInvested: number;
+}
+
+export interface HorizonOutcome {
+  horizonDays: number;
+  samples: number;
+  averageChange: number;
+  medianChange: number;
+  percentPositive: number;
+}
+
+export interface SignalOutcome {
+  action: SignalAction | 'All';
+  days: number;
+  periods: number;
+  horizons: HorizonOutcome[];
+}
+
+export type TradingRuleKey = 'signal' | 'goldenCross' | 'monthlyTrend';
+
+export interface RuleResult {
+  key: TradingRuleKey;
+  performance: Performance;
+  verdict: BacktestVerdict;
+  firstHalfAnnual: number;
+  secondHalfAnnual: number;
+}
+
+export interface BacktestResult {
+  symbol: string;
+  name: string;
+  type: InstrumentType;
+  hasEnoughData: boolean;
+  startDate: string;
+  endDate: string;
+  years: number;
+  tradingDays: number;
+  costPercent: number;
+  cashInterestPercent: number;
+  verdict: BacktestVerdict;
+  buyAndHold: Performance;
+  strategy: Performance;
+  strategyWithInterest: Performance;
+  outcomes: SignalOutcome[];
+  buyMinusSell30D?: number;
+  buyMinusSell30DFirstHalf?: number;
+  buyMinusSell30DSecondHalf?: number;
+  holdingFirstHalfAnnual: number;
+  holdingSecondHalfAnnual: number;
+  rules: RuleResult[];
+  equityCurve: { date: string; buyAndHold: number; strategy: number; goldenCross: number; monthlyTrend: number }[];
 }

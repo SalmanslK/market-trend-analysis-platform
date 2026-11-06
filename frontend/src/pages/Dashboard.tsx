@@ -184,7 +184,9 @@ export default function Dashboard() {
         </div>
       )}
 
-      <p style={{ color: COLORS.muted, fontSize: '12px', marginTop: '12px' }}>{SIGNAL_DISCLAIMER}</p>
+      <p style={{ color: COLORS.muted, fontSize: '12px', marginTop: '12px' }}>
+        {SIGNAL_DISCLAIMER} <Link to="/track-record" style={{ color: COLORS.link }}>See how the signals performed in the past.</Link>
+      </p>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { InstrumentAnalyticsDto, InstrumentType, NewsSentimentSummary, SignalAction } from './types/marketData'
+import { BacktestResult, BacktestVerdict, InstrumentAnalyticsDto, InstrumentType, NewsSentimentSummary, SignalAction } from './types/marketData'
 import { formatNumber } from './format'
 
 /**
@@ -209,5 +209,53 @@ export function describeMarket(all: InstrumentAnalyticsDto[], moods: NewsSentime
     sentences.push(`This week's news sounds ${parts.join(' and ')}.`)
   }
 
+  return sentences
+}
+
+// Under this much testable history, one good or bad stretch can decide the result
+export const MIN_RELIABLE_YEARS = 3
+
+export const verdictStyles: Record<BacktestVerdict, { label: string; background: string; color: string }> = {
+  Helped: { label: 'Beat holding', background: '#c8e6c9', color: '#1b5e20' },
+  LowerRisk: { label: 'Lower risk, lower return', background: '#fff3cd', color: '#7a5b00' },
+  DidNotHelp: { label: 'Did worse than holding', background: '#ffcdd2', color: '#b71c1c' },
+}
+
+const signedPct = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
+
+/** One instrument's track record in a sentence. */
+export function describeBacktest(r: BacktestResult): string {
+  const comparison = `Over ${r.years.toFixed(1)} years, following the signal earned ${signedPct(r.strategy.annualReturn)} a year after costs, against ${signedPct(r.buyAndHold.annualReturn)} a year for simply holding.`
+  const fall = r.strategy.maxDrawdown > r.buyAndHold.maxDrawdown
+    ? ` Its worst fall was smaller (${r.strategy.maxDrawdown.toFixed(0)}% against ${r.buyAndHold.maxDrawdown.toFixed(0)}%).`
+    : ` Its worst fall was no smaller (${r.strategy.maxDrawdown.toFixed(0)}% against ${r.buyAndHold.maxDrawdown.toFixed(0)}%).`
+  const short = r.years < MIN_RELIABLE_YEARS ? ' This is too little history to judge.' : ''
+  return comparison + fall + short
+}
+
+/** The overall finding across all instruments. */
+export function describeBacktests(results: BacktestResult[], costPercent: number): string[] {
+  const tested = results.filter((r) => r.hasEnoughData)
+  if (tested.length === 0) return []
+
+  const helped = tested.filter((r) => r.verdict === 'Helped').length
+  const lowerRisk = tested.filter((r) => r.verdict === 'LowerRisk').length
+  const worse = tested.length - helped - lowerRisk
+  const short = tested.filter((r) => r.years < MIN_RELIABLE_YEARS).map((r) => r.symbol)
+
+  const sentences = [
+    `At ${costPercent}% per trade, following the signal beat simply holding on ${helped} of ${tested.length} instruments, lowered risk at a lower return on ${lowerRisk}, and did worse on ${worse}.`,
+  ]
+  sentences.push(
+    helped * 2 > tested.length
+      ? 'On this history, the signal has added value more often than not.'
+      : 'On this history, the signal alone has not been a reliable reason to buy or sell. Treat it as a description of the current trend, not as a prediction.',
+  )
+  const reliable = tested.filter((r) => r.years >= MIN_RELIABLE_YEARS)
+  if (reliable.length > 0) {
+    const perYear = reliable.reduce((sum, r) => sum + r.strategy.trades / r.years, 0) / reliable.length
+    sentences.push(`It trades about ${Math.round(perYear)} times a year, so costs add up: change the cost below to see how much they matter.`)
+  }
+  if (short.length > 0) sentences.push(`${short.length > 1 ? `${short.slice(0, -1).join(', ')} and ${short[short.length - 1]}` : short[0]} ${short.length > 1 ? 'have' : 'has'} too little history to judge.`)
   return sentences
 }

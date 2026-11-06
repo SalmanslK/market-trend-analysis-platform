@@ -4,6 +4,7 @@ const LINKS = [
   { path: '/', label: 'Overview' },
   { path: '/news', label: 'News' },
   { path: '/comparison', label: 'Comparison' },
+  { path: '/track-record', label: 'Track Record' },
   { path: '/guide', label: 'Guide' },
   { path: '/settings', label: 'Settings' },
 ]

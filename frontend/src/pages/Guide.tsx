@@ -8,7 +8,7 @@ const sections: { title: string; terms: GlossaryKey[] }[] = [
   { title: 'Prices and performance', terms: ['price', 'change', 'range52w'] },
   { title: 'Risk', terms: ['volatility', 'drawdown'] },
   { title: 'Chart lines and indicators', terms: ['sma20', 'bollinger', 'trend', 'rsi', 'macd'] },
-  { title: 'Signals', terms: ['signal', 'score'] },
+  { title: 'Signals', terms: ['signal', 'score', 'backtest', 'annualReturn', 'tradingCost'] },
   { title: 'News', terms: ['newsMood', 'confidence', 'background', 'bigMoves'] },
 ]
 
@@ -64,7 +64,7 @@ export default function Guide() {
       <section style={{ ...cardStyle, backgroundColor: '#fff8e1' }}>
         <h2 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>Important to know</h2>
         <ul style={{ paddingLeft: '20px' }}>
-          <li>Signals and news moods describe what has happened; they cannot predict the future.</li>
+          <li>Signals and news moods describe what has happened; they cannot predict the future. The <Link to="/track-record" style={{ color: COLORS.link }}>Track Record</Link> page shows how the signals did in the past.</li>
           <li>Nothing here is financial advice. Think about your own goals, how long you plan to invest and how much loss you could accept.</li>
           <li>Meezan fund prices drop when the fund pays a dividend. The app doesn't adjust for this, so fund returns around payout dates look worse than they really were.</li>
           <li>For USD/PKR, a rising number means the rupee is getting weaker.</li>

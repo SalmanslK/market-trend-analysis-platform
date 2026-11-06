@@ -2,6 +2,7 @@ import { InstrumentAnalyticsDto } from '../../services/types/marketData'
 import { COLORS, formatDate, SIGNAL_DISCLAIMER } from '../../services/format'
 import { signalMeaning } from '../../services/plainLanguage'
 import InfoTip from '../help/InfoTip'
+import SignalTrackRecord from './SignalTrackRecord'
 import SignalBadge from './SignalBadge'
 
 interface SignalPanelProps {
@@ -46,6 +47,8 @@ export default function SignalPanel({ analytics }: SignalPanelProps) {
           )
         })}
       </ul>
+
+      <SignalTrackRecord symbol={analytics.symbol} />
 
       <p style={{ color: COLORS.muted, fontSize: '12px', marginTop: '12px' }}>{SIGNAL_DISCLAIMER}</p>
     </section>

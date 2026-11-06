@@ -22,9 +22,6 @@ namespace MarketAnalytics.Application.Services;
 /// </summary>
 public class MarketAnalyticsService : IMarketAnalyticsService
 {
-    private const int RsiPeriod = 14;
-    private const int MediumTrendPeriod = 50;
-    private const int LongTrendPeriod = 200;
     private const int MinReturnsForVolatility = 20;
 
     private readonly IInstrumentRepository _instrumentRepository;
@@ -153,19 +150,19 @@ public class MarketAnalyticsService : IMarketAnalyticsService
     {
         var lastDate = analytics.LastDate;
 
-        analytics.Rsi14 = _indicators.ComputeRsi(prices, RsiPeriod)[lastDate];
+        analytics.Rsi14 = _indicators.ComputeRsi(prices, SignalRules.RsiPeriod)[lastDate];
 
         var (macd, signal, histogram) = _indicators.ComputeMacd(prices);
         analytics.Macd = macd[lastDate];
         analytics.MacdSignal = signal[lastDate];
         analytics.MacdHistogram = histogram[lastDate];
 
-        analytics.Sma50 = _indicators.ComputeSma(prices, MediumTrendPeriod)[lastDate];
-        analytics.Sma200 = _indicators.ComputeSma(prices, LongTrendPeriod)[lastDate];
+        analytics.Sma50 = _indicators.ComputeSma(prices, SignalRules.MediumTrendPeriod)[lastDate];
+        analytics.Sma200 = _indicators.ComputeSma(prices, SignalRules.LongTrendPeriod)[lastDate];
 
         var (upper, lower) = _indicators.ComputeBollingerBands(prices);
-        if (upper[lastDate] is decimal upperBand && lower[lastDate] is decimal lowerBand && upperBand > lowerBand)
-            analytics.PercentB = (analytics.LastPrice - lowerBand) / (upperBand - lowerBand);
+        if (upper[lastDate] is decimal upperBand && lower[lastDate] is decimal lowerBand)
+            analytics.PercentB = SignalRules.PercentB(analytics.LastPrice, upperBand, lowerBand);
     }
 
     private static TechnicalSignalDto BuildSignal(InstrumentAnalyticsDto a)
@@ -174,22 +171,24 @@ public class MarketAnalyticsService : IMarketAnalyticsService
 
         if (a.Sma200 is decimal sma200)
         {
-            var above = a.LastPrice >= sma200;
+            var impact = SignalRules.Trend(a.LastPrice, sma200);
+            var above = impact > 0;
             reasons.Add(new SignalReasonDto
             {
                 Indicator = "Long-term trend",
-                Impact = above ? 1 : -1,
+                Impact = impact,
                 Detail = $"Price is {Math.Abs(PercentChange(sma200, a.LastPrice)):0.0}% {(above ? "above" : "below")} its 200-period average ({(above ? "uptrend" : "downtrend")})",
             });
         }
 
         if (a.Sma50 is decimal sma50)
         {
-            var above = a.LastPrice >= sma50;
+            var impact = SignalRules.Trend(a.LastPrice, sma50);
+            var above = impact > 0;
             reasons.Add(new SignalReasonDto
             {
                 Indicator = "Medium-term trend",
-                Impact = above ? 1 : -1,
+                Impact = impact,
                 Detail = $"Price is {Math.Abs(PercentChange(sma50, a.LastPrice)):0.0}% {(above ? "above" : "below")} its 50-period average",
             });
         }
@@ -199,7 +198,7 @@ public class MarketAnalyticsService : IMarketAnalyticsService
             reasons.Add(new SignalReasonDto
             {
                 Indicator = "Momentum (MACD)",
-                Impact = histogram >= 0 ? 1 : -1,
+                Impact = SignalRules.Momentum(histogram),
                 Detail = histogram >= 0
                     ? "MACD is above its signal line: momentum is rising"
                     : "MACD is below its signal line: momentum is fading",
@@ -208,22 +207,24 @@ public class MarketAnalyticsService : IMarketAnalyticsService
 
         if (a.Rsi14 is decimal rsi)
         {
-            var (impact, detail) = rsi switch
+            var impact = SignalRules.Rsi(rsi);
+            var detail = impact switch
             {
-                < 30 => (1, $"RSI {rsi:0} is below 30: oversold, a rebound is more likely"),
-                > 70 => (-1, $"RSI {rsi:0} is above 70: overbought, a pullback is more likely"),
-                _ => (0, $"RSI {rsi:0} is between 30 and 70: neither overbought nor oversold"),
+                > 0 => $"RSI {rsi:0} is below 30: oversold, a rebound is more likely",
+                < 0 => $"RSI {rsi:0} is above 70: overbought, a pullback is more likely",
+                _ => $"RSI {rsi:0} is between 30 and 70: neither overbought nor oversold",
             };
             reasons.Add(new SignalReasonDto { Indicator = "RSI (14)", Impact = impact, Detail = detail });
         }
 
         if (a.PercentB is decimal percentB)
         {
-            var (impact, detail) = percentB switch
+            var impact = SignalRules.Bollinger(percentB);
+            var detail = impact switch
             {
-                < 0 => (1, "Price is below the lower Bollinger Band: stretched to the downside"),
-                > 1 => (-1, "Price is above the upper Bollinger Band: stretched to the upside"),
-                _ => (0, $"Price is inside the Bollinger Bands ({percentB * 100:0}% of the way from lower to upper)"),
+                > 0 => "Price is below the lower Bollinger Band: stretched to the downside",
+                < 0 => "Price is above the upper Bollinger Band: stretched to the upside",
+                _ => $"Price is inside the Bollinger Bands ({percentB * 100:0}% of the way from lower to upper)",
             };
             reasons.Add(new SignalReasonDto { Indicator = "Bollinger Bands", Impact = impact, Detail = detail });
         }
@@ -234,14 +235,7 @@ public class MarketAnalyticsService : IMarketAnalyticsService
             Score = score,
             MaxScore = reasons.Count,
             Reasons = reasons,
-            Action = score switch
-            {
-                >= 3 => "StrongBuy",
-                >= 1 => "Buy",
-                <= -3 => "StrongSell",
-                <= -1 => "Sell",
-                _ => "Hold",
-            },
+            Action = SignalRules.ActionFor(score),
         };
     }
 

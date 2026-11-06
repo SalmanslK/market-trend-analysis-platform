@@ -71,6 +71,21 @@ export const glossary = {
     what: 'The lowest and highest price over the last year, with a marker showing where today\'s price sits.',
     howToRead: 'Marker at the left = near the year\'s low; at the right = near the year\'s high.',
   },
+  backtest: {
+    title: 'Track record (backtest)',
+    what: 'A replay of the signal over past prices: invest after a Buy signal, move to cash after a Sell signal, and pay a cost on every trade. Each day uses only the prices known on that day, and trades happen at the next day\'s close.',
+    howToRead: 'Compare it with "holding": buying once and doing nothing. If following the signal earned less, the signal would not have been worth acting on in that period. Past results don\'t guarantee future ones.',
+  },
+  annualReturn: {
+    title: 'Return per year',
+    what: 'The steady yearly growth that would turn the starting amount into the final amount.',
+    howToRead: '+20% a year means 100 would have grown by a fifth each year on average, reaching about 249 after five years.',
+  },
+  tradingCost: {
+    title: 'Cost per trade',
+    what: 'The broker fees, taxes and price gap paid each time you buy or sell, as a % of the amount.',
+    howToRead: 'Check your own broker or fund. Mutual funds can charge much more than shares through entry or exit fees. The more often a strategy trades, the more this matters.',
+  },
   newsMood: {
     title: 'News mood (sentiment)',
     what: 'An automatic reading of whether recent headlines about this instrument sound positive or negative for its price, from -100 (very negative) to +100 (very positive).',

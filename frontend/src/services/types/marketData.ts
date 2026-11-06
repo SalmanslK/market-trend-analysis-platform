@@ -171,3 +171,50 @@ export interface InstrumentMoves {
   newsAvailableSince?: string;
   moves: PriceMove[];
 }
+
+export type BacktestVerdict = 'Helped' | 'LowerRisk' | 'DidNotHelp';
+
+export interface Performance {
+  totalReturn: number;
+  annualReturn: number;
+  maxDrawdown: number;
+  trades: number;
+  timeInvested: number;
+}
+
+export interface HorizonOutcome {
+  horizonDays: number;
+  samples: number;
+  averageChange: number;
+  medianChange: number;
+  percentPositive: number;
+}
+
+export interface SignalOutcome {
+  action: SignalAction | 'All';
+  days: number;
+  periods: number;
+  horizons: HorizonOutcome[];
+}
+
+export interface BacktestResult {
+  symbol: string;
+  name: string;
+  type: InstrumentType;
+  hasEnoughData: boolean;
+  startDate: string;
+  endDate: string;
+  years: number;
+  tradingDays: number;
+  costPercent: number;
+  cashInterestPercent: number;
+  verdict: BacktestVerdict;
+  buyAndHold: Performance;
+  strategy: Performance;
+  strategyWithInterest: Performance;
+  outcomes: SignalOutcome[];
+  buyMinusSell30D?: number;
+  buyMinusSell30DFirstHalf?: number;
+  buyMinusSell30DSecondHalf?: number;
+  equityCurve: { date: string; buyAndHold: number; strategy: number }[];
+}

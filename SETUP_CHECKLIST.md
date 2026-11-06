@@ -108,15 +108,49 @@ Covers the indicator maths (Bollinger, EMA, RSI, MACD, SMA, weekly resampling) a
 
 ## Pages
 
-- **Dashboard (Market Overview)**: price, 1D/1M/YTD/1Y change, RSI, 52-week range and a Buy/Hold/Sell
-  technical signal for every instrument; sortable columns, hover a signal for its reasons
+- **Dashboard (Market Overview)**: a plain-language market summary; price, 1D/1M/YTD/1Y change, RSI, 52-week range and a Buy/Hold/Sell
+  technical signal and 7-day news mood for every instrument; sortable columns, hover a signal for its reasons
+- **News**: all collected news with sentiment, filterable by instrument, topic and mood
+- **Guide**: plain-language explanation of every number, chart and signal (also available as ⓘ tooltips)
 - **Instrument view**: price chart with SMA-20, Bollinger Bands and interval-specific moving averages
   (MA-4W for weekly, MA-6M / MA-12M for monthly). Indicators are computed on the full history before the
   timeframe is applied, so they cover the whole window; each line's latest value is shown in the legend.
-  Also shows the technical signal with its reasons, performance and risk stats, and RSI / MACD panels.
+  Also shows an "In plain words" summary, the technical signal with its reasons, performance and risk stats with a
+  plain reading of each, RSI / MACD panels, the news mood, the biggest moves with the news around them, and the
+  latest news.
 - **Comparison**: % change of several instruments on one chart, plus a performance table
 - **Settings**: default interval/timeframe (saved in the browser), suggested presets, and data source
   update status
+
+## Market news
+
+The Worker also collects news every hour (`NewsUpdateBackgroundService`) from:
+
+- **Publisher RSS feeds**: Dawn Business, Business Recorder (latest news and markets), Express Tribune Business.
+  Articles are tagged with topics (Pakistan stocks, Mutual funds, Interest rates & inflation, Rupee & dollar,
+  Economy & IMF, Gold, Oil prices) by keyword rules in `NewsTopicClassifier`; Pakistan-specific topics require a
+  Pakistan mention, so foreign stories ("European stocks fall") are not tagged.
+- **Per-instrument Google News RSS searches** (`RssNewsFetcher.InstrumentSearches`), last 30 days. A result is
+  linked to the instrument only if its title is about it (e.g. "PSX" is also Phillips 66's US ticker), and
+  evergreen price pages ("Live Chart", "Constituents") are dropped.
+
+The same story from several sources is stored once (matched on title). Feeds only carry recent items, so the
+archive builds up from the first run (which backfills about 30 days).
+
+**Direct vs background**: an article is *direct* for an instrument when its search found it or its main topic is
+about it (gold news for gold, rupee news for USD/PKR). Wider topics (interest rates, IMF, oil) are shown as
+*background* and are not counted in that instrument's news mood.
+
+**Sentiment** (`NewsSentimentAnalyzer`) is read from the wording: a financial word list (gains, surges, record
+high vs sheds, slump, panic selling), reversal phrases ("snaps four-day rally" is negative), title words counting
+double. Score -100 to +100; confidence grows with the number of matching words and how much they agree. The
+matched words are returned so readers can see why. For USD/PKR the score is flipped when the rupee is the subject
+("Rupee gains" means USD/PKR falls). The per-instrument news mood is the confidence-weighted average over 7 days.
+A word list can misread headlines such as "PSX ends rally on oil surge"; an LLM would be more accurate but needs a
+paid API key.
+
+**Biggest moves**: for each of an instrument's largest daily moves in the last 30 days, the API returns the news
+published from the day before to the next trading day (so weekend reports of a Friday move are included).
 
 ## How the technical signal works
 

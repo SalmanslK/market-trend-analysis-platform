@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { instrumentsApi } from '../services/api/instrumentsApi'
 import { pricesApi } from '../services/api/pricesApi'
 import { analyticsApi } from '../services/api/analyticsApi'
-import { InstrumentAnalyticsDto, InstrumentDto, PriceDataDto, Interval, Timeframe } from '../services/types/marketData'
+import { newsApi } from '../services/api/newsApi'
+import { InstrumentAnalyticsDto, InstrumentDto, NewsSentimentSummary, PriceDataDto, Interval, Timeframe } from '../services/types/marketData'
 import PriceChart from '../components/charts/PriceChart'
 import IndicatorCharts from '../components/charts/IndicatorCharts'
 import InstrumentSelector from '../components/controls/InstrumentSelector'
@@ -12,6 +13,9 @@ import TimeframeSelector from '../components/controls/TimeframeSelector'
 import SignalBadge from '../components/signals/SignalBadge'
 import SignalPanel from '../components/signals/SignalPanel'
 import KeyStats from '../components/analytics/KeyStats'
+import PlainSummary from '../components/help/PlainSummary'
+import InstrumentNews from '../components/news/InstrumentNews'
+import { describeInstrument } from '../services/plainLanguage'
 import { intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences } from '../services/preferences'
 import { changeColor, COLORS, formatDate, formatNumber, formatPercent } from '../services/format'
@@ -24,6 +28,7 @@ export default function InstrumentView() {
   const [instruments, setInstruments] = useState<InstrumentDto[]>([])
   const [priceData, setPriceData] = useState<PriceDataDto[]>([])
   const [analytics, setAnalytics] = useState<InstrumentAnalyticsDto | null>(null)
+  const [mood, setMood] = useState<NewsSentimentSummary>()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [interval, setInterval] = useState<Interval>(() => loadPreferences().interval)
@@ -43,6 +48,9 @@ export default function InstrumentView() {
     analyticsApi.getBySymbol(symbol)
       .then((data) => { if (!cancelled) setAnalytics(data) })
       .catch((err) => console.error('Error loading analytics:', err))
+    newsApi.getSentiment(7)
+      .then((moods) => { if (!cancelled) setMood(moods.find((m) => m.symbol === symbol)) })
+      .catch((err) => console.error('Error loading news sentiment:', err))
     return () => { cancelled = true }
   }, [symbol])
 
@@ -66,6 +74,7 @@ export default function InstrumentView() {
   }, [symbol, interval, timeframe])
 
   const instrumentName = instruments.find((i) => i.symbol === symbol)?.name
+  const summary = analytics ? describeInstrument(analytics, mood) : null
 
   return (
     <div style={{ padding: '20px' }}>
@@ -85,6 +94,14 @@ export default function InstrumentView() {
         </div>
       )}
 
+      {summary && (
+        <PlainSummary
+          headline={summary.headline}
+          points={summary.points}
+          footer="This describes what prices and news have done so far. It isn't a prediction or financial advice."
+        />
+      )}
+
       <div style={{ marginBottom: '20px', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
         <InstrumentSelector
           instruments={instruments}
@@ -99,7 +116,7 @@ export default function InstrumentView() {
       {error && <div style={{ color: COLORS.down, marginBottom: '15px' }}>{error}</div>}
 
       {analytics && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '12px', marginBottom: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(420px, 100%), 1fr))', gap: '12px', marginBottom: '12px' }}>
           <SignalPanel analytics={analytics} />
           <KeyStats analytics={analytics} />
         </div>
@@ -118,6 +135,8 @@ export default function InstrumentView() {
       ) : (
         !loading && !error && <div>No data available for this instrument and timeframe.</div>
       )}
+
+      {symbol && <InstrumentNews symbol={symbol} />}
     </div>
   )
 }

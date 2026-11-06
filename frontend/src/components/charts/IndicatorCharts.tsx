@@ -14,6 +14,7 @@ import {
 } from 'recharts'
 import { PriceDataDto } from '../../services/types/marketData'
 import { COLORS } from '../../services/format'
+import InfoTip from '../help/InfoTip'
 
 interface IndicatorChartsProps {
   data: PriceDataDto[]
@@ -48,7 +49,7 @@ export default function IndicatorCharts({ data }: IndicatorChartsProps) {
       {hasRsi && (
         <div style={panelStyle}>
           <h3 style={{ fontSize: '1rem' }}>
-            RSI (14) <span style={{ fontWeight: 'normal', color: COLORS.muted, fontSize: '13px' }}>above 70 overbought, below 30 oversold</span>
+            RSI (14)<InfoTip term="rsi" /> <span style={{ fontWeight: 'normal', color: COLORS.muted, fontSize: '13px' }}>in the red zone (above 70) it has risen fast; in the green zone (below 30) it has fallen fast</span>
           </h3>
           <ResponsiveContainer width="100%" height="85%">
             <LineChart data={chartData} syncId="price" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -69,7 +70,7 @@ export default function IndicatorCharts({ data }: IndicatorChartsProps) {
       {hasMacd && (
         <div style={panelStyle}>
           <h3 style={{ fontSize: '1rem' }}>
-            MACD (12, 26, 9) <span style={{ fontWeight: 'normal', color: COLORS.muted, fontSize: '13px' }}>bars above zero: momentum rising</span>
+            MACD (12, 26, 9)<InfoTip term="macd" /> <span style={{ fontWeight: 'normal', color: COLORS.muted, fontSize: '13px' }}>green bars: upward momentum building; red bars: momentum fading</span>
           </h3>
           <ResponsiveContainer width="100%" height="85%">
             <ComposedChart data={chartData} syncId="price" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>

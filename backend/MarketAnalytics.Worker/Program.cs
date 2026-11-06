@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MarketAnalytics.Infrastructure.Data;
 using MarketAnalytics.Infrastructure.DataFetchers;
+using MarketAnalytics.Infrastructure.News;
 using MarketAnalytics.Worker;
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -17,6 +18,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddHttpClient<JsonApiDataFetcher>();
 builder.Services.AddHttpClient<HtmlScraperDataFetcher>();
 builder.Services.AddHttpClient<CurrencyApiDataFetcher>();
+builder.Services.AddHttpClient<RssNewsFetcher>();
 builder.Services.AddScoped<InstrumentDataFetcherFactory>();
 
 // "--import-csv <directory>" runs a one-off historical CSV import instead of the scheduled updates
@@ -30,8 +32,9 @@ if (!string.IsNullOrWhiteSpace(importDirectory))
     return;
 }
 
-// Register background service
+// Register background services (prices daily, news hourly)
 builder.Services.AddHostedService<DataUpdateBackgroundService>();
+builder.Services.AddHostedService<NewsUpdateBackgroundService>();
 
 var host = builder.Build();
 host.Run();

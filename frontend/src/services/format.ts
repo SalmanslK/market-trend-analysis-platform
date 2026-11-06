@@ -18,7 +18,9 @@ export function formatNumber(value: number | undefined | null, decimals = 2): st
 /** 2.345 -> "+2.35%" */
 export function formatPercent(value: number | undefined | null, decimals = 2): string {
   if (value == null || Number.isNaN(value)) return '-'
-  return `${value > 0 ? '+' : ''}${value.toFixed(decimals)}%`
+  // Tiny changes that round to zero shouldn't show a "+"
+  const rounded = Number(value.toFixed(decimals))
+  return `${rounded > 0 ? '+' : ''}${(rounded === 0 ? 0 : value).toFixed(decimals)}%`
 }
 
 export function changeColor(value: number | undefined | null): string {

@@ -23,6 +23,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Register repositories
 builder.Services.AddScoped<IInstrumentRepository, InstrumentRepository>();
 builder.Services.AddScoped<IPricePointRepository, PricePointRepository>();
+builder.Services.AddScoped<INewsRepository, NewsRepository>();
 
 // Register data fetchers as typed HTTP clients
 builder.Services.AddHttpClient<JsonApiDataFetcher>();
@@ -36,6 +37,7 @@ builder.Services.AddScoped<ITimeframeFilterService, TimeframeFilterService>();
 builder.Services.AddScoped<IIndicatorCalculationService, IndicatorCalculationService>();
 builder.Services.AddScoped<IPriceDataProcessingService, PriceDataProcessingService>();
 builder.Services.AddScoped<IMarketAnalyticsService, MarketAnalyticsService>();
+builder.Services.AddScoped<INewsService, NewsService>();
 
 // CORS configuration for React frontend
 builder.Services.AddCors(options =>

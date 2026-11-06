@@ -32,6 +32,20 @@ public class NewsTopicClassifierTests
         Assert.Equal(new[] { "gold" }, topics);
     }
 
+    [Theory]
+    [InlineData("Financials and consumer staples stocks lift Sri Lankan shares higher", "The index rose as Rs. 3 billion in shares traded.")]
+    [InlineData("Indian stocks set for pullback after rally on oil slide", "The rupee weakened.")]
+    public void ForeignMarketNews_IsNotPakistanStocks_EvenWithRupeeMentions(string title, string summary)
+    {
+        Assert.DoesNotContain("pakistan-stocks", NewsTopicClassifier.Classify(title, summary));
+    }
+
+    [Fact]
+    public void PakistanNews_MentioningForeignMarkets_IsStillPakistanStocks()
+    {
+        Assert.Contains("pakistan-stocks", NewsTopicClassifier.Classify("PSX falls as India tensions rise", ""));
+    }
+
     [Fact]
     public void Topics_LinkToTheirInstruments()
     {
@@ -193,6 +207,14 @@ public class RssNewsFetcherTests
         Assert.Equal(new DateTime(2026, 11, 1, 2, 18, 13, DateTimeKind.Utc), first.PublishedAt);
         Assert.Equal("Oil & gas firms warn", first.Summary);
         Assert.Equal(2, items.Count); // the item without a date is skipped
+    }
+
+    [Theory]
+    [InlineData("Live Gold Price in Pakistani Rupee (PKR)")]
+    [InlineData("Gold price in Pakistan: Rates on October 1")]
+    public void EvergreenPricePages_AreExcluded(string title)
+    {
+        Assert.Matches(RssNewsFetcher.Excluded, title);
     }
 
     [Fact]

@@ -7,6 +7,11 @@ using MarketAnalytics.Domain.ValueObjects;
 namespace MarketAnalytics.Application.Services;
 
 /// <summary>
+/// One article's sentiment for one instrument.
+/// </summary>
+public record ScoredNews(DateTime Date, int Score, double Weight, string Label);
+
+/// <summary>
 /// Links stored news to instruments and their price moves.
 ///
 /// An article is linked to an instrument when the instrument's news search found it, or when it covers a topic
@@ -190,6 +195,45 @@ public class NewsService : INewsService
         return summary;
     }
 
+    /// <summary>
+    /// An instrument's direct news with its sentiment from the instrument's point of view, by Pakistan-time date.
+    /// </summary>
+    public static List<ScoredNews> ScoreForSymbol(IEnumerable<(NewsArticle Article, SentimentResult Sentiment)> articles, string symbol) =>
+        articles
+            .Where(a => IsDirect(a.Article, symbol))
+            .Select(a =>
+            {
+                var score = a.Sentiment.Score * NewsSentimentAnalyzer.DirectionFor(symbol, a.Article.Title);
+                return new ScoredNews((a.Article.PublishedAt + PakistanOffset).Date, score, a.Sentiment.Confidence / 100.0, NewsSentimentAnalyzer.LabelFor(score));
+            })
+            .OrderBy(n => n.Date)
+            .ToList();
+
+    /// <summary>
+    /// The news mood on each date, using only articles from that date and the days before it, the same way as the
+    /// live news mood. Sorted dates are expected.
+    /// </summary>
+    public static List<NewsSentimentSummaryDto> DailyMood(IReadOnlyList<DateTime> dates, IReadOnlyList<ScoredNews> news, int windowDays)
+    {
+        var moods = new List<NewsSentimentSummaryDto>(dates.Count);
+        int first = 0, last = 0;
+
+        foreach (var date in dates)
+        {
+            var day = date.Date;
+            while (last < news.Count && news[last].Date <= day)
+                last++;
+            while (first < last && news[first].Date <= day.AddDays(-windowDays))
+                first++;
+
+            var window = new List<(int Score, double Weight, string Label)>(last - first);
+            for (int i = first; i < last; i++)
+                window.Add((news[i].Score, news[i].Weight, news[i].Label));
+            moods.Add(Summarize(string.Empty, windowDays, window));
+        }
+        return moods;
+    }
+
     private static NewsArticleDto ToDto(NewsArticle article, Dictionary<string, List<PriceDataPoint>> prices)
     {
         var publishedDate = (article.PublishedAt + PakistanOffset).Date;
@@ -254,7 +298,7 @@ public class NewsService : INewsService
     /// <summary>
     /// Directly about the instrument: found by its own news search, or on a topic that is directly about it.
     /// </summary>
-    private static bool IsDirect(NewsArticle article, string symbol) =>
+    public static bool IsDirect(NewsArticle article, string symbol) =>
         SplitSymbols(article.Symbols).Contains(symbol, StringComparer.OrdinalIgnoreCase)
         || NewsTopicClassifier.IsDirectTopic(article.Topics, symbol);
 

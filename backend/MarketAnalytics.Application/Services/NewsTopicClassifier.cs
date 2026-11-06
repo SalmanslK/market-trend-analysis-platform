@@ -33,6 +33,12 @@ public static class NewsTopicClassifier
     private static readonly Regex PakistanContext = new(
         @"\b(Pakistan|Pakistani|PSX|KSE|KMI|SBP|State Bank|Karachi|Islamabad|Lahore|rupee|PKR|Rs\.?\s?\d)", Options);
 
+    // "Rupee" and "Rs" are also Indian and Sri Lankan, so a story about those markets needs a clear Pakistan mention
+    private static readonly Regex ForeignMarket = new(
+        @"\b(Sri Lankan?|Colombo|India|Indian|Nifty|Sensex|Bangladesh|Dhaka|Nepal)\b", Options);
+    private static readonly Regex ClearlyPakistan = new(
+        @"\b(Pakistan|Pakistani|PSX|KSE|KMI|SBP|Karachi|Islamabad|Lahore)\b", Options);
+
     public static IReadOnlyList<NewsTopic> Topics { get; } = new[]
     {
         new NewsTopic(
@@ -107,7 +113,8 @@ public static class NewsTopicClassifier
     public static List<string> Classify(string title, string summary)
     {
         var text = $"{title} {summary}";
-        var hasPakistanContext = PakistanContext.IsMatch(text);
+        var hasPakistanContext = PakistanContext.IsMatch(text)
+            && (!ForeignMarket.IsMatch(title) || ClearlyPakistan.IsMatch(title));
 
         return Topics
             .Where(t => (!t.RequiresPakistanContext || hasPakistanContext) && t.Keywords.IsMatch(text))

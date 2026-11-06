@@ -8,7 +8,7 @@ const sections: { title: string; terms: GlossaryKey[] }[] = [
   { title: 'Prices and performance', terms: ['price', 'change', 'range52w'] },
   { title: 'Risk', terms: ['volatility', 'drawdown'] },
   { title: 'Chart lines and indicators', terms: ['sma20', 'bollinger', 'trend', 'rsi', 'macd'] },
-  { title: 'Trend and track record', terms: ['signal', 'score', 'longTermTrend', 'backtest', 'goldenCross', 'monthlyTrend', 'annualReturn', 'tradingCost'] },
+  { title: 'Trend and track record', terms: ['combinedSignal', 'signal', 'newsSignal', 'score', 'longTermTrend', 'backtest', 'goldenCross', 'monthlyTrend', 'annualReturn', 'tradingCost'] },
   { title: 'News', terms: ['newsMood', 'confidence', 'background', 'bigMoves'] },
 ]
 
@@ -26,8 +26,8 @@ export default function Guide() {
         <h2 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>A 2-minute way to use it</h2>
         <ol style={{ paddingLeft: '20px' }}>
           <li><Link to="/" style={{ color: COLORS.link }}>Market Overview</Link>: read the "In plain words" box for the big picture, then look at which instruments are green or red.</li>
-          <li>Open an instrument. Start with its plain summary, then the <strong>Buy/Sell signal</strong> and <strong>long-term trend</strong> (what prices have been doing) and the <strong>news mood</strong> (what the headlines say).</li>
-          <li>When they agree (e.g. a Sell signal, a downward trend and negative news), the picture is clearer. When they disagree, be more careful.</li>
+          <li>Open an instrument. Start with its plain summary, then the <strong>combined signal</strong>, which brings together the <strong>technical signal</strong> (what prices have been doing) and the <strong>news signal</strong> (what the headlines say).</li>
+          <li>When they agree (e.g. technical and news both say Sell), the picture is clearer. When they disagree, be more careful.</li>
           <li>Check <strong>"Biggest moves and the news around them"</strong> to see what was happening when the price jumped or fell.</li>
           <li>Use <Link to="/comparison" style={{ color: COLORS.link }}>Comparison</Link> to see which instrument did best over the same period.</li>
         </ol>
@@ -47,7 +47,7 @@ export default function Guide() {
           </div>
         ))}
         <p style={{ marginTop: '8px' }}>
-          The <Link to="/track-record" style={{ color: COLORS.link }}>Track Record</Link> page shows how acting on these signals would have done in the past.
+          The <Link to="/track-record" style={{ color: COLORS.link }}>Track Record</Link> page shows how acting on the technical, news and combined signals would have done in the past.
           Each instrument's page also lists all the standard metrics, each with its own ⓘ explanation.
         </p>
       </section>

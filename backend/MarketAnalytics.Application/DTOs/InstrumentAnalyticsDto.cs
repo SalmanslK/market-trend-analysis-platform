@@ -49,8 +49,28 @@ public class InstrumentAnalyticsDto
     /// <summary>The Buy/Hold/Sell signal and what each of its indicators shows right now.</summary>
     public TechnicalSignalDto Signal { get; set; } = new();
 
+    /// <summary>Buy/Sell from the last 7 days of news about this instrument.</summary>
+    public ScaledSignalDto NewsSignal { get; set; } = new();
+
+    /// <summary>Buy/Sell from the technical signal and the news signal together.</summary>
+    public ScaledSignalDto CombinedSignal { get; set; } = new();
+
     /// <summary>All the standard metrics that can be calculated from closing prices.</summary>
     public List<MetricDto> Metrics { get; set; } = new();
+}
+
+/// <summary>
+/// A signal scored from -100 to +100.
+/// </summary>
+public class ScaledSignalDto
+{
+    /// <summary>StrongBuy, Buy, Hold, Sell or StrongSell.</summary>
+    public string Action { get; set; } = "Hold";
+    public int Score { get; set; }
+    /// <summary>Direct news articles behind it; below 3, news isn't used.</summary>
+    public int Articles { get; set; }
+    /// <summary>How clearly the news agrees, 0-100.</summary>
+    public int NewsConfidence { get; set; }
 }
 
 /// <summary>

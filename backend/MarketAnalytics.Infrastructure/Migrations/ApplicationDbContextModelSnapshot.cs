@@ -255,8 +255,8 @@ namespace MarketAnalytics.Infrastructure.Migrations
 
                     b.Property<string>("Url")
                         .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.HasKey("Id");
 

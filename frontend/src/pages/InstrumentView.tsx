@@ -11,7 +11,7 @@ import InstrumentSelector from '../components/controls/InstrumentSelector'
 import IntervalSelector from '../components/controls/IntervalSelector'
 import TimeframeSelector from '../components/controls/TimeframeSelector'
 import TrendBadge from '../components/trend/TrendBadge'
-import SignalBadge from '../components/signals/SignalBadge'
+import ScaledSignalBadge from '../components/signals/ScaledSignalBadge'
 import SignalPanel from '../components/signals/SignalPanel'
 import AllMetrics from '../components/analytics/AllMetrics'
 import KeyStats from '../components/analytics/KeyStats'
@@ -92,7 +92,9 @@ export default function InstrumentView() {
             {formatPercent(analytics.change1D)} <span style={{ fontSize: '13px', color: COLORS.muted }}>1D</span>
           </span>
           <span style={{ color: COLORS.muted }}>as of {formatDate(analytics.lastDate)}</span>
-          <SignalBadge signal={analytics.signal} large />
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: COLORS.muted, fontSize: '14px' }}>
+            Combined signal <ScaledSignalBadge signal={analytics.combinedSignal} large />
+          </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: COLORS.muted, fontSize: '14px' }}>
             Long-term trend <TrendBadge trend={analytics.longTermTrend} />
           </span>

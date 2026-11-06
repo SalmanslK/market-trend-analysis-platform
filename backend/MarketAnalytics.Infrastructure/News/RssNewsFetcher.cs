@@ -61,12 +61,15 @@ public class RssNewsFetcher
     /// such as "KMI 30 Index Today: Live Chart &amp; Price".
     /// </summary>
     public static readonly Regex Excluded = Pattern(
-        @"Phillips 66|\$PSX|NYSE|Live Chart|Index Today|Price Today|Constituents|Historical Data|News & Updates|Market Roundup$");
+        @"Phillips 66|\$PSX|NYSE|Live Chart|Index Today|Price Today|Constituents|Historical Data|News & Updates|Market Roundup$|Live Gold Price|Live Price|Rates on ");
 
     private static Regex Pattern(string pattern) => new(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     // Google News RSS search, limited to the last 30 days and Pakistan English editions
     private const string GoogleNewsSearchUrl = "https://news.google.com/rss/search?q={0}+when:30d&hl=en-PK&gl=PK&ceid=PK:en";
+
+    // The same search limited to a date range, for downloading older news
+    private const string GoogleNewsRangeUrl = "https://news.google.com/rss/search?q={0}+after:{1:yyyy-MM-dd}+before:{2:yyyy-MM-dd}&hl=en-PK&gl=PK&ceid=PK:en";
 
     private const int MaxSummaryLength = 600;
 
@@ -101,6 +104,12 @@ public class RssNewsFetcher
     /// </summary>
     public Task<List<FeedItem>> SearchAsync(InstrumentNewsSearch search, CancellationToken cancellationToken = default) =>
         ReadFeedAsync(string.Format(GoogleNewsSearchUrl, Uri.EscapeDataString(search.Query)), defaultSource: null, cancellationToken);
+
+    /// <summary>
+    /// Runs a Google News RSS search limited to stories between two dates.
+    /// </summary>
+    public Task<List<FeedItem>> SearchRangeAsync(InstrumentNewsSearch search, DateTime from, DateTime to, CancellationToken cancellationToken = default) =>
+        ReadFeedAsync(string.Format(GoogleNewsRangeUrl, Uri.EscapeDataString(search.Query), from, to), defaultSource: null, cancellationToken);
 
     private async Task<List<FeedItem>> ReadFeedAsync(string feedUrl, string? defaultSource, CancellationToken cancellationToken)
     {

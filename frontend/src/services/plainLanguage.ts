@@ -171,6 +171,10 @@ export function describeInstrument(a: InstrumentAnalyticsDto, mood?: NewsSentime
   const note = directionNote(a.symbol)
   if (note) points.push(note)
 
+  const labels: Record<SignalAction, string> = { StrongBuy: 'Strong Buy', Buy: 'Buy', Hold: 'Hold', Sell: 'Sell', StrongSell: 'Strong Sell' }
+  const newsText = a.newsSignal.articles >= 3 ? labels[a.newsSignal.action] : `Hold (only ${a.newsSignal.articles} recent ${a.newsSignal.articles === 1 ? 'story' : 'stories'})`
+  points.unshift(`Combined signal: ${labels[a.combinedSignal.action]}. Technical says ${labels[a.signal.action]}, news says ${newsText}.`)
+
   return {
     headline: `${signalMeaning[a.signal.action].headline}. ${a.name} is at ${formatNumber(a.lastPrice)} (${priceMeaning(a)}).`,
     points,
@@ -206,9 +210,10 @@ export function describeMarket(all: InstrumentAnalyticsDto[], moods: NewsSentime
     )
   }
 
-  const buys = all.filter((a) => a.signal.score > 0).length
-  const sells = all.filter((a) => a.signal.score < 0).length
-  sentences.push(`Signals: ${buys} of ${all.length} lean towards Buy, ${sells} towards Sell and ${all.length - buys - sells} are Hold.`)
+  const leaning = (action: string) => action === 'StrongBuy' || action === 'Buy' ? 'buy' : action === 'StrongSell' || action === 'Sell' ? 'sell' : 'hold'
+  const buys = all.filter((a) => leaning(a.combinedSignal.action) === 'buy').length
+  const sells = all.filter((a) => leaning(a.combinedSignal.action) === 'sell').length
+  sentences.push(`Combined signals (technical and news together): ${buys} of ${all.length} lean towards Buy, ${sells} towards Sell and ${all.length - buys - sells} are Hold.`)
 
   const trendsUp = all.filter((a) => a.longTermTrend.direction === 'Up').length
   const trendsDown = all.filter((a) => a.longTermTrend.direction === 'Down').length
@@ -317,4 +322,41 @@ export function describeTrendRules(results: BacktestResult[], costPercent: numbe
     'So simply holding has been hard to beat on this history.',
     'The long-term trend rule makes few trades and was picked after seeing this test, so treat its figures as weak evidence.',
   ]
+}
+
+/** The overall finding for the technical, news and combined signals, counted on instruments with enough history. */
+export function describeNewsTests(results: BacktestResult[], costPercent: number): string[] {
+  const reliable = results.filter((r) => r.newsTest.hasEnoughNews && r.newsTest.years >= MIN_RELIABLE_YEARS)
+  if (reliable.length === 0) return ['There is not enough news history yet to test the news and combined signals.']
+
+  const annual = (r: BacktestResult, key: 'technical' | 'news' | 'combined') =>
+    r.newsTest.rules.find((x) => x.key === key)!.performance.annualReturn
+  const count = (key: 'technical' | 'news' | 'combined', result: 'ahead' | 'tied' | 'behind') =>
+    reliable.filter((r) => compareWithHolding(annual(r, key), r.newsTest.holding.annualReturn) === result).length
+  const line = (name: string, key: 'technical' | 'news' | 'combined') =>
+    `${name}: clearly ahead of holding on ${count(key, 'ahead')}, about the same on ${count(key, 'tied')}, behind on ${count(key, 'behind')}.`
+  const combinedBeatTechnical = reliable.filter((r) => annual(r, 'combined') > annual(r, 'technical')).length
+  const combinedBeatNews = reliable.filter((r) => annual(r, 'combined') > annual(r, 'news')).length
+
+  return [
+    `At ${costPercent}% per trade, on the ${reliable.length} instruments with at least ${MIN_RELIABLE_YEARS} years of news:`,
+    line('Technical', 'technical'),
+    line('News', 'news'),
+    line('Combined', 'combined'),
+    `Combined beat technical alone on ${combinedBeatTechnical} of ${reliable.length}, and news alone on ${combinedBeatNews} of ${reliable.length}.`,
+  ]
+}
+
+/** How the news or combined signal would have compared with holding, for one instrument. */
+export function describeNewsRuleRecord(r: BacktestResult, key: 'news' | 'combined'): string {
+  const rule = r.newsTest.rules.find((x) => x.key === key)
+  if (!rule) return ''
+
+  const { annualReturn, maxDrawdown, trades } = rule.performance
+  const holding = r.newsTest.holding
+  const result = compareWithHolding(annualReturn, holding.annualReturn)
+  const outcome = result === 'tied' ? 'about the same as' : result === 'ahead' ? 'more than' : 'less than'
+  const short = r.newsTest.years < MIN_RELIABLE_YEARS ? ' This is too little history to judge.' : ''
+
+  return `Over ${r.newsTest.years.toFixed(1)} years, ${signedPct(annualReturn)} a year after costs with ${trades} trades: ${outcome} simply holding (${signedPct(holding.annualReturn)}). Worst fall ${maxDrawdown.toFixed(0)}% against ${holding.maxDrawdown.toFixed(0)}%.${short}`
 }

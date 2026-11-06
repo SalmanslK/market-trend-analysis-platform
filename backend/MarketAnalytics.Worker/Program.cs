@@ -32,6 +32,17 @@ if (!string.IsNullOrWhiteSpace(importDirectory))
     return;
 }
 
+// "--backfill-news <date>" downloads older news from that date instead of running the scheduled updates
+var backfillFrom = builder.Configuration["backfill-news"];
+if (!string.IsNullOrWhiteSpace(backfillFrom))
+{
+    builder.Services.AddScoped<NewsBackfill>();
+    using var backfillHost = builder.Build();
+    using var scope = backfillHost.Services.CreateScope();
+    await scope.ServiceProvider.GetRequiredService<NewsBackfill>().RunAsync(DateTime.SpecifyKind(DateTime.Parse(backfillFrom), DateTimeKind.Utc));
+    return;
+}
+
 // Register background services (prices daily, news hourly)
 builder.Services.AddHostedService<DataUpdateBackgroundService>();
 builder.Services.AddHostedService<NewsUpdateBackgroundService>();

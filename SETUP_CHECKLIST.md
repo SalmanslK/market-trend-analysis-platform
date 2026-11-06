@@ -176,7 +176,13 @@ published from the day before to the next trading day (so weekend reports of a F
 
 Score >= 3 Strong Buy, 1 to 2 Buy, 0 Hold, -1 to -2 Sell, <= -3 Strong Sell. Rules without enough history are skipped.
 
-**Long-term trend**, shown beside it: Up while the 50-period average is above the 200-period average (golden cross),
+**News signal**: the confidence-weighted average sentiment of direct news over the last 7 days (the news mood), from
+-100 to +100. +20 Buy, +60 Strong Buy, -20 Sell, -60 Strong Sell; with fewer than 3 articles, Hold.
+
+**Combined signal**: technical (score as a % of its maximum) and news weighted equally, with the same cut-offs; with
+fewer than 3 articles, technical alone. Rules live in `SignalRules`, shared by the live signals and the backtest.
+
+**Long-term trend**, shown beside them: Up while the 50-period average is above the 200-period average (golden cross),
 otherwise Down, with the date it last changed.
 
 **All metrics** (`TechnicalMetrics`), on each instrument's page: SMA and EMA (10, 20, 50, 100, 200); RSI, Stochastic RSI,
@@ -193,6 +199,14 @@ Mutual fund NAVs drop when dividends are paid out and are not adjusted for this,
 understate performance.
 
 ## Track record (backtest)
+
+Older news for this test comes from a one-off, slow download (safe to re-run, stops if refused):
+
+```
+cd backend/MarketAnalytics.Worker
+dotnet run -- --backfill-news 2021-05-01
+```
+
 
 `BacktestService` replays the signal over stored daily prices, using the same rules as the live signal
 (`SignalRules`). Strategy: invested after a positive score, in cash after a negative one, unchanged on zero.
@@ -215,6 +229,11 @@ invested if the price is above its 200-period average). At 0.5% per trade both b
 instruments by trading far less, but mostly matched or trailed holding (KSE-100: golden cross +26.8% a year against
 +26.6% holding and +13.4% for the signal). They make few trades, so this is weak evidence. Golden cross is shown as the long-term trend beside
 the signal; it was picked after seeing this test, so its figures may flatter it.
+
+Technical, news and combined signals, tested on the same dates from when each instrument's news begins (Nov 2026, 0.5%
+per trade): all three trailed holding on all 6 instruments with at least 3 years of history, and combined beat technical
+alone on 1 of 6 (KSE-100: holding +26.6% a year, technical +13.3%, news +14.3%, combined +8.9%). Older news is a sample
+of a few stories per week, and sentiment is read from headline wording. The rules were fixed before these results.
 
 ## Nice to have
 

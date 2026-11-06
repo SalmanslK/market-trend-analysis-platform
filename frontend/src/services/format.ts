@@ -42,4 +42,4 @@ export const signalStyles: Record<SignalAction, { label: string; background: str
 }
 
 export const TREND_DISCLAIMER =
-  'The trend and indicators describe past prices. They are not predictions or financial advice, and do not account for fundamentals, news or dividends.'
+  'Signals, trends and indicators describe past prices. They are not predictions or financial advice, and do not account for fundamentals, news or dividends.'

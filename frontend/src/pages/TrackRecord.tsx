@@ -14,7 +14,7 @@ import {
 import { backtestApi } from '../services/api/backtestApi'
 import { BacktestResult, RuleResult, SignalAction, SignalOutcome } from '../services/types/marketData'
 import { changeColor, COLORS, formatDate, formatPercent, signalStyles } from '../services/format'
-import { compareWithHolding, describeBacktests, describeTrendRecord, describeTrendRules, MIN_RELIABLE_YEARS, ruleNames, verdictStyles } from '../services/plainLanguage'
+import { compareWithHolding, describeBacktests, describeRuleRecord, describeTrendRules, MIN_RELIABLE_YEARS, ruleNames, verdictStyles } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
 import PlainSummary from '../components/help/PlainSummary'
 
@@ -65,7 +65,7 @@ function InstrumentDetail({ result }: { result: BacktestResult }) {
     <section style={cardStyle}>
       <h2 style={{ fontSize: '1.2rem' }}>{result.symbol}: what 100 would have become</h2>
       <p style={{ ...noteStyle, margin: '4px 0 10px' }}>
-        {describeTrendRecord(result)} Tested from {formatDate(result.startDate)} to {formatDate(result.endDate)}.
+        Following the long-term trend: {describeRuleRecord(result, 'goldenCross')} Tested from {formatDate(result.startDate)} to {formatDate(result.endDate)}.
       </p>
       <div style={{ width: '100%', height: '320px' }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -99,9 +99,9 @@ function OldScoreSection({ results, detail, cost }: { results: BacktestResult[];
 
   return (
     <section style={cardStyle}>
-      <h2 style={{ fontSize: '1.2rem' }}>Why the app no longer shows Buy or Sell</h2>
+      <h2 style={{ fontSize: '1.2rem' }}>How the Buy/Sell signal did</h2>
       <p style={{ ...noteStyle, margin: '4px 0 10px' }}>
-        The app used to add up five indicators into a Buy, Hold or Sell score. These are its results, kept here for the record.
+        The Buy/Sell signal adds up five indicators into Strong Buy, Buy, Hold, Sell or Strong Sell. This is what acting on it would have done.
       </p>
 
       <PlainSummary points={describeBacktests(results, cost)} />
@@ -112,7 +112,7 @@ function OldScoreSection({ results, detail, cost }: { results: BacktestResult[];
             <tr>
               <th style={{ ...headerStyle, textAlign: 'left' }}>Instrument</th>
               <th style={headerStyle}>Holding, per year</th>
-              <th style={headerStyle}>Old score, per year</th>
+              <th style={headerStyle}>Signal, per year</th>
               <th style={headerStyle}>Trades</th>
               <th style={{ ...headerStyle, textAlign: 'center' }}>Result</th>
             </tr>
@@ -136,10 +136,10 @@ function OldScoreSection({ results, detail, cost }: { results: BacktestResult[];
 
       {detail && (
         <>
-          <h3 style={{ fontSize: '1rem', marginTop: '20px' }}>{detail.symbol}: what happened in the {OUTCOME_HORIZON_DAYS} days after each old score</h3>
+          <h3 style={{ fontSize: '1rem', marginTop: '20px' }}>{detail.symbol}: what happened in the {OUTCOME_HORIZON_DAYS} days after each signal</h3>
           <p style={{ ...noteStyle, margin: '4px 0 10px' }}>
             A useful signal would show clearly better results after Buy than after Sell.
-            {spread != null && ` Here, Buy-type scores were followed by changes ${Math.abs(spread).toFixed(1)} percentage points ${spread >= 0 ? 'better' : 'worse'} than Sell-type scores.`}
+            {spread != null && ` Here, Buy-type signals were followed by changes ${Math.abs(spread).toFixed(1)} percentage points ${spread >= 0 ? 'better' : 'worse'} than Sell-type signals.`}
             {first != null && second != null && ` (${formatPercent(first, 1)} in the first half of the period, ${formatPercent(second, 1)} in the second.)`}
           </p>
           <div style={{ overflowX: 'auto' }}>
@@ -153,7 +153,7 @@ function OldScoreSection({ results, detail, cost }: { results: BacktestResult[];
                   <th style={headerStyle}>Days</th>
                   <th style={headerStyle}>
                     Separate periods
-                    <InfoTip title="Separate periods" text="Days next to each other share most of their 30-day window, so they aren't independent. The number of separate runs of a score is a better guide to how much evidence there is." />
+                    <InfoTip title="Separate periods" text="Days next to each other share most of their 30-day window, so they aren't independent. The number of separate runs of a signal is a better guide to how much evidence there is." />
                   </th>
                 </tr>
               </thead>
@@ -212,7 +212,7 @@ export default function TrackRecord() {
     <div style={{ padding: '20px' }}>
       <h1>Track Record</h1>
       <p style={{ color: COLORS.muted, margin: '6px 0 16px' }}>
-        Would acting on the app's labels have worked? This replays them over past prices.<InfoTip term="backtest" />
+        Would acting on the app's signals have worked? This replays them over past prices.<InfoTip term="backtest" />
       </p>
 
       {tested.length > 0 && <PlainSummary points={describeTrendRules(tested, shownCost)} />}
@@ -283,7 +283,7 @@ export default function TrackRecord() {
         <ul style={{ paddingLeft: '20px' }}>
           <li><strong>What is compared:</strong> being invested only while a rule says so, otherwise in cash, against buying once and doing nothing ("holding").</li>
           <li><strong>Fair test:</strong> each day uses only the prices known that day, trades happen at the next day's close, and every trade pays the cost above. All rules use standard settings and were not adjusted to fit this data.</li>
-          <li><strong>The trend label was picked after seeing this test,</strong> so its figures may flatter it. The real test is how it does from here on.</li>
+          <li><strong>The long-term trend rule was picked after seeing this test,</strong> so its figures may flatter it. The real test is how it does from here on.</li>
           <li><strong>Few trades means weak evidence.</strong> The slower rules made only a handful of trades, so one or two well-timed moves can decide the result.</li>
           <li><strong>Dividends aren't included.</strong> Index and fund prices leave out dividends, so real returns from holding were higher, especially for funds like MIF, whose price drops at each payout.</li>
           <li><strong>Cash earns nothing here,</strong> which is harsh on every rule when interest rates are high.</li>

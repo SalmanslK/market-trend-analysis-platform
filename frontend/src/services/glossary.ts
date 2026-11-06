@@ -27,9 +27,14 @@ export const glossary = {
     howToRead: 'It tells you the direction so far, not what happens next, and it reacts slowly: it can stay Up for weeks after prices start falling. It looks only at past prices, so it knows nothing about company results, news, dividends or your own goals.',
   },
   signal: {
-    title: 'Short-term indicators (old Buy/Sell score)',
-    what: 'Five common chart indicators, each pointing up, down or having no view. The app used to add them up into a Buy, Hold or Sell score.',
-    howToRead: 'They are useful for seeing what prices are doing right now. Acting on them directly traded too often and did worse than simply holding, so the app no longer turns them into Buy or Sell.',
+    title: 'Buy/Sell signal',
+    what: 'A summary of five common chart indicators. Each one votes +1 (points up), -1 (points down) or 0 (no view). The total gives Strong Buy, Buy, Hold, Sell or Strong Sell.',
+    howToRead: 'It is a quick read of what the indicators show right now. It looks only at past prices, so it knows nothing about company results, news, dividends or your own goals. The Track Record page shows how it did in the past.',
+  },
+  score: {
+    title: 'Signal score',
+    what: 'The total of the indicator votes, e.g. "-1/5" means five indicators were checked and one more pointed down than up.',
+    howToRead: '+3 or more is Strong Buy, +1 to +2 Buy, 0 Hold, -1 to -2 Sell, -3 or less Strong Sell. The closer to zero, the more mixed the picture.',
   },
   trend: {
     title: 'Price vs its averages',

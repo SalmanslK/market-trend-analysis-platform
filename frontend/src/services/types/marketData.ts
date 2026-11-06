@@ -81,6 +81,17 @@ export interface LongTermTrend {
   since?: string;
 }
 
+export interface Metric {
+  group: string;
+  name: string;
+  value: number;
+  unit: 'price' | 'percent' | 'number';
+  /** Positive, Negative or Neutral; empty when the metric has no good or bad direction */
+  reading: string;
+  note: string;
+  description: string;
+}
+
 export interface InstrumentAnalyticsDto {
   symbol: string;
   name: string;
@@ -108,6 +119,7 @@ export interface InstrumentAnalyticsDto {
   percentB?: number;
   longTermTrend: LongTermTrend;
   signal: TechnicalSignal;
+  metrics: Metric[];
 }
 
 export type SentimentLabel = 'Positive' | 'Neutral' | 'Negative' | 'Background';

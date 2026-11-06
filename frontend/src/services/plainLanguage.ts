@@ -1,4 +1,4 @@
-import { BacktestResult, BacktestVerdict, InstrumentAnalyticsDto, InstrumentType, NewsSentimentSummary } from './types/marketData'
+import { BacktestResult, BacktestVerdict, InstrumentAnalyticsDto, InstrumentType, NewsSentimentSummary, SignalAction } from './types/marketData'
 import { formatDate, formatNumber } from './format'
 
 /**
@@ -55,6 +55,29 @@ export function describeDrawdown(drawdown?: number): string | undefined {
   if (drawdown == null) return undefined
   if (drawdown > -5) return 'Has barely fallen from its highs this year'
   return `At its worst this year it was ${pct(drawdown)} below its peak`
+}
+
+export const signalMeaning: Record<SignalAction, { headline: string; detail: string }> = {
+  StrongBuy: {
+    headline: 'Most indicators point up',
+    detail: 'The price trend and momentum are both positive. Strong upward trends often continue for a while, but can also be late in the move.',
+  },
+  Buy: {
+    headline: 'Indicators lean positive',
+    detail: 'More indicators point up than down, but not all of them agree.',
+  },
+  Hold: {
+    headline: 'Indicators are mixed',
+    detail: 'Signals cancel each other out: there is no clear direction right now.',
+  },
+  Sell: {
+    headline: 'Indicators lean negative',
+    detail: 'More indicators point down than up, but not all of them agree.',
+  },
+  StrongSell: {
+    headline: 'Most indicators point down',
+    detail: 'The price trend and momentum are both negative. Falling trends often continue for a while, but can also be close to a turning point.',
+  },
 }
 
 /** The long-term trend in a sentence or two. */
@@ -126,22 +149,30 @@ export function describeInstrument(a: InstrumentAnalyticsDto, mood?: NewsSentime
   if (moodText) points.push(moodText)
 
   // Price trend and news agreeing makes the picture clearer; disagreeing is a reason for extra care
-  if (mood && mood.articles > 0 && mood.label !== 'Neutral' && direction !== 'Unknown') {
-    const trendUp = direction === 'Up'
+  // The short-term signal and long-term trend measure different things, so spell out when they differ
+  if (direction !== 'Unknown' && a.signal.score !== 0 && (a.signal.score > 0) !== (direction === 'Up')) {
+    points.push(
+      a.signal.score > 0
+        ? 'The signal leans towards Buy while the long-term trend is still down: prices have recently risen within a longer weak period.'
+        : 'The signal leans towards Sell while the long-term trend is still up: prices have recently weakened within a longer strong period.',
+    )
+  }
+
+  if (mood && mood.articles > 0 && mood.label !== 'Neutral' && a.signal.score !== 0) {
+    const signalUp = a.signal.score > 0
     const newsUp = mood.label === 'Positive'
     points.push(
-      trendUp === newsUp
-        ? `The price trend and the news point the same way (${newsUp ? 'up' : 'down'}), which makes the picture clearer.`
-        : `The price trend points ${trendUp ? 'up' : 'down'} but the news sounds ${newsUp ? 'positive' : 'negative'}. When they disagree, the picture is less certain: worth reading the news before deciding.`,
+      signalUp === newsUp
+        ? `The signal and the news point the same way (${newsUp ? 'up' : 'down'}), which makes the picture clearer.`
+        : `The signal points ${signalUp ? 'up' : 'down'} but the news sounds ${newsUp ? 'positive' : 'negative'}. When they disagree, the picture is less certain: worth reading the news before deciding.`,
     )
   }
 
   const note = directionNote(a.symbol)
   if (note) points.push(note)
 
-  const headline = direction === 'Unknown' ? 'The long-term trend isn\'t known yet' : `The long-term trend is ${direction.toLowerCase()}`
   return {
-    headline: `${headline}. ${a.name} is at ${formatNumber(a.lastPrice)} (${priceMeaning(a)}).`,
+    headline: `${signalMeaning[a.signal.action].headline}. ${a.name} is at ${formatNumber(a.lastPrice)} (${priceMeaning(a)}).`,
     points,
   }
 }
@@ -175,6 +206,10 @@ export function describeMarket(all: InstrumentAnalyticsDto[], moods: NewsSentime
     )
   }
 
+  const buys = all.filter((a) => a.signal.score > 0).length
+  const sells = all.filter((a) => a.signal.score < 0).length
+  sentences.push(`Signals: ${buys} of ${all.length} lean towards Buy, ${sells} towards Sell and ${all.length - buys - sells} are Hold.`)
+
   const trendsUp = all.filter((a) => a.longTermTrend.direction === 'Up').length
   const trendsDown = all.filter((a) => a.longTermTrend.direction === 'Down').length
   sentences.push(`The long-term trend is up for ${trendsUp} of ${all.length} instruments and down for ${trendsDown}. It reacts slowly, so it can lag recent moves.`)
@@ -206,23 +241,18 @@ export const verdictStyles: Record<BacktestVerdict, { label: string; background:
 
 const signedPct = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
 
-/** How acting on the trend label would have compared with holding, for one instrument. */
-export function describeTrendRecord(r: BacktestResult): string {
-  const rule = r.rules.find((x) => x.key === 'goldenCross')
+/** How acting on a rule would have compared with holding, for one instrument. */
+export function describeRuleRecord(r: BacktestResult, key: 'signal' | 'goldenCross' | 'monthlyTrend'): string {
+  const rule = r.rules.find((x) => x.key === key)
   if (!rule) return ''
 
   const { annualReturn, maxDrawdown, trades } = rule.performance
   const holding = r.buyAndHold
   const result = compareWithHolding(annualReturn, holding.annualReturn)
   const outcome = result === 'tied' ? 'about the same as' : result === 'ahead' ? 'more than' : 'less than'
-  const fall = maxDrawdown > holding.maxDrawdown
-    ? `Its worst fall was smaller (${maxDrawdown.toFixed(0)}% against ${holding.maxDrawdown.toFixed(0)}%).`
-    : `Its worst fall was no smaller (${maxDrawdown.toFixed(0)}% against ${holding.maxDrawdown.toFixed(0)}%).`
-  const evidence = r.years < MIN_RELIABLE_YEARS
-    ? 'This is too little history to judge.'
-    : `With only ${trades} trades, this is weak evidence.`
+  const short = r.years < MIN_RELIABLE_YEARS ? ' This is too little history to judge.' : ''
 
-  return `Over ${r.years.toFixed(1)} years, being invested only while it said Up earned ${signedPct(annualReturn)} a year after costs: ${outcome} simply holding (${signedPct(holding.annualReturn)}). ${fall} ${evidence}`
+  return `Over ${r.years.toFixed(1)} years, ${signedPct(annualReturn)} a year after costs with ${trades} trades: ${outcome} simply holding (${signedPct(holding.annualReturn)}). Worst fall ${maxDrawdown.toFixed(0)}% against ${holding.maxDrawdown.toFixed(0)}%.${short}`
 }
 
 /** The overall finding across all instruments. */
@@ -236,12 +266,12 @@ export function describeBacktests(results: BacktestResult[], costPercent: number
   const short = tested.filter((r) => r.years < MIN_RELIABLE_YEARS).map((r) => r.symbol)
 
   const sentences = [
-    `At ${costPercent}% per trade, following the old score beat simply holding on ${helped} of ${tested.length} instruments, lowered risk at a lower return on ${lowerRisk}, and did worse on ${worse}.`,
+    `At ${costPercent}% per trade, following the Buy/Sell signal beat simply holding on ${helped} of ${tested.length} instruments, lowered risk at a lower return on ${lowerRisk}, and did worse on ${worse}.`,
   ]
   sentences.push(
     helped * 2 > tested.length
-      ? 'At this cost, the old score added value more often than not.'
-      : 'At this cost, the old score has not been a reliable reason to buy or sell.',
+      ? 'At this cost, the signal added value more often than not.'
+      : 'At this cost, acting on the signal alone has not beaten simply holding on most instruments.',
   )
   const reliable = tested.filter((r) => r.years >= MIN_RELIABLE_YEARS)
   if (reliable.length > 0) {
@@ -256,8 +286,8 @@ export function describeBacktests(results: BacktestResult[], costPercent: number
 const MEANINGFUL_ANNUAL_DIFFERENCE = 1
 
 export const ruleNames: Record<'signal' | 'goldenCross' | 'monthlyTrend', string> = {
-  signal: 'Old Buy/Sell score',
-  goldenCross: 'Trend label',
+  signal: 'Buy/Sell signal',
+  goldenCross: 'Long-term trend',
   monthlyTrend: 'Monthly trend check',
 }
 
@@ -282,9 +312,9 @@ export function describeTrendRules(results: BacktestResult[], costPercent: numbe
   const beatOld = reliable.filter((r) => annual(r, 'goldenCross') > annual(r, 'signal')).length
 
   return [
-    `At ${costPercent}% per trade, on the ${reliable.length} instruments with at least ${MIN_RELIABLE_YEARS} years of history, acting on the trend label was clearly ahead of simply holding on ${count('ahead')}, about the same on ${count('tied')} and behind on ${count('behind')}.`,
-    `It beat the old Buy/Sell score on ${beatOld} of ${reliable.length}, mainly by trading far less: about ${tradesPerYear('goldenCross')} times a year instead of ${tradesPerYear('signal')}.`,
-    'So simply holding has been hard to beat. The label is best read as a description of the trend so far, not as a reason to trade.',
-    'The label was picked after seeing this test and makes few trades, so treat these figures as weak evidence.',
+    `At ${costPercent}% per trade, on the ${reliable.length} instruments with at least ${MIN_RELIABLE_YEARS} years of history, following the long-term trend was clearly ahead of simply holding on ${count('ahead')}, about the same on ${count('tied')} and behind on ${count('behind')}.`,
+    `It beat the Buy/Sell signal on ${beatOld} of ${reliable.length}, mainly by trading far less: about ${tradesPerYear('goldenCross')} times a year instead of ${tradesPerYear('signal')}.`,
+    'So simply holding has been hard to beat on this history.',
+    'The long-term trend rule makes few trades and was picked after seeing this test, so treat its figures as weak evidence.',
   ]
 }

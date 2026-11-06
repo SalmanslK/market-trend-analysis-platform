@@ -23,6 +23,8 @@ namespace MarketAnalytics.Application.Services;
 public class MarketAnalyticsService : IMarketAnalyticsService
 {
     private const int MinReturnsForVolatility = 20;
+    // Beta, correlation and alpha are measured against the main Pakistan stock index
+    private const string BenchmarkSymbol = "KSE100";
 
     private readonly IInstrumentRepository _instrumentRepository;
     private readonly IPricePointRepository _pricePointRepository;
@@ -77,14 +79,27 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         if (dailyPrices.Count == 0)
             return null;
 
-        var analytics = ComputeAnalytics(dailyPrices);
+        var analytics = ComputeAnalytics(dailyPrices, await LoadBenchmarkAsync(instrument, cancellationToken));
         analytics.Symbol = instrument.Symbol;
         analytics.Name = instrument.Name;
         analytics.Type = instrument.Type;
         return analytics;
     }
 
-    public InstrumentAnalyticsDto ComputeAnalytics(IReadOnlyList<PriceDataPoint> dailyPrices)
+    private async Task<List<PriceDataPoint>?> LoadBenchmarkAsync(Instrument instrument, CancellationToken cancellationToken)
+    {
+        if (instrument.Symbol.Equals(BenchmarkSymbol, StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var benchmark = await _instrumentRepository.GetBySymbolAsync(BenchmarkSymbol, cancellationToken);
+        if (benchmark == null)
+            return null;
+
+        var points = await _pricePointRepository.GetByInstrumentIdAsync(benchmark.Id, DateTime.UtcNow.AddYears(-2), cancellationToken: cancellationToken);
+        return PriceDataCleaner.RemoveSpikes(points.Select(p => new PriceDataPoint(p.DateTime, p.Price)));
+    }
+
+    public InstrumentAnalyticsDto ComputeAnalytics(IReadOnlyList<PriceDataPoint> dailyPrices, IReadOnlyList<PriceDataPoint>? benchmarkPrices = null)
     {
         var prices = dailyPrices.OrderBy(p => p.DateTime).ToList();
         var last = prices[^1];
@@ -107,6 +122,7 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         ComputeRisk(prices, analytics);
         ComputeIndicators(prices, analytics);
         analytics.Signal = BuildSignal(analytics);
+        analytics.Metrics = TechnicalMetrics.Compute(prices, _indicators, benchmarkPrices);
 
         return analytics;
     }

@@ -46,8 +46,27 @@ public class InstrumentAnalyticsDto
     /// <summary>The headline label shown for the instrument: the direction of its long-term trend.</summary>
     public LongTermTrendDto LongTermTrend { get; set; } = new();
 
-    /// <summary>What each indicator shows right now; kept as detail behind the trend label.</summary>
+    /// <summary>The Buy/Hold/Sell signal and what each of its indicators shows right now.</summary>
     public TechnicalSignalDto Signal { get; set; } = new();
+
+    /// <summary>All the standard metrics that can be calculated from closing prices.</summary>
+    public List<MetricDto> Metrics { get; set; } = new();
+}
+
+/// <summary>
+/// One technical or risk metric at the latest price, with its usual reading in plain language.
+/// </summary>
+public class MetricDto
+{
+    public string Group { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public decimal Value { get; set; }
+    /// <summary>price, percent or number.</summary>
+    public string Unit { get; set; } = "number";
+    /// <summary>Positive, Negative or Neutral; empty when the metric has no good or bad direction.</summary>
+    public string Reading { get; set; } = string.Empty;
+    public string Note { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
 }
 
 /// <summary>

@@ -136,7 +136,7 @@ export default function NewsSignalComparison({ results, detail, cost, onSelect }
         Green is more than 1 point a year ahead of holding, red more than 1 point behind, grey about the same.{' '}
         <strong>Limits of this news test:</strong> older news comes from a search that returns only a few stories per week, so it is a sample, not all the news.
         Sentiment is read automatically from headline wording. Many headlines report moves that have already happened, so news often lags the price.
-        Funds and KMI-30 mostly share the same stock market news as the KSE-100, so their results aren't independent.
+        The stock funds and KMI-30 mostly share the KSE-100's news, and the gold fund shares gold's, so their results aren't independent.
       </p>
     </section>
   )

@@ -47,6 +47,15 @@ public class NewsTopicClassifierTests
     }
 
     [Fact]
+    public void GoldFund_FollowsGoldNews_NotStockNews()
+    {
+        Assert.True(NewsTopicClassifier.IsDirectTopic("gold", "MGF"));
+        Assert.False(NewsTopicClassifier.IsDirectTopic("pakistan-stocks", "MGF"));
+        Assert.Empty(NewsTopicClassifier.TopicsForSymbol("pakistan-stocks", "MGF"));
+        Assert.True(NewsTopicClassifier.IsDirectTopic("pakistan-stocks", "MIF"));
+    }
+
+    [Fact]
     public void Topics_LinkToTheirInstruments()
     {
         var linked = NewsTopicClassifier.TopicsForSymbol("gold,rupee-dollar", "GOLDPK").Select(t => t.Key);

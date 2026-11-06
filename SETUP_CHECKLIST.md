@@ -232,7 +232,7 @@ the signal; it was picked after seeing this test, so its figures may flatter it.
 
 Technical, news and combined signals, tested on the same dates from when each instrument's news begins (Nov 2026, 0.5%
 per trade): all three trailed holding on all 6 instruments with at least 3 years of history, and combined beat technical
-alone on 1 of 6 (KSE-100: holding +26.6% a year, technical +13.3%, news +14.3%, combined +8.9%). Older news is a sample
+alone on none of them (KSE-100: holding +26.6% a year, technical +13.3%, news +14.3%, combined +8.9%). Older news is a sample
 of a few stories per week, and sentiment is read from headline wording. The rules were fixed before these results.
 
 ## Nice to have

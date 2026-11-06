@@ -43,7 +43,7 @@ public static class InstrumentSeedData
             {
                 Id = 3,
                 Symbol = "KMIF",
-                Name = "KMI Islamic Fund",
+                Name = "KSE Meezan Index Fund",
                 Type = InstrumentType.MutualFund,
                 DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/mutual-funds/nav-history/a0aac2a4-0ec4-4718-b2e5-4580f5cd8ddd?days=365",
                 DataSourceType = DataSourceType.JsonApi,
@@ -79,7 +79,7 @@ public static class InstrumentSeedData
             {
                 Id = 6,
                 Symbol = "MGF",
-                Name = "Meezan Growth Fund",
+                Name = "Meezan Gold Fund",
                 Type = InstrumentType.MutualFund,
                 DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/mutual-funds/nav-history/7e59207d-798c-43ab-bc76-4a44d2f90a64?days=365",
                 DataSourceType = DataSourceType.JsonApi,

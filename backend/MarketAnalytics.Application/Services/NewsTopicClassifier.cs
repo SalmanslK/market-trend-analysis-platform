@@ -27,6 +27,8 @@ public static class NewsTopicClassifier
 
     private static readonly string[] PakistanStocks = { "KSE100", "KMI30" };
     private static readonly string[] MeezanFunds = { "KMIF", "MIF", "MGF", "MBF" };
+    // Funds that hold shares; MGF is the Meezan Gold Fund, so it follows gold news instead
+    private static readonly string[] MeezanStockFunds = { "KMIF", "MIF", "MBF" };
 
     // Feeds also carry international stories ("European stocks fall"), so Pakistan-specific topics
     // only match when the article mentions Pakistan
@@ -45,8 +47,8 @@ public static class NewsTopicClassifier
             "pakistan-stocks",
             "Pakistan stocks",
             "Share prices on the Pakistan Stock Exchange drive the KSE-100 and KMI-30 indices and the Meezan stock funds.",
-            PakistanStocks.Concat(MeezanFunds).ToArray(),
-            PakistanStocks.Concat(MeezanFunds).ToArray(),
+            PakistanStocks.Concat(MeezanStockFunds).ToArray(),
+            PakistanStocks.Concat(MeezanStockFunds).ToArray(),
             new Regex(@"\b(PSX|KSE[- ]?100|KSE|KMI[- ]?30|stock exchange|stock market|stocks|equities|equity market|bourse|share prices|benchmark index|bulls|bears)\b", Options),
             RequiresPakistanContext: true),
 
@@ -63,7 +65,7 @@ public static class NewsTopicClassifier
             "interest-rates",
             "Interest rates & inflation",
             "Higher interest rates make bank deposits more attractive than shares, which often weighs on stocks; lower rates tend to help them.",
-            PakistanStocks.Concat(MeezanFunds).Append("USDPKR").ToArray(),
+            PakistanStocks.Concat(MeezanStockFunds).Append("USDPKR").ToArray(),
             Array.Empty<string>(),
             new Regex(@"\b(policy rate|interest rates?|monetary policy|inflation|CPI|T-?bills?|treasury bills?|rate cut|rate hike)\b", Options),
             RequiresPakistanContext: true),
@@ -72,7 +74,7 @@ public static class NewsTopicClassifier
             "rupee-dollar",
             "Rupee & dollar",
             "The rupee's value against the dollar sets USD/PKR and changes the rupee price of gold in Pakistan.",
-            new[] { "USDPKR", "GOLDPK" },
+            new[] { "USDPKR", "GOLDPK", "MGF" },
             new[] { "USDPKR" },
             new Regex(@"\b(rupee|PKR|exchange rate|dollar|greenback|forex|foreign exchange|remittances?|foreign reserves|FX reserves|current account)\b", Options),
             RequiresPakistanContext: true),
@@ -90,8 +92,8 @@ public static class NewsTopicClassifier
             "gold",
             "Gold",
             "Gold is priced globally in US dollars; the Pakistani gold price follows it, adjusted for the rupee.",
-            new[] { "GOLDINT", "GOLDPK" },
-            new[] { "GOLDINT", "GOLDPK" },
+            new[] { "GOLDINT", "GOLDPK", "MGF" },
+            new[] { "GOLDINT", "GOLDPK", "MGF" },
             new Regex(@"\b(gold|bullion|XAU|precious metals?)\b", Options),
             RequiresPakistanContext: false),
 

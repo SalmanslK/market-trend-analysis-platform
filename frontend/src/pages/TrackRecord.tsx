@@ -12,9 +12,9 @@ import {
   YAxis,
 } from 'recharts'
 import { backtestApi } from '../services/api/backtestApi'
-import { BacktestResult, SignalAction, SignalOutcome } from '../services/types/marketData'
+import { BacktestResult, RuleResult, SignalAction, SignalOutcome } from '../services/types/marketData'
 import { changeColor, COLORS, formatDate, formatPercent, signalStyles } from '../services/format'
-import { describeBacktest, describeBacktests, MIN_RELIABLE_YEARS, verdictStyles } from '../services/plainLanguage'
+import { compareWithHolding, describeBacktest, describeBacktests, describeSlowerRules, MIN_RELIABLE_YEARS, ruleNames, verdictStyles } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
 import PlainSummary from '../components/help/PlainSummary'
 
@@ -35,6 +35,74 @@ function VerdictChip({ result }: { result: BacktestResult }) {
   )
 }
 
+const RULE_COLORS = { ahead: COLORS.up, tied: COLORS.neutral, behind: COLORS.down }
+
+function RuleCell({ result, ruleKey }: { result: BacktestResult; ruleKey: RuleResult['key'] }) {
+  const rule = result.rules.find((r) => r.key === ruleKey)
+  if (!rule) return <td style={cellStyle}>-</td>
+  const comparison = compareWithHolding(rule.performance.annualReturn, result.buyAndHold.annualReturn)
+  return (
+    <td style={cellStyle}>
+      <strong style={{ color: RULE_COLORS[comparison] }}>{formatPercent(rule.performance.annualReturn, 1)}</strong>
+      <div style={{ fontSize: '12px', color: COLORS.muted }}>
+        {rule.performance.trades} trades, fall {rule.performance.maxDrawdown.toFixed(0)}%
+      </div>
+    </td>
+  )
+}
+
+function SlowerRules({ results }: { results: BacktestResult[] }) {
+  return (
+    <section style={cardStyle}>
+      <h2 style={{ fontSize: '1.2rem' }}>Would a slower rule do better?</h2>
+      <p style={{ fontSize: '13px', color: '#546e7a', margin: '4px 0 10px', lineHeight: 1.45 }}>
+        The current signal changes its mind often, and every trade costs money. These two standard rules react only to long trends:
+        the <strong>golden cross</strong><InfoTip term="goldenCross" /> and the <strong>monthly trend check</strong><InfoTip term="monthlyTrend" />.
+        Both were chosen before seeing how they did, and use the same dates and costs.
+      </p>
+
+      <PlainSummary points={describeSlowerRules(results)} />
+
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+          <thead>
+            <tr>
+              <th style={{ ...headerStyle, textAlign: 'left' }}>Return per year</th>
+              <th style={headerStyle}>Holding</th>
+              <th style={headerStyle}>{ruleNames.signal}</th>
+              <th style={headerStyle}>{ruleNames.goldenCross}</th>
+              <th style={headerStyle}>{ruleNames.monthlyTrend}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {results.map((r) => (
+              <tr key={r.symbol}>
+                <td style={{ ...cellStyle, textAlign: 'left' }}>
+                  <strong>{r.symbol}</strong>
+                  {r.years < MIN_RELIABLE_YEARS && <div style={{ fontSize: '12px', color: COLORS.down }}>too short to judge</div>}
+                </td>
+                <td style={cellStyle}>
+                  <strong>{formatPercent(r.buyAndHold.annualReturn, 1)}</strong>
+                  <div style={{ fontSize: '12px', color: COLORS.muted }}>fall {r.buyAndHold.maxDrawdown.toFixed(0)}%</div>
+                </td>
+                <RuleCell result={r} ruleKey="signal" />
+                <RuleCell result={r} ruleKey="goldenCross" />
+                <RuleCell result={r} ruleKey="monthlyTrend" />
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p style={{ fontSize: '13px', color: '#546e7a', marginTop: '10px', lineHeight: 1.45 }}>
+        Green is more than 1 point a year ahead of holding, red more than 1 point behind, grey about the same.{' '}
+        <strong>Treat this as weak evidence:</strong> these rules made only a handful of trades, so one or two well-timed moves can decide the result,
+        and this is one stretch of history. A rule that looks best here may not stay best.
+      </p>
+    </section>
+  )
+}
+
 function outcomeLabel(outcome: SignalOutcome): string {
   return outcome.action === 'All' ? 'Any day (for comparison)' : signalStyles[outcome.action as SignalAction].label
 }
@@ -44,6 +112,8 @@ function InstrumentDetail({ result }: { result: BacktestResult }) {
     date: new Date(p.date).toLocaleDateString(),
     'Simply holding': p.buyAndHold,
     'Following the signal': p.strategy,
+    'Golden cross': p.goldenCross,
+    'Monthly trend check': p.monthlyTrend,
   }))
   const horizonFor = (o: SignalOutcome) => o.horizons.find((h) => h.horizonDays === OUTCOME_HORIZON_DAYS)
   const spread = result.buyMinusSell30D
@@ -69,6 +139,8 @@ function InstrumentDetail({ result }: { result: BacktestResult }) {
               <ReferenceLine y={100} stroke="#999" />
               <Line type="monotone" dataKey="Simply holding" stroke="#000000" strokeWidth={2} dot={false} isAnimationActive={false} />
               <Line type="monotone" dataKey="Following the signal" stroke="#1976d2" strokeWidth={2} dot={false} isAnimationActive={false} />
+              <Line type="monotone" dataKey="Golden cross" stroke="#2e7d32" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+              <Line type="monotone" dataKey="Monthly trend check" stroke="#ef6c00" strokeWidth={1.5} dot={false} isAnimationActive={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -211,6 +283,8 @@ export default function TrackRecord() {
         <p style={{ color: COLORS.muted, fontSize: '13px', marginTop: '8px' }}>Not enough history to test: {notTested.map((r) => r.symbol).join(', ')}.</p>
       )}
       <p style={{ color: COLORS.muted, fontSize: '13px', marginTop: '8px' }}>Click an instrument for its details.</p>
+
+      {tested.length > 0 && <SlowerRules results={tested} />}
 
       {detail && <InstrumentDetail result={detail} />}
 

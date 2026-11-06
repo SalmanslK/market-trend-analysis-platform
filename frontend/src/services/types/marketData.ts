@@ -197,6 +197,16 @@ export interface SignalOutcome {
   horizons: HorizonOutcome[];
 }
 
+export type TradingRuleKey = 'signal' | 'goldenCross' | 'monthlyTrend';
+
+export interface RuleResult {
+  key: TradingRuleKey;
+  performance: Performance;
+  verdict: BacktestVerdict;
+  firstHalfAnnual: number;
+  secondHalfAnnual: number;
+}
+
 export interface BacktestResult {
   symbol: string;
   name: string;
@@ -216,5 +226,8 @@ export interface BacktestResult {
   buyMinusSell30D?: number;
   buyMinusSell30DFirstHalf?: number;
   buyMinusSell30DSecondHalf?: number;
-  equityCurve: { date: string; buyAndHold: number; strategy: number }[];
+  holdingFirstHalfAnnual: number;
+  holdingSecondHalfAnnual: number;
+  rules: RuleResult[];
+  equityCurve: { date: string; buyAndHold: number; strategy: number; goldenCross: number; monthlyTrend: number }[];
 }

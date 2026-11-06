@@ -8,7 +8,7 @@ const sections: { title: string; terms: GlossaryKey[] }[] = [
   { title: 'Prices and performance', terms: ['price', 'change', 'range52w'] },
   { title: 'Risk', terms: ['volatility', 'drawdown'] },
   { title: 'Chart lines and indicators', terms: ['sma20', 'bollinger', 'trend', 'rsi', 'macd'] },
-  { title: 'Signals', terms: ['signal', 'score', 'backtest', 'annualReturn', 'tradingCost'] },
+  { title: 'Signals', terms: ['signal', 'score', 'backtest', 'goldenCross', 'monthlyTrend', 'annualReturn', 'tradingCost'] },
   { title: 'News', terms: ['newsMood', 'confidence', 'background', 'bigMoves'] },
 ]
 

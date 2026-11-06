@@ -76,6 +76,16 @@ export const glossary = {
     what: 'A replay of the signal over past prices: invest after a Buy signal, move to cash after a Sell signal, and pay a cost on every trade. Each day uses only the prices known on that day, and trades happen at the next day\'s close.',
     howToRead: 'Compare it with "holding": buying once and doing nothing. If following the signal earned less, the signal would not have been worth acting on in that period. Past results don\'t guarantee future ones.',
   },
+  goldenCross: {
+    title: 'Golden cross',
+    what: 'A slow trend rule: stay invested while the 50-day average price is above the 200-day average, and hold cash when it is below.',
+    howToRead: 'It only reacts to long trends, so it trades about once or twice a year. It usually gets out after a fall has started and back in after a rise has started.',
+  },
+  monthlyTrend: {
+    title: 'Monthly trend check',
+    what: 'A slow trend rule: once a month, on the first trading day, invest if the price is above its 200-day average, otherwise hold cash.',
+    howToRead: 'Checking only once a month avoids reacting to daily noise. Between checks, nothing changes, even if the price moves a lot.',
+  },
   annualReturn: {
     title: 'Return per year',
     what: 'The steady yearly growth that would turn the starting amount into the final amount.',

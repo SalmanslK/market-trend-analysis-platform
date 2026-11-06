@@ -163,9 +163,54 @@ public class BacktestService : IBacktestService
         result.BuyMinusSell30DFirstHalf = BuyMinusSell(dates, closes, scores, 0, middle);
         result.BuyMinusSell30DSecondHalf = BuyMinusSell(dates, closes, scores, middle, dates.Count);
 
-        result.EquityCurve = ThinCurve(dates, buyAndHold, strategy.Equity);
+        // Slower trend rules, fixed in advance, on the same dates and with the same costs as the signal
+        var byDate = prices.OrderBy(p => p.DateTime).ToList();
+        var sma50 = _indicators.ComputeSma(byDate, SignalRules.MediumTrendPeriod);
+        var sma200 = _indicators.ComputeSma(byDate, SignalRules.LongTrendPeriod);
+        var medium = dates.Select(d => sma50[d]!.Value).ToList();
+        var longTerm = dates.Select(d => sma200[d]!.Value).ToList();
+        var goldenCross = Simulate(dates, closes, GoldenCrossScores(medium, longTerm), cost, cashInterest: 0);
+        var monthlyTrend = Simulate(dates, closes, MonthlyTrendScores(dates, days.Select(d => d.Price).ToList(), longTerm), cost, cashInterest: 0);
+
+        var firstHalfYears = (dates[middle] - dates[0]).TotalDays / 365.25;
+        var secondHalfYears = (dates[^1] - dates[middle]).TotalDays / 365.25;
+        double Annual(double[] equity, int from, int to, double spanYears) => (Math.Pow(equity[to] / equity[from], 1 / spanYears) - 1) * 100;
+
+        result.HoldingFirstHalfAnnual = (decimal)Annual(buyAndHold, 0, middle, firstHalfYears);
+        result.HoldingSecondHalfAnnual = (decimal)Annual(buyAndHold, middle, dates.Count - 1, secondHalfYears);
+
+        RuleResultDto Rule(string key, (double[] Equity, int Trades, decimal TimeInvested) run)
+        {
+            var performance = Performance(run.Equity, years, run.Trades, run.TimeInvested);
+            return new RuleResultDto
+            {
+                Key = key,
+                Performance = performance,
+                Verdict = VerdictFor(performance, result.BuyAndHold),
+                FirstHalfAnnual = (decimal)Annual(run.Equity, 0, middle, firstHalfYears),
+                SecondHalfAnnual = (decimal)Annual(run.Equity, middle, dates.Count - 1, secondHalfYears),
+            };
+        }
+
+        result.Rules = new List<RuleResultDto> { Rule("signal", strategy), Rule("goldenCross", goldenCross), Rule("monthlyTrend", monthlyTrend) };
+        result.EquityCurve = ThinCurve(dates, buyAndHold, strategy.Equity, goldenCross.Equity, monthlyTrend.Equity);
         return result;
     }
+
+    /// <summary>
+    /// Golden cross: invested while the 50-period average is above the 200-period average.
+    /// </summary>
+    public static List<int> GoldenCrossScores(IReadOnlyList<decimal> mediumAverages, IReadOnlyList<decimal> longAverages) =>
+        mediumAverages.Select((medium, i) => SignalRules.GoldenCross(medium, longAverages[i])).ToList();
+
+    /// <summary>
+    /// Monthly trend check: on the first trading day of each month, invested if the price is above its 200-period
+    /// average, otherwise in cash. A zero score on all other days keeps the position, so it rarely trades.
+    /// </summary>
+    public static List<int> MonthlyTrendScores(IReadOnlyList<DateTime> dates, IReadOnlyList<decimal> prices, IReadOnlyList<decimal> longAverages) =>
+        dates.Select((date, i) => i == 0 || date.Month != dates[i - 1].Month || date.Year != dates[i - 1].Year
+            ? SignalRules.Trend(prices[i], longAverages[i])
+            : 0).ToList();
 
     /// <summary>
     /// Invested after a positive score, in cash after a negative one, unchanged on a zero score. A signal from
@@ -319,14 +364,21 @@ public class BacktestService : IBacktestService
         return buys.Count > 0 && sells.Count > 0 ? (decimal)(buys.Average() - sells.Average()) : null;
     }
 
-    private static List<EquityPointDto> ThinCurve(List<DateTime> dates, double[] buyAndHold, double[] strategy)
+    private static List<EquityPointDto> ThinCurve(List<DateTime> dates, double[] buyAndHold, double[] strategy, double[] goldenCross, double[] monthlyTrend)
     {
         var step = Math.Max(1, dates.Count / MaxCurvePoints);
         var curve = new List<EquityPointDto>();
         for (int i = 0; i < dates.Count; i++)
         {
             if (i % step == 0 || i == dates.Count - 1)
-                curve.Add(new EquityPointDto { Date = dates[i], BuyAndHold = (decimal)(buyAndHold[i] * 100), Strategy = (decimal)(strategy[i] * 100) });
+                curve.Add(new EquityPointDto
+                {
+                    Date = dates[i],
+                    BuyAndHold = (decimal)(buyAndHold[i] * 100),
+                    Strategy = (decimal)(strategy[i] * 100),
+                    GoldenCross = (decimal)(goldenCross[i] * 100),
+                    MonthlyTrend = (decimal)(monthlyTrend[i] * 100),
+                });
         }
         return curve;
     }

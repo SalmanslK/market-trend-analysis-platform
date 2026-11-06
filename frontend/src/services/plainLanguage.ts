@@ -259,3 +259,48 @@ export function describeBacktests(results: BacktestResult[], costPercent: number
   if (short.length > 0) sentences.push(`${short.length > 1 ? `${short.slice(0, -1).join(', ')} and ${short[short.length - 1]}` : short[0]} ${short.length > 1 ? 'have' : 'has'} too little history to judge.`)
   return sentences
 }
+
+// Differences smaller than this, in percentage points a year, are too small to call a win or a loss
+const MEANINGFUL_ANNUAL_DIFFERENCE = 1
+
+export const ruleNames: Record<'signal' | 'goldenCross' | 'monthlyTrend', string> = {
+  signal: 'Current signal',
+  goldenCross: 'Golden cross',
+  monthlyTrend: 'Monthly trend check',
+}
+
+/** Compares a rule with holding, treating very small differences as a tie. */
+export function compareWithHolding(ruleAnnual: number, holdingAnnual: number): 'ahead' | 'tied' | 'behind' {
+  const difference = ruleAnnual - holdingAnnual
+  if (Math.abs(difference) < MEANINGFUL_ANNUAL_DIFFERENCE) return 'tied'
+  return difference > 0 ? 'ahead' : 'behind'
+}
+
+/** The overall finding for the slower rules, counted only on instruments with enough history. */
+export function describeSlowerRules(results: BacktestResult[]): string[] {
+  const reliable = results.filter((r) => r.hasEnoughData && r.years >= MIN_RELIABLE_YEARS && r.rules.length > 0)
+  if (reliable.length === 0) return []
+
+  const annual = (r: BacktestResult, key: 'signal' | 'goldenCross' | 'monthlyTrend') =>
+    r.rules.find((x) => x.key === key)!.performance.annualReturn
+  const trades = (r: BacktestResult, key: 'signal' | 'goldenCross' | 'monthlyTrend') =>
+    r.rules.find((x) => x.key === key)!.performance.trades / r.years
+
+  const count = (key: 'goldenCross' | 'monthlyTrend', result: 'ahead' | 'tied' | 'behind') =>
+    reliable.filter((r) => compareWithHolding(annual(r, key), r.buyAndHold.annualReturn) === result).length
+  const beatSignal = (key: 'goldenCross' | 'monthlyTrend') =>
+    reliable.filter((r) => annual(r, key) > annual(r, 'signal')).length
+  const average = (key: 'signal' | 'goldenCross' | 'monthlyTrend') =>
+    Math.round(reliable.reduce((sum, r) => sum + trades(r, key), 0) / reliable.length)
+
+  const summary = (key: 'goldenCross' | 'monthlyTrend') =>
+    `${ruleNames[key]} beat the current signal on ${beatSignal(key)} of ${reliable.length} instruments. Against holding it was clearly ahead on ${count(key, 'ahead')}, about the same on ${count(key, 'tied')} and behind on ${count(key, 'behind')}.`
+
+  return [
+    `Counting the ${reliable.length} instruments with at least ${MIN_RELIABLE_YEARS} years of history:`,
+    summary('goldenCross'),
+    summary('monthlyTrend'),
+    `The reason is mainly fewer trades: about ${Math.max(average('goldenCross'), average('monthlyTrend'))} a year instead of about ${average('signal')}, so far less is lost to costs and short-lived moves.`,
+    'So slower rules avoided most of the current signal\'s damage, but they have not reliably beaten simply holding.',
+  ]
+}

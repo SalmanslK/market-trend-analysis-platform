@@ -32,6 +32,9 @@ public static class SignalRules
         _ => 0,
     };
 
+    /// <summary>Golden cross: the 50-period average above (+1) or below (-1) the 200-period average.</summary>
+    public static int GoldenCross(decimal mediumAverage, decimal longAverage) => mediumAverage >= longAverage ? 1 : -1;
+
     /// <summary>Where the price sits between the bands: 0 = lower band, 1 = upper band. Null if the bands have no width.</summary>
     public static decimal? PercentB(decimal price, decimal upperBand, decimal lowerBand) =>
         upperBand > lowerBand ? (price - lowerBand) / (upperBand - lowerBand) : null;

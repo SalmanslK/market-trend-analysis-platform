@@ -40,8 +40,30 @@ public class BacktestResultDto
     public decimal? BuyMinusSell30DFirstHalf { get; set; }
     public decimal? BuyMinusSell30DSecondHalf { get; set; }
 
+    /// <summary>Holding's return per year in each half of the period, to compare with each rule's.</summary>
+    public decimal HoldingFirstHalfAnnual { get; set; }
+    public decimal HoldingSecondHalfAnnual { get; set; }
+
+    /// <summary>The current signal and the slower trend rules, tested over the same dates with the same costs.</summary>
+    public List<RuleResultDto> Rules { get; set; } = new();
+
     /// <summary>Growth of 100 under each approach, thinned to at most a few hundred points for charting.</summary>
     public List<EquityPointDto> EquityCurve { get; set; } = new();
+}
+
+/// <summary>
+/// One trading rule's result. Rules were chosen before their results were seen: the current signal plus two
+/// standard slower trend rules. Comparing several rules on one history still risks picking a lucky one.
+/// </summary>
+public class RuleResultDto
+{
+    /// <summary>signal, goldenCross or monthlyTrend.</summary>
+    public string Key { get; set; } = string.Empty;
+    public PerformanceDto Performance { get; set; } = new();
+    /// <summary>Helped, LowerRisk or DidNotHelp, compared with holding.</summary>
+    public string Verdict { get; set; } = "DidNotHelp";
+    public decimal FirstHalfAnnual { get; set; }
+    public decimal SecondHalfAnnual { get; set; }
 }
 
 public class PerformanceDto
@@ -83,4 +105,6 @@ public class EquityPointDto
     public DateTime Date { get; set; }
     public decimal BuyAndHold { get; set; }
     public decimal Strategy { get; set; }
+    public decimal GoldenCross { get; set; }
+    public decimal MonthlyTrend { get; set; }
 }

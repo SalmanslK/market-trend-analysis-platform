@@ -195,6 +195,13 @@ Result on the data as of Nov 2026, at 0.5% per trade: no instrument beat holding
 return, and the other 8 did worse. With no costs, 4 of 9 came out slightly ahead, so frequent trading is a large part
 of the shortfall. The rules were deliberately not tuned to improve this, since that would only fit them to the past.
 
+Two slower rules, fixed before seeing their results, are tested the same way: **golden cross** (invested while the
+50-period average is above the 200-period) and **monthly trend check** (on the first trading day of each month,
+invested if the price is above its 200-period average). At 0.5% per trade both beat the current signal on 8 of 9
+instruments by trading far less, but mostly matched or trailed holding (KSE-100: golden cross +26.8% a year against
++26.6% holding and +13.4% for the signal). They make few trades, so this is weak evidence. The app's live signal is
+unchanged.
+
 ## Nice to have
 
 - **Dividend-adjusted fund returns**: needs payout data for the Meezan funds

@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useIsNarrow } from '../../services/useIsNarrow'
 
 const LINKS = [
   { path: '/', label: 'Overview' },
@@ -13,6 +15,10 @@ const LINKS = [
 
 export default function Navigation() {
   const location = useLocation()
+  // On phones the nine links would take four rows, so they fold behind a menu button
+  const narrow = useIsNarrow()
+  const [menuOpen, setMenuOpen] = useState(false)
+  useEffect(() => setMenuOpen(false), [location.pathname])
 
   const isActive = (path: string) => {
     if (path === '/') {
@@ -45,7 +51,25 @@ export default function Navigation() {
           Market Analytics
         </Link>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginLeft: 'auto' }}>
+        {narrow && (
+          <button
+            type="button"
+            aria-expanded={menuOpen}
+            aria-controls="main-menu"
+            onClick={() => setMenuOpen(!menuOpen)}
+            style={{ marginLeft: 'auto', padding: '0.4rem 0.8rem', backgroundColor: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '4px', fontSize: '15px', cursor: 'pointer' }}
+          >
+            {menuOpen ? '✕ Close' : `☰ ${LINKS.find(({ path }) => isActive(path))?.label ?? 'Menu'}`}
+          </button>
+        )}
+
+        {(!narrow || menuOpen) && (
+        <div
+          id="main-menu"
+          style={narrow
+            ? { display: 'flex', flexDirection: 'column', width: '100%', gap: '0.25rem' }
+            : { display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginLeft: 'auto' }}
+        >
           {LINKS.map(({ path, label }) => (
             <Link
               key={path}
@@ -62,6 +86,7 @@ export default function Navigation() {
             </Link>
           ))}
         </div>
+        )}
       </div>
     </nav>
   )

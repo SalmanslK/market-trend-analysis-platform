@@ -53,7 +53,8 @@ From the `backend` folder:
 dotnet ef database update --project MarketAnalytics.Infrastructure --startup-project MarketAnalytics.Api
 ```
 
-This creates the tables and seeds the 9 instruments.
+This creates the tables and seeds the instruments. After that, the API applies any new migrations itself when it
+starts, so pulling new code needs no manual database step.
 
 ## 4. Load market data (Worker)
 
@@ -62,7 +63,8 @@ cd backend/MarketAnalytics.Worker
 dotnet run
 ```
 
-The Worker fetches data for every instrument on startup, then again every 24 hours while it keeps running.
+The Worker fetches data for every instrument on startup, then checks again every 6 hours while it keeps running (each
+check only fetches what is new; indices publish after the close and fund NAVs in the evening or next morning).
 The first run loads about a year of history: from sarmaaya.pk for KSE100, KMI30, KMIF, MIF, MBF, MGF, USDPKR
 and GOLDPK, and from the free, keyless [fawazahmed0 currency-api](https://github.com/fawazahmed0/exchange-api)
 daily snapshots for **GOLDINT (XAU/USD)**. (Investing.com, the original GOLDINT source, blocks automated
@@ -103,6 +105,12 @@ and website in the background, and opens http://localhost:3000. It keeps running
 anything already running is left alone. **`stop-app.cmd`** stops it all. Logs are in the `logs` folder.
 
 It doesn't start automatically after a reboot, and .NET updates may close the API and Worker; run `start-app.cmd` again.
+If prices are more than 4 days old, the Overview and instrument pages show a warning. `GET /api/health` reports whether
+the database answers and the newest price date.
+
+**Backups:** `start-app` backs up the database (prices, news, payouts) to the `backups` folder once a day and keeps the
+newest 14; run `scripts/backup-db.ps1` for one now. Restore with
+`pg_restore -h localhost -U postgres -d MarketAnalytics --clean backups/<file>.dump`.
 
 ## Tests
 
@@ -113,6 +121,9 @@ dotnet test
 
 Covers the indicator maths (Bollinger, EMA, RSI, MACD, SMA, weekly resampling) and the analytics service
 (returns, drawdown, volatility, spike filter, signal scoring).
+
+Website: `cd frontend`, then `npm run lint`, `npm test` (Vitest) and `npm run build`. GitHub Actions
+(`.github/workflows/ci.yml`) runs the backend tests and these three on every push to `main` and every pull request.
 
 ## Pages
 
@@ -184,7 +195,13 @@ most -20), scored as their average; otherwise Hold, which keeps any existing pos
 by the live signals and the backtest. All three signals display on the same -100 to +100 scale.
 
 **Long-term trend**, shown beside them: Up while the 50-period average is above the 200-period average (golden cross),
-otherwise Down, with the date it last changed.
+otherwise Down, with the date it last changed. The averages cross weeks after a turn, so it also shows a phase:
+**recovering** when the trend is Down but the price is back above both averages, **weakening** when it is Up but the
+price is below both.
+
+**Shared news:** instruments linked to the same stories (all Pakistani stock news counts for KSE-100 and KMI-30, the
+Meezan stock funds share their searches, and both gold prices share gold news) get identical news signals. The API lists
+them in `newsSignal.sharedWith`, and the pages say they are one reading, not separate ones.
 
 **All metrics** (`TechnicalMetrics`), on each instrument's page: SMA and EMA (10, 20, 50, 100, 200); RSI, Stochastic RSI,
 Stochastic %K/%D, Williams %R, CCI, MACD, PPO, rate of change, momentum, TRIX; Bollinger bands, %B and bandwidth, Donchian
@@ -271,7 +288,6 @@ Fund figures count payouts (added Nov 2026; holding rose from +21.8% to +22.6%, 
 
 - **Alerts**: notify when an instrument's signal changes
 
-- **Error handling**: global exception middleware and more detailed error responses
 - **Validation**: FluentValidation for API request models
-- **Testing**: unit tests for indicator/resampling services, API integration tests, frontend component tests
+- **Testing**: API integration tests, frontend component tests
 - **Logging**: structured logging (Serilog)

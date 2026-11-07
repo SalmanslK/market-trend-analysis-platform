@@ -35,6 +35,17 @@ public static class SignalRules
     /// <summary>Golden cross: the 50-period average above (+1) or below (-1) the 200-period average.</summary>
     public static int GoldenCross(decimal mediumAverage, decimal longAverage) => mediumAverage >= longAverage ? 1 : -1;
 
+    /// <summary>
+    /// The averages cross weeks after a turn, so the trend can lag the price: "Recovering" when the trend is Down
+    /// but the price is above both averages, "Weakening" when it is Up but the price is below both, otherwise null.
+    /// </summary>
+    public static string? TrendPhase(string direction, decimal price, decimal mediumAverage, decimal longAverage) => direction switch
+    {
+        "Down" when price > mediumAverage && price > longAverage => "Recovering",
+        "Up" when price < mediumAverage && price < longAverage => "Weakening",
+        _ => null,
+    };
+
     /// <summary>Where the price sits between the bands: 0 = lower band, 1 = upper band. Null if the bands have no width.</summary>
     public static decimal? PercentB(decimal price, decimal upperBand, decimal lowerBand) =>
         upperBand > lowerBand ? (price - lowerBand) / (upperBand - lowerBand) : null;

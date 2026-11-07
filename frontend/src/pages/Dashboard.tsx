@@ -6,8 +6,9 @@ import { InstrumentAnalyticsDto, NewsSentimentSummary, SignalAction } from '../s
 import { GlossaryKey } from '../services/glossary'
 import { describeMarket } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
+import Tip from '../components/help/Tip'
 import PlainSummary from '../components/help/PlainSummary'
-import { changeColor, COLORS, formatDate, formatNumber, formatPercent, signalStyles, TREND_DISCLAIMER } from '../services/format'
+import { changeColor, COLORS, formatDate, formatNumber, formatPercent, signalStyles, TREND_DISCLAIMER, daysSince, STALE_AFTER_DAYS } from '../services/format'
 import ScaledSignalBadge from '../components/signals/ScaledSignalBadge'
 import SignalBadge from '../components/signals/SignalBadge'
 import TrendBadge from '../components/trend/TrendBadge'
@@ -88,13 +89,20 @@ export default function Dashboard() {
       <h1>Market Overview</h1>
       <p style={{ color: COLORS.muted, margin: '6px 0 20px' }}>
         {latestDate ? `Latest prices up to ${formatDate(latestDate)}. ` : ''}
-        Click a column to sort, an instrument for its charts and news, or hover a signal to see why.
+        Click a column to sort, an instrument for its charts and news, or hover or tap a signal to see why.
       </p>
+
+      {latestDate && daysSince(latestDate) > STALE_AFTER_DAYS && (
+        <div role="alert" style={{ padding: '12px 16px', marginBottom: '16px', backgroundColor: '#fff3e0', borderLeft: '4px solid #e65100', borderRadius: '6px', lineHeight: 1.45 }}>
+          <strong>Prices are {daysSince(latestDate)} days old.</strong> The Worker that fetches new prices may not be running.
+          Start the app with start-app.cmd, or see the logs folder. Signals below are based on old prices.
+        </div>
+      )}
 
       {analytics.length > 0 && (
         <PlainSummary
           points={describeMarket(analytics, moods)}
-          footer={<>New here? The <Link to="/guide" style={{ color: COLORS.link }}>Guide</Link> explains every number in plain words, or hover any ⓘ.</>}
+          footer={<>New here? The <Link to="/guide" style={{ color: COLORS.link }}>Guide</Link> explains every number in plain words, or tap any ⓘ.</>}
         />
       )}
 
@@ -152,7 +160,13 @@ export default function Dashboard() {
                   </td>
                   <td style={cellStyle}>
                     {formatNumber(a.lastPrice)}
-                    <div style={{ fontSize: '12px', color: COLORS.muted }}>{formatDate(a.lastDate)}</div>
+                    {latestDate && daysSince(a.lastDate) - daysSince(latestDate) > STALE_AFTER_DAYS + 1 ? (
+                      <Tip text={`No new price since ${formatDate(a.lastDate)}, while others are updated to ${formatDate(latestDate)}. Its source may have stopped publishing.`}>
+                        <div style={{ fontSize: '12px', color: '#e65100', fontWeight: 'bold' }}>⚠ {formatDate(a.lastDate)}</div>
+                      </Tip>
+                    ) : (
+                      <div style={{ fontSize: '12px', color: COLORS.muted }}>{formatDate(a.lastDate)}</div>
+                    )}
                   </td>
                   {[a.change1D, a.change1M, a.changeYtd, a.change1Y].map((value, i) => (
                     <td key={i} style={{ ...cellStyle, color: changeColor(value) }}>{formatPercent(value)}</td>
@@ -178,7 +192,7 @@ export default function Dashboard() {
                     <Link to={`/news?symbol=${a.symbol}`} style={{ textDecoration: 'none' }}>
                       <ScaledSignalBadge
                         signal={a.newsSignal}
-                        title={`${a.newsSignal.articles} stories in the last 7 days, ${a.newsSignal.newsConfidence}% sure. Click to read them.`}
+                        title={`${a.newsSignal.articles} stories in the last 7 days, ${a.newsSignal.newsConfidence}% sure.${a.newsSignal.sharedWith.length ? ` Same news as ${a.newsSignal.sharedWith.join(', ')}, so this is one reading, not ${a.newsSignal.sharedWith.length + 1} separate ones.` : ''} Click to read them, or open the News page.`}
                       />
                     </Link>
                   </td>

@@ -20,7 +20,7 @@ import InstrumentNews from '../components/news/InstrumentNews'
 import { describeInstrument } from '../services/plainLanguage'
 import { intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences } from '../services/preferences'
-import { changeColor, COLORS, formatDate, formatNumber, formatPercent } from '../services/format'
+import { changeColor, COLORS, formatDate, formatNumber, formatPercent, daysSince, STALE_AFTER_DAYS } from '../services/format'
 
 export default function InstrumentView() {
   // The URL is the source of truth for the selected instrument, so links between instruments work
@@ -91,7 +91,11 @@ export default function InstrumentView() {
           <span style={{ fontSize: '18px', color: changeColor(analytics.change1D) }}>
             {formatPercent(analytics.change1D)} <span style={{ fontSize: '13px', color: COLORS.muted }}>1D</span>
           </span>
-          <span style={{ color: COLORS.muted }}>as of {formatDate(analytics.lastDate)}</span>
+          {daysSince(analytics.lastDate) > STALE_AFTER_DAYS ? (
+            <span style={{ color: '#e65100', fontWeight: 'bold' }}>⚠ as of {formatDate(analytics.lastDate)}, {daysSince(analytics.lastDate)} days ago</span>
+          ) : (
+            <span style={{ color: COLORS.muted }}>as of {formatDate(analytics.lastDate)}</span>
+          )}
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: COLORS.muted, fontSize: '14px' }}>
             Combined signal <ScaledSignalBadge signal={analytics.combinedSignal} large />
           </span>

@@ -30,7 +30,7 @@ export default function AllMetrics({ analytics }: AllMetricsProps) {
     <section style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px', marginBottom: '12px' }}>
       <h2 style={{ fontSize: '1.2rem' }}>All metrics</h2>
       <p style={{ color: COLORS.muted, fontSize: '13px', margin: '4px 0 12px' }}>
-        The standard measures used by traders and investors worldwide, on daily closing prices. Hover or tap any ⓘ for what it means.
+        The standard measures used by traders and investors worldwide, on daily closing prices. Tap or hover any ⓘ for what it means.
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(480px, 100%), 1fr))', gap: '16px' }}>

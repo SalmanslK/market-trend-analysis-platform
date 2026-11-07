@@ -173,7 +173,7 @@ export function describeInstrument(a: InstrumentAnalyticsDto, mood?: NewsSentime
 
   const labels: Record<SignalAction, string> = { StrongBuy: 'Strong Buy', Buy: 'Buy', Hold: 'Hold', Sell: 'Sell', StrongSell: 'Strong Sell' }
   const newsText = a.newsSignal.articles >= 3 ? labels[a.newsSignal.action] : `Hold (only ${a.newsSignal.articles} recent ${a.newsSignal.articles === 1 ? 'story' : 'stories'})`
-  const combinedText = a.combinedSignal.action === 'Hold' ? 'Hold, because technical and news don\'t clearly agree' : labels[a.combinedSignal.action]
+  const combinedText = a.combinedSignal.action === 'Hold' ? 'Hold (stay as you are), because technical and news don\'t clearly agree' : labels[a.combinedSignal.action]
   points.unshift(`Combined signal: ${combinedText}. Technical says ${labels[a.signal.action]}, news says ${newsText}.`)
 
   return {
@@ -214,11 +214,17 @@ export function describeMarket(all: InstrumentAnalyticsDto[], moods: NewsSentime
   const leaning = (action: string) => action === 'StrongBuy' || action === 'Buy' ? 'buy' : action === 'StrongSell' || action === 'Sell' ? 'sell' : 'hold'
   const buys = all.filter((a) => leaning(a.combinedSignal.action) === 'buy').length
   const sells = all.filter((a) => leaning(a.combinedSignal.action) === 'sell').length
-  sentences.push(`Combined signals (Buy or Sell only when technical and news agree): ${buys} of ${all.length} lean towards Buy, ${sells} towards Sell and ${all.length - buys - sells} are Hold.`)
+  sentences.push(`Combined signals (Buy or Sell only when technical and news agree): ${buys} of ${all.length} lean towards Buy, ${sells} towards Sell and ${all.length - buys - sells} are Hold (stay as you are).`)
 
   const trendsUp = all.filter((a) => a.longTermTrend.direction === 'Up').length
   const trendsDown = all.filter((a) => a.longTermTrend.direction === 'Down').length
-  sentences.push(`The long-term trend is up for ${trendsUp} of ${all.length} instruments and down for ${trendsDown}. It reacts slowly, so it can lag recent moves.`)
+  const recovering = all.filter((a) => a.longTermTrend.phase === 'Recovering').map((a) => a.symbol)
+  const weakening = all.filter((a) => a.longTermTrend.phase === 'Weakening').map((a) => a.symbol)
+  const phases = [
+    recovering.length ? `${recovering.join(', ')} ${recovering.length === 1 ? 'is' : 'are'} already recovering (price back above both averages)` : '',
+    weakening.length ? `${weakening.join(', ')} ${weakening.length === 1 ? 'is' : 'are'} already weakening (price below both averages)` : '',
+  ].filter(Boolean).join('; ')
+  sentences.push(`The long-term trend is up for ${trendsUp} of ${all.length} instruments and down for ${trendsDown}. It reacts slowly, so it can lag recent moves${phases ? `: ${phases}` : ''}.`)
 
   const scored = moods.filter((m) => m.articles > 0)
   const positiveMood = scored.filter((m) => m.label === 'Positive').map((m) => m.symbol)
@@ -232,6 +238,15 @@ export function describeMarket(all: InstrumentAnalyticsDto[], moods: NewsSentime
     if (negativeMood.length) parts.push(`negative for ${negativeMood.map((s) => name(s, 'Negative')).join(', ')}`)
     sentences.push(`This week's news sounds ${parts.join(' and ')}.`)
   }
+
+  // Instruments linked to the same stories have one shared reading, not separate ones
+  const groups = new Map<string, string[]>()
+  for (const a of all.filter((a) => a.newsSignal.sharedWith.length)) {
+    const key = [a.symbol, ...a.newsSignal.sharedWith].sort().join(', ')
+    groups.set(key, key.split(', '))
+  }
+  for (const group of groups.values())
+    sentences.push(`${group.join(', ')} read the same news, so their news signals are one reading, not ${group.length} separate ones.`)
 
   return sentences
 }

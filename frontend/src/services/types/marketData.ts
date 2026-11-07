@@ -79,6 +79,8 @@ export interface LongTermTrend {
   direction: 'Up' | 'Down' | 'Unknown';
   /** The day the trend last changed; absent if it hasn't changed in the stored history */
   since?: string;
+  /** The price has already turned against the trend; the trend changes only when the averages cross */
+  phase?: 'Recovering' | 'Weakening';
 }
 
 export interface Metric {
@@ -98,6 +100,8 @@ export interface ScaledSignal {
   score: number;
   articles: number;
   newsConfidence: number;
+  /** Other instruments with exactly the same news reading (they are linked to the same stories) */
+  sharedWith: string[];
 }
 
 export interface InstrumentAnalyticsDto {

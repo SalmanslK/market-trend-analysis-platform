@@ -12,13 +12,15 @@ namespace MarketAnalytics.Worker;
 /// <summary>
 /// Background service for scheduled data updates.
 /// Matches Python logic: update_instrument_data() - fetches incremental data for each instrument.
-/// Runs daily to update market data.
+/// Checks every few hours: each check only fetches what is new, and sources publish at different times
+/// (indices after the close, fund NAVs in the evening or next morning), so a daily run started at an
+/// arbitrary time could leave prices up to a day behind, or miss a day while the PC sleeps.
 /// </summary>
 public class DataUpdateBackgroundService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<DataUpdateBackgroundService> _logger;
-    private readonly TimeSpan _updateInterval = TimeSpan.FromHours(24); // Daily updates
+    private readonly TimeSpan _updateInterval = TimeSpan.FromHours(6);
 
     public DataUpdateBackgroundService(
         IServiceProvider serviceProvider,
@@ -159,16 +161,17 @@ public class DataUpdateBackgroundService : BackgroundService
             CreatedAt = DateTime.UtcNow
         }).ToList();
 
-        // Bulk upsert (handles duplicates) - matches Python: concat + drop_duplicates
-        // Note: EF Core will handle unique constraint violations, but we'll use a more explicit approach
-        foreach (var pricePoint in pricePoints)
-        {
-            var existing = await dbContext.PricePoints
-                .FirstOrDefaultAsync(
-                    p => p.InstrumentId == pricePoint.InstrumentId && p.DateTime == pricePoint.DateTime,
-                    cancellationToken);
+        // Upsert (matches Python: concat + drop_duplicates, keep="last"). Existing rows in the fetched range are
+        // loaded in one query instead of one per price
+        var from = pricePoints.Min(p => p.DateTime);
+        var to = pricePoints.Max(p => p.DateTime);
+        var existingByDate = await dbContext.PricePoints
+            .Where(p => p.InstrumentId == instrument.Id && p.DateTime >= from && p.DateTime <= to)
+            .ToDictionaryAsync(p => p.DateTime, cancellationToken);
 
-            if (existing != null)
+        foreach (var pricePoint in pricePoints.GroupBy(p => p.DateTime).Select(g => g.Last()))
+        {
+            if (existingByDate.TryGetValue(pricePoint.DateTime, out var existing))
             {
                 // Update existing (matches Python: keep="last")
                 existing.Price = pricePoint.Price;

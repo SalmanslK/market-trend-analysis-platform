@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { NewsArticle } from '../../services/types/marketData'
 import { changeColor, COLORS, formatPercent } from '../../services/format'
+import Tip from '../help/Tip'
 import SentimentChip from './SentimentChip'
 
 interface ArticleCardProps {
@@ -9,7 +10,7 @@ interface ArticleCardProps {
   symbol?: string
 }
 
-export function timeAgo(value: string): string {
+function timeAgo(value: string): string {
   const minutes = Math.round((Date.now() - new Date(value).getTime()) / 60000)
   if (minutes < 60) return `${Math.max(minutes, 1)} min ago`
   const hours = Math.round(minutes / 60)
@@ -59,13 +60,11 @@ export default function ArticleCard({ article, symbol }: ArticleCardProps) {
           </span>
         )}
         {article.topics.map((topic) => (
-          <span
-            key={topic.key}
-            title={topic.whyItMatters}
-            style={{ padding: '1px 8px', borderRadius: '10px', backgroundColor: '#eceff1', color: '#455a64', cursor: 'help' }}
-          >
-            {topic.label}
-          </span>
+          <Tip key={topic.key} text={topic.whyItMatters}>
+            <span style={{ padding: '1px 8px', borderRadius: '10px', backgroundColor: '#eceff1', color: '#455a64', cursor: 'help' }}>
+              {topic.label}
+            </span>
+          </Tip>
         ))}
         {others.map((i) => (
           <Link

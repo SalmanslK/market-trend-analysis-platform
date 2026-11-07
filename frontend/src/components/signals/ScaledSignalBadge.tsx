@@ -1,9 +1,10 @@
 import { ScaledSignal } from '../../services/types/marketData'
 import { signalStyles } from '../../services/format'
+import Tip from '../help/Tip'
 
 interface ScaledSignalBadgeProps {
   signal: ScaledSignal
-  /** Explains the reading on hover */
+  /** Explains the reading on hover or tap */
   title?: string
   large?: boolean
 }
@@ -13,8 +14,8 @@ export default function ScaledSignalBadge({ signal, title, large = false }: Scal
   const style = signalStyles[signal.action]
 
   return (
+    <Tip text={title}>
     <span
-      title={title}
       style={{
         display: 'inline-block',
         padding: large ? '6px 14px' : '3px 10px',
@@ -32,5 +33,6 @@ export default function ScaledSignalBadge({ signal, title, large = false }: Scal
         {signal.score > 0 ? '+' : ''}{signal.score}
       </span>
     </span>
+    </Tip>
   )
 }

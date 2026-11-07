@@ -1,3 +1,4 @@
+using MarketAnalytics.Application.DTOs;
 using MarketAnalytics.Application.Services;
 using MarketAnalytics.Domain.ValueObjects;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -138,5 +139,28 @@ public class MarketAnalyticsServiceTests
         Assert.DoesNotContain(a.Signal.Reasons, r => r.Indicator == "Price vs 200-day average");
         Assert.Contains(a.Signal.Reasons, r => r.Indicator == "Price vs 50-day average");
         Assert.Equal(4, a.Signal.MaxScore);
+    }
+
+    [Theory]
+    [InlineData("Down", 110, 100, 105, "Recovering")]
+    [InlineData("Down", 102, 100, 105, null)]
+    [InlineData("Up", 90, 100, 95, "Weakening")]
+    [InlineData("Up", 98, 100, 95, null)]
+    [InlineData("Up", 110, 100, 95, null)]
+    public void TrendPhase_FlagsAPriceThatHasTurnedBeforeTheAveragesCross(string direction, int price, int sma50, int sma200, string? expected)
+    {
+        Assert.Equal(expected, SignalRules.TrendPhase(direction, price, sma50, sma200));
+    }
+
+    [Fact]
+    public void SharedNews_ListsInstrumentsWithTheSameReading()
+    {
+        NewsSentimentSummaryDto Mood(string symbol, int articles, int score) =>
+            new() { Symbol = symbol, Articles = articles, Score = score, Confidence = 79 };
+        var moods = new[] { Mood("KSE100", 55, 60), Mood("MIF", 55, 60), Mood("KMI30", 55, 60), Mood("GOLDPK", 198, 23) };
+
+        Assert.Equal(new[] { "KMI30", "MIF" }, MarketAnalyticsService.SharedNews(moods[0], moods));
+        Assert.Empty(MarketAnalyticsService.SharedNews(moods[3], moods));
+        Assert.Empty(MarketAnalyticsService.SharedNews(Mood("USDPKR", 0, 0), moods.Append(Mood("X", 0, 0))));
     }
 }

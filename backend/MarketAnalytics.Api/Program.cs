@@ -12,6 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
+// Unhandled errors return a short JSON problem description instead of a stack trace
+builder.Services.AddProblemDetails();
+
+// Backtest and price responses are large JSON; compression cuts them to a fraction
+builder.Services.AddResponseCompression();
+
 // Database configuration (the password lives in user secrets, shared by Api and Worker)
 builder.Configuration.AddUserSecrets<Program>(optional: true);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
@@ -55,7 +61,17 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Bring the database up to date, so pulling new code doesn't need a manual "dotnet ef database update".
+// Only the API migrates; start-app starts the Worker after the API is ready.
+using (var scope = app.Services.CreateScope())
+{
+    scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.Migrate();
+}
+
 // Configure the HTTP request pipeline
+app.UseExceptionHandler();
+app.UseResponseCompression();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -65,5 +81,19 @@ app.UseHttpsRedirection();
 app.UseCors("AllowReactFrontend");
 app.UseAuthorization();
 app.MapControllers();
+
+// Health check: whether the database answers and how fresh the newest price is
+app.MapGet("/api/health", async (ApplicationDbContext db, CancellationToken cancellationToken) =>
+{
+    try
+    {
+        var latestPrice = await db.PricePoints.MaxAsync(p => (DateTime?)p.DateTime, cancellationToken);
+        return Results.Ok(new { status = "Healthy", database = "Connected", latestPrice });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new { status = "Unhealthy", database = ex.GetType().Name }, statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+});
 
 app.Run();

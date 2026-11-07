@@ -112,10 +112,24 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         analytics.Symbol = instrument.Symbol;
         analytics.Name = instrument.Name;
         analytics.Type = instrument.Type;
-        ApplyNewsSignals(analytics, moods.FirstOrDefault(m => m.Symbol == instrument.Symbol));
+        var mood = moods.FirstOrDefault(m => m.Symbol == instrument.Symbol);
+        ApplyNewsSignals(analytics, mood);
+        analytics.NewsSignal.SharedWith = SharedNews(mood, moods);
         ApplyPayouts(analytics, cleaned, payouts);
         return analytics;
     }
+
+    /// <summary>
+    /// Instruments with exactly the same news reading. Several instruments are linked to the same stories (e.g. all
+    /// Pakistani stock news counts for KSE-100, KMI-30 and the stock funds), so their news signals are one reading.
+    /// </summary>
+    public static List<string> SharedNews(NewsSentimentSummaryDto? mood, IEnumerable<NewsSentimentSummaryDto> moods) =>
+        mood == null || mood.Articles == 0
+            ? new()
+            : moods.Where(m => m.Symbol != mood.Symbol && m.Articles == mood.Articles && m.Score == mood.Score && m.Confidence == mood.Confidence)
+                .Select(m => m.Symbol)
+                .OrderBy(s => s)
+                .ToList();
 
     /// <summary>
     /// Lists the payouts on the day the NAV reflected them, and the last 12 months' payouts as a share of the price.
@@ -223,6 +237,8 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         analytics.Sma50 = sma50[lastDate];
         analytics.Sma200 = sma200[lastDate];
         analytics.LongTermTrend = ComputeLongTermTrend(prices, sma50, sma200);
+        if (analytics.Sma50 is decimal fast && analytics.Sma200 is decimal slow)
+            analytics.LongTermTrend.Phase = SignalRules.TrendPhase(analytics.LongTermTrend.Direction, analytics.LastPrice, fast, slow);
 
         var (upper, lower) = _indicators.ComputeBollingerBands(prices);
         if (upper[lastDate] is decimal upperBand && lower[lastDate] is decimal lowerBand)

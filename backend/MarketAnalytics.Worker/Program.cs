@@ -44,7 +44,7 @@ if (!string.IsNullOrWhiteSpace(backfillFrom))
     return;
 }
 
-// Register background services (prices daily, news hourly)
+// Register background services (prices every 6 hours, news hourly)
 builder.Services.AddHostedService<DataUpdateBackgroundService>();
 builder.Services.AddHostedService<NewsUpdateBackgroundService>();
 

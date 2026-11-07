@@ -40,6 +40,11 @@ export default function SignalPanel({ analytics }: SignalPanelProps) {
           <div style={{ fontSize: '12px', color: COLORS.muted, marginTop: '6px' }}>
             {analytics.newsSignal.articles} {analytics.newsSignal.articles === 1 ? 'story' : 'stories'}, {analytics.newsSignal.newsConfidence}% sure
           </div>
+          {analytics.newsSignal.sharedWith.length > 0 && (
+            <div style={{ fontSize: '12px', color: COLORS.muted, marginTop: '4px' }}>
+              Same news as {analytics.newsSignal.sharedWith.join(', ')}: not specific to {analytics.symbol}
+            </div>
+          )}
         </div>
       </div>
 

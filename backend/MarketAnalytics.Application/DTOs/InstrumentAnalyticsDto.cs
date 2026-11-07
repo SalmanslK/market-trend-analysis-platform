@@ -77,6 +77,8 @@ public class ScaledSignalDto
     public int Articles { get; set; }
     /// <summary>How clearly the news agrees, 0-100.</summary>
     public int NewsConfidence { get; set; }
+    /// <summary>Other instruments whose news reading is identical, because they are linked to the same stories.</summary>
+    public List<string> SharedWith { get; set; } = new();
 }
 
 /// <summary>
@@ -114,6 +116,11 @@ public class LongTermTrendDto
     public string Direction { get; set; } = "Unknown";
     /// <summary>The day the trend last changed to this direction; null if it hasn't changed in the stored history.</summary>
     public DateTime? Since { get; set; }
+    /// <summary>
+    /// Recovering when the trend is Down but the price is back above both averages; Weakening when it is Up but the
+    /// price has fallen below both. Null otherwise. The direction itself only changes when the averages cross.
+    /// </summary>
+    public string? Phase { get; set; }
 }
 
 /// <summary>

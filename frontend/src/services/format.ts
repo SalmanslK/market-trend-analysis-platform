@@ -33,6 +33,14 @@ export function formatDate(value: string): string {
   return new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+/** Whole days from a date to now. */
+export function daysSince(value: string): number {
+  return Math.floor((Date.now() - new Date(value).getTime()) / 86_400_000)
+}
+
+// A weekend plus a holiday can leave prices 4 days old; more than that means the updates have stopped
+export const STALE_AFTER_DAYS = 4
+
 export const signalStyles: Record<SignalAction, { label: string; background: string; color: string }> = {
   StrongBuy: { label: 'Strong Buy', background: '#1b5e20', color: 'white' },
   Buy: { label: 'Buy', background: '#c8e6c9', color: '#1b5e20' },

@@ -47,6 +47,14 @@ if (Test-Port 5432) {
     Wait-ForPort 5432 'PostgreSQL' $pgLog 60
 }
 
+# One backup a day of prices and the collected news, which would take hours to download again.
+# A failed backup is reported but doesn't stop the app
+try {
+    & (Join-Path $PSScriptRoot 'backup-db.ps1') -IfOlderThanHours 20
+} catch {
+    Write-Host "  Backup failed: $($_.Exception.Message)" -ForegroundColor Yellow
+}
+
 # The API and Worker read the database password from user secrets, shared by both
 $env:ASPNETCORE_ENVIRONMENT = 'Development'
 $env:DOTNET_ENVIRONMENT = 'Development'
@@ -74,7 +82,7 @@ if ($workerRunning) {
     Write-Host '  Worker is already running'
 } else {
     Start-Hidden 'worker' 'dotnet' @('run', '--no-build', '--no-launch-profile') (Join-Path $root 'backend\MarketAnalytics.Worker') | Out-Null
-    Write-Host '  Worker started (updates prices daily and news hourly)' -ForegroundColor Green
+    Write-Host '  Worker started (checks prices every 6 hours, news hourly)' -ForegroundColor Green
 }
 
 if (Test-Port 3000) {

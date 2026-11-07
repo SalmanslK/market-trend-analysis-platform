@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { portfolioApi } from '../services/api/portfolioApi'
 import { PortfolioComparison, PortfolioMix, PortfolioResult, RebalanceSchedule } from '../services/types/marketData'
@@ -19,6 +20,18 @@ const SCHEDULES: { value: RebalanceSchedule; label: string }[] = [
 const LINE_COLORS = ['#1565c0', '#2e7d32', '#ef6c00', '#6a1b9a', '#c62828', '#00838f', '#5d4037', '#455a64', '#ad1457', '#827717']
 const STORAGE_KEY = 'portfolio.myMix'
 const DEFAULT_MIX: PortfolioMix = { name: 'My mix', weights: { MIF: 60, MGF: 20, MCF: 20 }, rebalance: 'Yearly', trendFilter: false }
+
+/** "MIF:60,MGF:20" from a link (e.g. from My Holdings), or null */
+function mixFromLink(value: string | null): PortfolioMix | null {
+  if (!value) return null
+  const weights: Record<string, number> = {}
+  for (const part of value.split(',')) {
+    const [symbol, weight] = part.split(':')
+    const number = Number(weight)
+    if (symbol && number > 0) weights[symbol.trim().toUpperCase()] = Math.min(100, number)
+  }
+  return Object.keys(weights).length ? { name: 'My holdings', weights, rebalance: 'Never', trendFilter: false } : null
+}
 
 function loadMix(): PortfolioMix {
   try {
@@ -42,8 +55,11 @@ const headerStyle = { padding: '8px 10px', textAlign: 'right' as const, fontSize
 
 export default function Portfolio() {
   const [presets, setPresets] = useState<PortfolioMix[]>([])
-  const [mix, setMix] = useState<PortfolioMix>(loadMix)
-  const [tested, setTested] = useState<PortfolioMix | null>(null)
+  const [searchParams] = useSearchParams()
+  const linked = useMemo(() => mixFromLink(searchParams.get('mix')), [searchParams])
+  const [mix, setMix] = useState<PortfolioMix>(() => linked ?? loadMix())
+  // A mix from a link is tested straight away
+  const [tested, setTested] = useState<PortfolioMix | null>(linked)
   const [cost, setCost] = useState(0.5)
   const [comparison, setComparison] = useState<PortfolioComparison | null>(null)
   const [shown, setShown] = useState<string[]>([])

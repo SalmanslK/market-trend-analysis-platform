@@ -128,7 +128,8 @@ Website: `cd frontend`, then `npm run lint`, `npm test` (Vitest) and `npm run bu
 ## Pages
 
 - **Dashboard (Market Overview)**: a plain-language market summary; price, 1D/1M/YTD/1Y change, RSI, 52-week range,
-  Buy/Sell signal, long-term trend and 7-day news mood for every instrument; sortable columns
+  Buy/Sell signal, long-term trend and 7-day news mood for every instrument; sortable columns; and what changed in the
+  last 30 days, with optional browser notifications
 - **News**: all collected news with sentiment, filterable by instrument, topic and mood
 - **Guide**: plain-language explanation of every number, chart and signal (also available as ⓘ tooltips)
 - **Instrument view**: price chart with SMA-20, Bollinger Bands and interval-specific moving averages
@@ -139,6 +140,9 @@ Website: `cd frontend`, then `npm run lint`, `npm test` (Vitest) and `npm run bu
   latest news.
 - **Comparison**: % change of several instruments on one chart, plus a performance table
 - **Track Record**: how acting on the Buy/Sell signal and the long-term trend would have done against simply holding
+- **My Holdings**: what you own (units, optional price paid and date, saved only in the browser) with its value, gain,
+  payouts received since buying, combined signal and trend, the stocks/gold/cash split, and a link that tests that split on
+  the Portfolio page
 - **Portfolio**: how mixes of stocks, gold and cash would have done, with your own mix (remembered in the browser)
   against preset mixes: return, worst fall, volatility, Sharpe, a growth chart and year-by-year returns
 - **Settings**: default interval/timeframe (saved in the browser), suggested presets, and data source
@@ -286,6 +290,15 @@ choice of golden cross were picked after earlier tests on this data. Older news 
 sentiment is read from headline wording, index dividends are excluded, and the history is mostly a rising market.
 Fund figures count payouts (added Nov 2026; holding rose from +21.8% to +22.6%, partly from newer prices too).
 
+## Alerts (what changed)
+
+`AlertService` (`GET /api/alerts?days=30`) recomputes each day's technical, news and combined signal and trend direction
+from that day's close (`SignalHistory`, the same code as the backtests) and lists the days one changed side (Buy, Hold,
+Sell; Buy to Strong Buy doesn't count). Important changes are the combined signal turning Buy or Sell and the trend
+turning; Hold means stay as you are, so a move to Hold isn't one. The Overview lists important changes (all on request)
+and can notify in the browser while the app is open, checking every 30 minutes. Nothing is stored, so the list always
+matches the current rules and data.
+
 ## Portfolio mix
 
 `PortfolioService` (`GET /api/portfolio` for the presets, `POST /api/portfolio` with up to 12 mixes) replays mixes of
@@ -320,7 +333,7 @@ compared (the gold fund starts in Aug 2020), mostly a rising market.
 
 ## Nice to have
 
-- **Alerts**: notify when an instrument's signal changes
+- **Alerts outside the browser**: email or phone notifications (needs a mail or push service)
 
 - **Validation**: FluentValidation for API request models
 - **Testing**: API integration tests, frontend component tests

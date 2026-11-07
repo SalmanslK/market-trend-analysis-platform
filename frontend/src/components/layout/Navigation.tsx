@@ -6,6 +6,7 @@ const LINKS = [
   { path: '/comparison', label: 'Comparison' },
   { path: '/track-record', label: 'Track Record' },
   { path: '/portfolio', label: 'Portfolio' },
+  { path: '/holdings', label: 'My Holdings' },
   { path: '/guide', label: 'Guide' },
   { path: '/settings', label: 'Settings' },
 ]

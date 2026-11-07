@@ -29,7 +29,7 @@ public class BacktestService : IBacktestService
     private const int MinTradingDays = 250;
     private const int MaxCurvePoints = 300;
     // Days in the backtest always have all five technical rules available
-    private const int MaxTechnicalScore = 5;
+    public const int MaxTechnicalScore = 5;
     // A drawdown must shrink by at least this share to count as meaningfully lower risk
     private const double MeaningfulDrawdownReduction = 1.0 / 3;
     private static readonly int[] Horizons = { 7, 30, 90 };
@@ -112,35 +112,8 @@ public class BacktestService : IBacktestService
     /// The signal score for each day from the first day all five rules can be evaluated (exposed for testing).
     /// Uses the same rules as the live signal; each day's score only depends on prices up to that day.
     /// </summary>
-    public List<(DateTime Date, decimal Price, int Score)> ComputeDailyScores(IReadOnlyList<PriceDataPoint> prices)
-    {
-        var sorted = prices.OrderBy(p => p.DateTime).ToList();
-        var sma200 = _indicators.ComputeSma(sorted, SignalRules.LongTrendPeriod);
-        var sma50 = _indicators.ComputeSma(sorted, SignalRules.MediumTrendPeriod);
-        var rsi = _indicators.ComputeRsi(sorted, SignalRules.RsiPeriod);
-        var (_, _, histogram) = _indicators.ComputeMacd(sorted);
-        var (upper, lower) = _indicators.ComputeBollingerBands(sorted);
-
-        var scores = new List<(DateTime, decimal, int)>();
-        foreach (var point in sorted)
-        {
-            var date = point.DateTime;
-            if (sma200[date] is not decimal longAverage || sma50[date] is not decimal mediumAverage
-                || rsi[date] is not decimal rsiValue || histogram[date] is not decimal macdHistogram
-                || upper[date] is not decimal upperBand || lower[date] is not decimal lowerBand)
-                continue;
-
-            var percentB = SignalRules.PercentB(point.Price, upperBand, lowerBand);
-            var score = SignalRules.Trend(point.Price, longAverage)
-                + SignalRules.Trend(point.Price, mediumAverage)
-                + SignalRules.Momentum(macdHistogram)
-                + SignalRules.Rsi(rsiValue)
-                + (percentB is decimal b ? SignalRules.Bollinger(b) : 0);
-
-            scores.Add((date, point.Price, score));
-        }
-        return scores;
-    }
+    public List<(DateTime Date, decimal Price, int Score)> ComputeDailyScores(IReadOnlyList<PriceDataPoint> prices) =>
+        SignalHistory.TechnicalScores(_indicators, prices);
 
     /// <summary>
     /// Runs the full backtest on daily prices (exposed for testing).

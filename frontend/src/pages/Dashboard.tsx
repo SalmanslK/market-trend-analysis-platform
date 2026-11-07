@@ -12,6 +12,7 @@ import { changeColor, COLORS, formatDate, formatNumber, formatPercent, signalSty
 import ScaledSignalBadge from '../components/signals/ScaledSignalBadge'
 import SignalBadge from '../components/signals/SignalBadge'
 import TrendBadge from '../components/trend/TrendBadge'
+import RecentChanges from '../components/signals/RecentChanges'
 import RangeBar from '../components/analytics/RangeBar'
 
 type SortKey = 'symbol' | 'change1D' | 'change1M' | 'changeYtd' | 'change1Y' | 'rsi14' | 'signal' | 'combined' | 'trend' | 'news'
@@ -219,6 +220,8 @@ export default function Dashboard() {
       <p style={{ color: COLORS.muted, fontSize: '12px', marginTop: '12px' }}>
         {TREND_DISCLAIMER} <Link to="/track-record" style={{ color: COLORS.link }}>See how they performed in the past.</Link>
       </p>
+
+      <RecentChanges />
     </div>
   )
 }

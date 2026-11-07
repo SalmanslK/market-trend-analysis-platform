@@ -332,3 +332,16 @@ export interface PortfolioComparison {
   results: PortfolioResult[];
   instruments: { symbol: string; name: string; firstDate: string; isCash: boolean }[];
 }
+
+/** A signal or trend change from one day's close to the next */
+export interface SignalAlert {
+  date: string;
+  symbol: string;
+  name: string;
+  signal: 'Combined' | 'Technical' | 'News' | 'Trend';
+  /** A Buy/Sell action, or Up/Down for the trend */
+  from: string;
+  to: string;
+  /** The combined signal turned to Buy or Sell, or the trend changed */
+  important: boolean;
+}

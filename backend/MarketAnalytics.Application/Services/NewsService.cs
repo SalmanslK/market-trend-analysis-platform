@@ -28,12 +28,15 @@ public class NewsService : INewsService
     private readonly INewsRepository _newsRepository;
     private readonly IInstrumentRepository _instrumentRepository;
     private readonly IPricePointRepository _pricePointRepository;
+    private readonly IFundPayoutRepository? _fundPayoutRepository;
 
     public NewsService(
         INewsRepository newsRepository,
         IInstrumentRepository instrumentRepository,
-        IPricePointRepository pricePointRepository)
+        IPricePointRepository pricePointRepository,
+        IFundPayoutRepository? fundPayoutRepository = null)
     {
+        _fundPayoutRepository = fundPayoutRepository;
         _newsRepository = newsRepository;
         _instrumentRepository = instrumentRepository;
         _pricePointRepository = pricePointRepository;
@@ -65,8 +68,7 @@ public class NewsService : INewsService
 
         var now = DateTime.UtcNow;
         var yearAgo = now.AddYears(-1).AddDays(-7);
-        var points = await _pricePointRepository.GetByInstrumentIdAsync(instrument.Id, yearAgo, cancellationToken: cancellationToken);
-        var prices = PriceDataCleaner.RemoveSpikes(points.Select(p => new PriceDataPoint(p.DateTime, p.Price)));
+        var prices = await PriceHistory.LoadDailyAsync(_pricePointRepository, _fundPayoutRepository, instrument.Id, yearAgo, cancellationToken);
 
         var changes = prices.Skip(1)
             .Select((p, i) => (Date: p.DateTime, Price: p.Price, Change: (p.Price / prices[i].Price - 1) * 100, Index: i + 1))
@@ -132,8 +134,7 @@ public class NewsService : INewsService
         var result = new Dictionary<string, List<PriceDataPoint>>(StringComparer.OrdinalIgnoreCase);
         foreach (var instrument in await _instrumentRepository.GetActiveInstrumentsAsync(cancellationToken))
         {
-            var points = await _pricePointRepository.GetByInstrumentIdAsync(instrument.Id, fromUtc, cancellationToken: cancellationToken);
-            result[instrument.Symbol] = PriceDataCleaner.RemoveSpikes(points.Select(p => new PriceDataPoint(p.DateTime, p.Price)));
+            result[instrument.Symbol] = await PriceHistory.LoadDailyAsync(_pricePointRepository, _fundPayoutRepository, instrument.Id, fromUtc, cancellationToken);
         }
         return result;
     }

@@ -57,6 +57,12 @@ public class InstrumentAnalyticsDto
 
     /// <summary>All the standard metrics that can be calculated from closing prices.</summary>
     public List<MetricDto> Metrics { get; set; } = new();
+
+    /// <summary>Fund cash payouts, newest first. Prices and returns above are adjusted for them.</summary>
+    public List<PayoutDto> Payouts { get; set; } = new();
+
+    /// <summary>Payouts over the last 12 months as a percentage of the latest price; null when there were none.</summary>
+    public decimal? PayoutYield1Y { get; set; }
 }
 
 /// <summary>
@@ -76,6 +82,15 @@ public class ScaledSignalDto
 /// <summary>
 /// One technical or risk metric at the latest price, with its usual reading in plain language.
 /// </summary>
+/// <summary>
+/// One fund payout: the date the NAV reflected it and the rupees paid per unit.
+/// </summary>
+public class PayoutDto
+{
+    public DateTime Date { get; set; }
+    public decimal AmountPerUnit { get; set; }
+}
+
 public class MetricDto
 {
     public string Group { get; set; } = string.Empty;

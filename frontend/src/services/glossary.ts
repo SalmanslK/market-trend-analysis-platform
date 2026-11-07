@@ -86,6 +86,11 @@ export const glossary = {
     what: 'The lowest and highest price over the last year, with a marker showing where today\'s price sits.',
     howToRead: 'Marker at the left = near the year\'s low; at the right = near the year\'s high.',
   },
+  payouts: {
+    title: 'Payouts (dividends)',
+    what: 'Cash a fund pays out per unit, usually once a year in June. On that day the fund\'s price drops by about the same amount, but investors don\'t lose anything: they get the cash, or more units if they reinvest.',
+    howToRead: 'Prices, returns and charts here count payouts as reinvested, so a payout does not show as a fall. The latest price is the real price. "Last 12 months" is the payouts of the past year as a share of today\'s price.',
+  },
   backtest: {
     title: 'Track record (backtest)',
     what: 'A replay of a rule over past prices: invested while the rule says so, in cash otherwise, paying a cost on every trade. Each day uses only the prices known on that day, and trades happen at the next day\'s close.',

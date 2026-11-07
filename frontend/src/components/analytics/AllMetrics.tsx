@@ -61,7 +61,7 @@ export default function AllMetrics({ analytics }: AllMetricsProps) {
         <strong>Not shown, because the data sources don't provide what they need:</strong> ATR, ADX, Parabolic SAR and Ichimoku need each day's high and low;
         OBV, VWAP and MFI need trading volume; P/E, EPS and dividend yield need company financials, which don't apply to indices, funds, gold or currencies in the same way.
         Metrics marked "closes" normally use highs and lows, so they can differ slightly from other websites.
-        Sharpe, Sortino and alpha assume cash earns 10% a year. Returns exclude dividends.
+        Sharpe, Sortino and alpha assume cash earns 10% a year. Fund returns count payouts as reinvested; index returns leave out the dividends of the stocks in them.
       </p>
     </section>
   )

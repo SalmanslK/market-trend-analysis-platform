@@ -58,6 +58,35 @@ namespace MarketAnalytics.Infrastructure.Migrations
                     b.ToTable("DataUpdateLogs", (string)null);
                 });
 
+            modelBuilder.Entity("MarketAnalytics.Domain.Entities.FundPayout", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AmountPerUnit")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<DateTime>("FetchedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("InstrumentId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("PayoutDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstrumentId", "PayoutDate")
+                        .IsUnique();
+
+                    b.ToTable("FundPayouts", (string)null);
+                });
+
             modelBuilder.Entity("MarketAnalytics.Domain.Entities.Instrument", b =>
                 {
                     b.Property<int>("Id")
@@ -306,6 +335,17 @@ namespace MarketAnalytics.Infrastructure.Migrations
                 {
                     b.HasOne("MarketAnalytics.Domain.Entities.Instrument", "Instrument")
                         .WithMany("UpdateLogs")
+                        .HasForeignKey("InstrumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Instrument");
+                });
+
+            modelBuilder.Entity("MarketAnalytics.Domain.Entities.FundPayout", b =>
+                {
+                    b.HasOne("MarketAnalytics.Domain.Entities.Instrument", "Instrument")
+                        .WithMany()
                         .HasForeignKey("InstrumentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

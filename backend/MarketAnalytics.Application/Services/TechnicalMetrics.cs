@@ -199,7 +199,7 @@ public static class TechnicalMetrics
         void AddGrowth(string name, int years)
         {
             var value = Cagr(prices, years);
-            Add(metrics, RiskAndReturn, name, value, "percent", value >= 0 ? Positive : Negative, "Growth per year, excluding dividends",
+            Add(metrics, RiskAndReturn, name, value, "percent", value >= 0 ? Positive : Negative, "Growth per year; funds include payouts, indices exclude dividends",
                 $"Compound annual growth rate: the steady yearly growth that matches the actual change over {years} years.");
         }
 

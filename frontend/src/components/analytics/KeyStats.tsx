@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import { InstrumentAnalyticsDto } from '../../services/types/marketData'
-import { changeColor, COLORS, formatNumber, formatPercent } from '../../services/format'
+import { changeColor, COLORS, formatDate, formatNumber, formatPercent } from '../../services/format'
 import { GlossaryKey } from '../../services/glossary'
 import { describeDrawdown, describeRange, describeRsi, volatilityLevel } from '../../services/plainLanguage'
 import InfoTip from '../help/InfoTip'
@@ -64,6 +64,25 @@ export default function KeyStats({ analytics: a }: KeyStatsProps) {
         </div>
         <RangeBar low={a.low52W} high={a.high52W} position={a.rangePosition52W} showLabels />
       </div>
+
+      {a.payouts.length > 0 && (
+        <div style={{ marginTop: '16px' }}>
+          <div style={{ fontSize: '12px', color: COLORS.muted, marginBottom: '6px' }}>
+            Payouts (dividends)<InfoTip term="payouts" />{' '}
+            <span style={{ color: '#546e7a' }}>
+              {a.payoutYield1Y != null ? `Last 12 months: ${a.payoutYield1Y.toFixed(2)}% of today's price. ` : 'None in the last 12 months. '}
+              Returns above count payouts as reinvested.
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            {a.payouts.map(p => (
+              <span key={p.date} style={{ fontSize: '13px', padding: '4px 8px', border: `1px solid ${COLORS.border}`, borderRadius: '6px' }}>
+                {formatDate(p.date)}: <strong>Rs {formatNumber(p.amountPerUnit)}</strong> per unit
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   )
 }

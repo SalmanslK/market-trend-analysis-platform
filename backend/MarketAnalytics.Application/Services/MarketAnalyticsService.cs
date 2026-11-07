@@ -31,15 +31,18 @@ public class MarketAnalyticsService : IMarketAnalyticsService
     private readonly IIndicatorCalculationService _indicators;
     private readonly ILogger<MarketAnalyticsService> _logger;
     private readonly INewsService? _newsService;
+    private readonly IFundPayoutRepository? _fundPayoutRepository;
 
     public MarketAnalyticsService(
         IInstrumentRepository instrumentRepository,
         IPricePointRepository pricePointRepository,
         IIndicatorCalculationService indicators,
         ILogger<MarketAnalyticsService> logger,
-        INewsService? newsService = null)
+        INewsService? newsService = null,
+        IFundPayoutRepository? fundPayoutRepository = null)
     {
         _newsService = newsService;
+        _fundPayoutRepository = fundPayoutRepository;
         _instrumentRepository = instrumentRepository;
         _pricePointRepository = pricePointRepository;
         _indicators = indicators;
@@ -97,8 +100,10 @@ public class MarketAnalyticsService : IMarketAnalyticsService
 
     private async Task<InstrumentAnalyticsDto?> BuildAsync(Instrument instrument, List<NewsSentimentSummaryDto> moods, CancellationToken cancellationToken)
     {
-        var pricePoints = await _pricePointRepository.GetByInstrumentIdAsync(instrument.Id, cancellationToken: cancellationToken);
-        var dailyPrices = PriceDataCleaner.RemoveSpikes(pricePoints.Select(p => new PriceDataPoint(p.DateTime, p.Price)));
+        var points = await _pricePointRepository.GetByInstrumentIdAsync(instrument.Id, cancellationToken: cancellationToken);
+        var cleaned = PriceDataCleaner.RemoveSpikes(points.Select(p => new PriceDataPoint(p.DateTime, p.Price)));
+        var payouts = _fundPayoutRepository == null ? new List<FundPayout>() : await _fundPayoutRepository.GetByInstrumentIdAsync(instrument.Id, cancellationToken);
+        var dailyPrices = PayoutAdjuster.Adjust(cleaned, payouts);
 
         if (dailyPrices.Count == 0)
             return null;
@@ -108,7 +113,23 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         analytics.Name = instrument.Name;
         analytics.Type = instrument.Type;
         ApplyNewsSignals(analytics, moods.FirstOrDefault(m => m.Symbol == instrument.Symbol));
+        ApplyPayouts(analytics, cleaned, payouts);
         return analytics;
+    }
+
+    /// <summary>
+    /// Lists the payouts on the day the NAV reflected them, and the last 12 months' payouts as a share of the price.
+    /// </summary>
+    public static void ApplyPayouts(InstrumentAnalyticsDto analytics, IReadOnlyList<PriceDataPoint> prices, IEnumerable<FundPayout> payouts)
+    {
+        analytics.Payouts = PayoutAdjuster.MatchExDates(prices, payouts)
+            .Select(m => new PayoutDto { Date = prices[m.Index].DateTime, AmountPerUnit = m.Payout.AmountPerUnit })
+            .OrderByDescending(p => p.Date)
+            .ToList();
+
+        var yearAgo = analytics.LastDate.AddYears(-1);
+        var lastYear = analytics.Payouts.Where(p => p.Date > yearAgo).Sum(p => p.AmountPerUnit);
+        analytics.PayoutYield1Y = lastYear > 0 && analytics.LastPrice > 0 ? Math.Round(lastYear / analytics.LastPrice * 100, 2) : null;
     }
 
     private async Task<List<PriceDataPoint>?> LoadBenchmarkAsync(Instrument instrument, CancellationToken cancellationToken)
@@ -120,8 +141,7 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         if (benchmark == null)
             return null;
 
-        var points = await _pricePointRepository.GetByInstrumentIdAsync(benchmark.Id, DateTime.UtcNow.AddYears(-2), cancellationToken: cancellationToken);
-        return PriceDataCleaner.RemoveSpikes(points.Select(p => new PriceDataPoint(p.DateTime, p.Price)));
+        return await PriceHistory.LoadDailyAsync(_pricePointRepository, _fundPayoutRepository, benchmark.Id, DateTime.UtcNow.AddYears(-2), cancellationToken);
     }
 
     public InstrumentAnalyticsDto ComputeAnalytics(IReadOnlyList<PriceDataPoint> dailyPrices, IReadOnlyList<PriceDataPoint>? benchmarkPrices = null)

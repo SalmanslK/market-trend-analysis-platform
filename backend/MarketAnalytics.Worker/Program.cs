@@ -19,6 +19,7 @@ builder.Services.AddHttpClient<JsonApiDataFetcher>();
 builder.Services.AddHttpClient<HtmlScraperDataFetcher>();
 builder.Services.AddHttpClient<CurrencyApiDataFetcher>();
 builder.Services.AddHttpClient<RssNewsFetcher>();
+builder.Services.AddHttpClient<FundPayoutFetcher>();
 builder.Services.AddScoped<InstrumentDataFetcherFactory>();
 
 // "--import-csv <directory>" runs a one-off historical CSV import instead of the scheduled updates

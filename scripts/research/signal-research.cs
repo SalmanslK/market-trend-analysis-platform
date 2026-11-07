@@ -175,7 +175,9 @@ async Task<InstrumentData> LoadAsync(string symbol)
 {
     var instrument = await db.Instruments.SingleAsync(i => i.Symbol == symbol);
     var points = await db.PricePoints.AsNoTracking().Where(p => p.InstrumentId == instrument.Id).OrderBy(p => p.DateTime).ToListAsync();
-    var prices = PriceDataCleaner.RemoveSpikes(points.Select(p => new PriceDataPoint(p.DateTime, p.Price)));
+    // Same as the app: spikes removed, fund NAVs adjusted for payouts
+    var payouts = await db.FundPayouts.AsNoTracking().Where(p => p.InstrumentId == instrument.Id).ToListAsync();
+    var prices = PayoutAdjuster.Adjust(PriceDataCleaner.RemoveSpikes(points.Select(p => new PriceDataPoint(p.DateTime, p.Price))), payouts);
     var days = backtest.ComputeDailyScores(prices);
     var news = NewsService.ScoreForSymbol(articles, symbol);
     var allDates = days.Select(d => d.Date).ToList();

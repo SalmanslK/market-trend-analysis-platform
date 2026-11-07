@@ -5,6 +5,7 @@ import Comparison from './pages/Comparison'
 import News from './pages/News'
 import Guide from './pages/Guide'
 import TrackRecord from './pages/TrackRecord'
+import Portfolio from './pages/Portfolio'
 import Settings from './pages/Settings'
 import Navigation from './components/layout/Navigation'
 
@@ -21,6 +22,7 @@ function App() {
             <Route path="/news" element={<News />} />
             <Route path="/comparison" element={<Comparison />} />
             <Route path="/track-record" element={<TrackRecord />} />
+            <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/guide" element={<Guide />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>

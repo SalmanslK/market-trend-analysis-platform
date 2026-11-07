@@ -112,6 +112,7 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         analytics.Symbol = instrument.Symbol;
         analytics.Name = instrument.Name;
         analytics.Type = instrument.Type;
+        analytics.IsCash = PortfolioService.IsCash(instrument.Symbol);
         var mood = moods.FirstOrDefault(m => m.Symbol == instrument.Symbol);
         ApplyNewsSignals(analytics, mood);
         analytics.NewsSignal.SharedWith = SharedNews(mood, moods);

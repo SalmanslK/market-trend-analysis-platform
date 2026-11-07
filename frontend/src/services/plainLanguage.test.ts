@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { compareWithHolding, describeDrawdown, describeMarket, describeRsi } from './plainLanguage'
+import { compareWithHolding, describeDrawdown, describeMarket, describePortfolios, describeRsi } from './plainLanguage'
 import { daysSince } from './format'
-import { InstrumentAnalyticsDto } from './types/marketData'
+import { InstrumentAnalyticsDto, PortfolioResult } from './types/marketData'
 
 function instrument(symbol: string, overrides: Partial<InstrumentAnalyticsDto> = {}): InstrumentAnalyticsDto {
   return {
@@ -69,5 +69,29 @@ describe('plain readings', () => {
 
   it('counts whole days since a date', () => {
     expect(daysSince(new Date(Date.now() - 3.5 * 86_400_000).toISOString())).toBe(3)
+  })
+})
+
+describe('describePortfolios', () => {
+  const result = (name: string, annualReturn: number, maxDrawdown: number, extra: Partial<PortfolioResult> = {}): PortfolioResult => ({
+    name, annualReturn, maxDrawdown, weights: { MIF: 100 }, rebalance: 'Yearly', trendFilter: false, costPercent: 0.5,
+    startDate: '2020-08-07', endDate: '2026-11-06', years: 6.2, totalReturn: 0, volatility: 10, yearlyReturns: [], trades: 1, equityCurve: [],
+    ...extra,
+  })
+
+  it('names the best mix and a mix that kept most of its return with a smaller fall', () => {
+    const sentences = describePortfolios({
+      startDate: '2020-08-07', endDate: '2026-11-06', costPercent: 0.5, cashAnnualReturn: 12.4, instruments: [],
+      results: [
+        result('All in stocks', 22.4, -23.5),
+        result('Stocks 60, gold 20, cash 20', 20.3, -13.1, { weights: { MIF: 60, MGF: 20, MCF: 20 } }),
+        result('All in stocks, with trend filter', 20.3, -27.2, { trendFilter: true }),
+      ],
+    })
+
+    expect(sentences[0]).toContain('"All in stocks" earned the most: 22.4% a year')
+    expect(sentences[1]).toContain('"Stocks 60, gold 20, cash 20" earned 2.1 points a year less, but its worst fall was -13%')
+    expect(sentences.some((s) => s.includes('cash fund earned 12.4%'))).toBe(true)
+    expect(sentences.some((s) => s.startsWith('The trend filter on "All in stocks" hurt'))).toBe(true)
   })
 })

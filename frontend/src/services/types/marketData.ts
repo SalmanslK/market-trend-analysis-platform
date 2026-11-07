@@ -108,6 +108,8 @@ export interface InstrumentAnalyticsDto {
   symbol: string;
   name: string;
   type: InstrumentType;
+  /** A cash (money market) fund: Buy/Sell signals don't apply */
+  isCash: boolean;
   lastDate: string;
   lastPrice: number;
   dataPoints: number;
@@ -294,4 +296,39 @@ export interface BacktestResult {
   rules: RuleResult[];
   newsTest: NewsBacktest;
   equityCurve: { date: string; buyAndHold: number; strategy: number; goldenCross: number; monthlyTrend: number }[];
+}
+
+export type RebalanceSchedule = 'Never' | 'Yearly' | 'HalfYearly' | 'Quarterly'
+
+/** A mix to test: weights in percent per symbol (the rest is cash) */
+export interface PortfolioMix {
+  name: string;
+  weights: Record<string, number>;
+  rebalance: RebalanceSchedule;
+  trendFilter: boolean;
+}
+
+export interface PortfolioResult extends PortfolioMix {
+  costPercent: number;
+  startDate: string;
+  endDate: string;
+  years: number;
+  totalReturn: number;
+  annualReturn: number;
+  maxDrawdown: number;
+  volatility: number;
+  /** Return above cash per unit of volatility */
+  sharpe?: number;
+  yearlyReturns: { year: number; return: number }[];
+  trades: number;
+  equityCurve: { date: string; value: number }[];
+}
+
+export interface PortfolioComparison {
+  startDate: string;
+  endDate: string;
+  costPercent: number;
+  cashAnnualReturn?: number;
+  results: PortfolioResult[];
+  instruments: { symbol: string; name: string; firstDate: string; isCash: boolean }[];
 }

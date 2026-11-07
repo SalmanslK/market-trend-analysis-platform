@@ -19,8 +19,8 @@ import { intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences } from '../services/preferences'
 import PlainSummary from '../components/help/PlainSummary'
 
-// Distinct colors for up to 9 instruments
-const SERIES_COLORS = ['#1976d2', '#d32f2f', '#388e3c', '#f57c00', '#7b1fa2', '#0097a7', '#5d4037', '#c2185b', '#616161']
+// Distinct colors for up to 10 instruments
+const SERIES_COLORS = ['#1976d2', '#d32f2f', '#388e3c', '#f57c00', '#7b1fa2', '#0097a7', '#5d4037', '#c2185b', '#616161', '#827717']
 
 const DEFAULT_SELECTION = ['KSE100', 'KMI30', 'USDPKR']
 

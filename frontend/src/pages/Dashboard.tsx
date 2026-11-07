@@ -62,7 +62,7 @@ export default function Dashboard() {
   }, [analytics, moods, sortKey, sortDescending])
 
   const signalCounts = SIGNAL_ORDER
-    .map((action) => ({ action, count: analytics.filter((a) => a.combinedSignal.action === action).length }))
+    .map((action) => ({ action, count: analytics.filter((a) => !a.isCash && a.combinedSignal.action === action).length }))
     .filter((s) => s.count > 0)
 
   const latestDate = analytics.reduce<string | null>((latest, a) => (!latest || a.lastDate > latest ? a.lastDate : latest), null)
@@ -174,14 +174,23 @@ export default function Dashboard() {
                   <td
                     style={{
                       ...cellStyle,
-                      color: a.rsi14 == null ? undefined : a.rsi14 > 70 ? COLORS.down : a.rsi14 < 30 ? COLORS.up : undefined,
+                      color: a.rsi14 == null || a.isCash ? undefined : a.rsi14 > 70 ? COLORS.down : a.rsi14 < 30 ? COLORS.up : undefined,
                     }}
                   >
-                    {formatNumber(a.rsi14, 0)}
+                    {a.isCash ? '-' : formatNumber(a.rsi14, 0)}
                   </td>
                   <td style={{ ...cellStyle, padding: '10px 16px' }}>
                     <RangeBar low={a.low52W} high={a.high52W} position={a.rangePosition52W} />
                   </td>
+                  {a.isCash ? (
+                    <td colSpan={4} style={{ ...cellStyle, textAlign: 'center' }}>
+                      <Tip text="A cash fund's price creeps up almost every day, so Buy/Sell signals and trends don't apply. It shows what money earns while it waits; see the Portfolio page.">
+                        <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '12px', fontSize: '13px', backgroundColor: '#e3f2fd', color: '#0d47a1', fontWeight: 'bold' }}>
+                          Cash fund · no signals
+                        </span>
+                      </Tip>
+                    </td>
+                  ) : (<>
                   <td style={{ ...cellStyle, textAlign: 'center' }}>
                     <ScaledSignalBadge signal={a.combinedSignal} title="Technical and news together, from -100 to +100" />
                   </td>
@@ -199,6 +208,7 @@ export default function Dashboard() {
                   <td style={{ ...cellStyle, textAlign: 'center' }}>
                     <TrendBadge trend={a.longTermTrend} />
                   </td>
+                  </>)}
                 </tr>
               ))}
             </tbody>

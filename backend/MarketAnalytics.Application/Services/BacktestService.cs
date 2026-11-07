@@ -62,7 +62,8 @@ public class BacktestService : IBacktestService
     {
         var results = new List<BacktestResultDto>();
         var news = await LoadNewsAsync(cancellationToken);
-        foreach (var instrument in await _instrumentRepository.GetActiveInstrumentsAsync(cancellationToken))
+        // A cash fund's price only creeps up, so there is nothing for Buy/Sell rules to time
+        foreach (var instrument in (await _instrumentRepository.GetActiveInstrumentsAsync(cancellationToken)).Where(i => !PortfolioService.IsCash(i.Symbol)))
         {
             try
             {

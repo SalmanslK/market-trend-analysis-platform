@@ -11,6 +11,7 @@ import InstrumentSelector from '../components/controls/InstrumentSelector'
 import IntervalSelector from '../components/controls/IntervalSelector'
 import TimeframeSelector from '../components/controls/TimeframeSelector'
 import TrendBadge from '../components/trend/TrendBadge'
+import InfoTip from '../components/help/InfoTip'
 import ScaledSignalBadge from '../components/signals/ScaledSignalBadge'
 import SignalPanel from '../components/signals/SignalPanel'
 import AllMetrics from '../components/analytics/AllMetrics'
@@ -96,12 +97,18 @@ export default function InstrumentView() {
           ) : (
             <span style={{ color: COLORS.muted }}>as of {formatDate(analytics.lastDate)}</span>
           )}
+          {analytics.isCash ? (
+            <span style={{ color: COLORS.muted, fontSize: '14px' }}>
+              Cash fund: Buy/Sell signals don't apply<InfoTip term="cashFund" />
+            </span>
+          ) : (<>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: COLORS.muted, fontSize: '14px' }}>
             Combined signal <ScaledSignalBadge signal={analytics.combinedSignal} large />
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: COLORS.muted, fontSize: '14px' }}>
             Long-term trend <TrendBadge trend={analytics.longTermTrend} />
           </span>
+          </>)}
         </div>
       )}
 
@@ -128,7 +135,7 @@ export default function InstrumentView() {
 
       {analytics && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(420px, 100%), 1fr))', gap: '12px', marginBottom: '12px' }}>
-          <SignalPanel analytics={analytics} />
+          {!analytics.isCash && <SignalPanel analytics={analytics} />}
           <KeyStats analytics={analytics} />
         </div>
       )}

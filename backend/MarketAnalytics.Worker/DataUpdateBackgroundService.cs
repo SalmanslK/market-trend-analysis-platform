@@ -124,9 +124,11 @@ public class DataUpdateBackgroundService : BackgroundService
         // Get appropriate data fetcher
         var fetcher = fetcherFactory.GetFetcher(instrument.DataSourceType);
 
-        // Fetch new data since latest date (matches Python: new_df = new_df[new_df["datetime"] > max_date])
+        // Fetch new data since latest date (matches Python: new_df = new_df[new_df["datetime"] > max_date]).
+        // A new instrument asks for its whole history instead of the usual last year
+        var url = latestDate == null ? FullHistoryUrl(instrument.DataSourceUrl) : instrument.DataSourceUrl;
         var newDataPoints = await fetcher.FetchHistoricalDataAsync(
-            instrument.DataSourceUrl,
+            url,
             instrument.Symbol,
             latestDate);
 
@@ -193,6 +195,12 @@ public class DataUpdateBackgroundService : BackgroundService
         // Log update result
         await LogUpdateResultAsync(dbContext, instrument, latestNewDate, pricePoints.Count, UpdateStatus.Success, null, cancellationToken);
     }
+
+    /// <summary>
+    /// Sources that take a "days" parameter serve as much history as asked for.
+    /// </summary>
+    public static string FullHistoryUrl(string url) =>
+        System.Text.RegularExpressions.Regex.Replace(url, @"([?&]days=)\d+", "${1}10000");
 
     /// <summary>
     /// Stores payouts not seen before for funds whose NAVs come from a nav-history URL. The source lists

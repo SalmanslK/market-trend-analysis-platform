@@ -91,6 +91,31 @@ export const glossary = {
     what: 'Cash a fund pays out per unit, usually once a year in June. On that day the fund\'s price drops by about the same amount, but investors don\'t lose anything: they get the cash, or more units if they reinvest.',
     howToRead: 'Prices, returns and charts here count payouts as reinvested, so a payout does not show as a fall. The latest price is the real price. "Last 12 months" is the payouts of the past year as a share of today\'s price.',
   },
+  portfolio: {
+    title: 'Portfolio mix',
+    what: 'Splitting your money between different investments, for example 60% in a stock fund, 20% in a gold fund and 20% in a cash fund. Stocks and gold often move differently, and the cash part never falls, so the mix usually falls less than any one of its risky parts.',
+    howToRead: 'Compare "Return per year" with "Worst fall": a mix that earns a little less but falls much less can be easier to stick with in a crash.',
+  },
+  rebalance: {
+    title: 'Rebalancing',
+    what: 'Bringing the mix back to its target split on a schedule, for example every January. After stocks rise, you sell some stocks and buy the parts that fell behind.',
+    howToRead: '"Never" lets the split drift with prices. Yearly is common; more often means more trading costs.',
+  },
+  trendFilter: {
+    title: 'Trend filter',
+    what: 'Each stock or gold part is moved to the cash fund while its own long-term trend is Down, and bought back when it turns Up.',
+    howToRead: 'It aims to avoid long falls, but it trades more and can sell near the bottom and buy back higher. The table shows whether it helped.',
+  },
+  sharpe: {
+    title: 'Sharpe ratio',
+    what: 'How much return a mix earned above the cash fund for each unit of ups and downs (volatility).',
+    howToRead: 'Higher is better. It lets you compare a calm mix with a bumpy one: a mix with a lower return can still have a higher Sharpe ratio.',
+  },
+  cashFund: {
+    title: 'Cash fund',
+    what: 'A money market fund such as Meezan Cash Fund. It invests in very short-term Islamic deposits and government papers, so its price creeps up almost every day and rarely falls.',
+    howToRead: 'It shows what money earns while it waits. Buy/Sell signals don\'t apply to it. It pays most of its return out as yearly payouts; returns here count them as reinvested.',
+  },
   backtest: {
     title: 'Track record (backtest)',
     what: 'A replay of a rule over past prices: invested while the rule says so, in cash otherwise, paying a cost on every trade. Each day uses only the prices known on that day, and trades happen at the next day\'s close.',

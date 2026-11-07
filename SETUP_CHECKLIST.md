@@ -139,6 +139,8 @@ Website: `cd frontend`, then `npm run lint`, `npm test` (Vitest) and `npm run bu
   latest news.
 - **Comparison**: % change of several instruments on one chart, plus a performance table
 - **Track Record**: how acting on the Buy/Sell signal and the long-term trend would have done against simply holding
+- **Portfolio**: how mixes of stocks, gold and cash would have done, with your own mix (remembered in the browser)
+  against preset mixes: return, worst fall, volatility, Sharpe, a growth chart and year-by-year returns
 - **Settings**: default interval/timeframe (saved in the browser), suggested presets, and data source
   update status
 
@@ -283,6 +285,38 @@ Holding did best on return. No rule beat it reliably, and choosing rules quarter
 choice of golden cross were picked after earlier tests on this data. Older news is a sample of a few stories per week,
 sentiment is read from headline wording, index dividends are excluded, and the history is mostly a rising market.
 Fund figures count payouts (added Nov 2026; holding rose from +21.8% to +22.6%, partly from newer prices too).
+
+## Portfolio mix
+
+`PortfolioService` (`GET /api/portfolio` for the presets, `POST /api/portfolio` with up to 12 mixes) replays mixes of
+instruments over payout-adjusted prices. **Meezan Cash Fund (MCF)** was added as the cash instrument (its payouts are
+listed from 2018, its prices go back to 2009); it is marked as cash, so it shows no Buy/Sell signals and is left out of the
+signal backtests and the market summary counts.
+
+- All mixes in one comparison use the same dates, from when every chosen instrument has prices.
+- Rebalancing at the first close of each year, half-year or quarter, or never. The optional trend filter keeps each risky
+  part in cash while its own golden cross is down, acting at the close after the trend turns.
+- Each buy or sell pays the chosen cost, except moves into and out of the cash fund. Money not in the mix earns what MCF
+  earned.
+- The 9 preset mixes were fixed before seeing their results.
+
+Result (Aug 2020 to Nov 2026, 0.5% per trade, cash fund +12.4% a year):
+
+| Mix | Return per year | Worst fall | Sharpe |
+| --- | --- | --- | --- |
+| All in stocks (MIF) | +22.4% | -23.5% | 0.47 |
+| Stocks 50, gold 50 | +21.1% | -19.2% | 0.60 |
+| Stocks 60, gold 20, cash 20 | +20.3% | -13.1% | 0.60 |
+| Stocks 40, gold 30, cash 30 | +18.9% | -11.2% | 0.63 |
+| Stocks 20, gold 20, cash 60 | +16.2% | -4.8% | 0.64 |
+| All in gold (MGF) | +18.6% | -25.9% | 0.31 |
+| All in cash (MCF) | +12.4% | 0% | - |
+| All in stocks, trend filter | +20.3% | -27.2% | 0.43 |
+| Stocks 60, gold 20, cash 20, trend filter | +18.2% | -16.5% | 0.51 |
+
+Mixing gave up a little return for much smaller falls: 60/20/20 kept 20.3% of the 22.4% a year and cut the worst fall
+from -24% to -13%, a better trade-off than any Buy/Sell rule. The trend filter hurt here. Only about 6 years can be
+compared (the gold fund starts in Aug 2020), mostly a rising market.
 
 ## Nice to have
 

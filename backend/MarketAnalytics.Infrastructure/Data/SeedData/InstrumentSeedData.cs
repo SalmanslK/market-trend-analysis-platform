@@ -126,6 +126,19 @@ public static class InstrumentSeedData
                 IsActive = true,
                 CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                 UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            },
+            // Islamic money market fund: what cash earns, for backtests and the portfolio mix
+            new Instrument
+            {
+                Id = 10,
+                Symbol = "MCF",
+                Name = "Meezan Cash Fund",
+                Type = InstrumentType.MutualFund,
+                DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/mutual-funds/nav-history/a0674272-8a64-4fb8-b708-4e60a1e7f135?days=365",
+                DataSourceType = DataSourceType.JsonApi,
+                IsActive = true,
+                CreatedAt = new DateTime(2026, 11, 8, 0, 0, 0, DateTimeKind.Utc),
+                UpdatedAt = new DateTime(2026, 11, 8, 0, 0, 0, DateTimeKind.Utc)
             }
         };
     }

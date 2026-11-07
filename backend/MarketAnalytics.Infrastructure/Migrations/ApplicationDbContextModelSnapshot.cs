@@ -240,6 +240,18 @@ namespace MarketAnalytics.Infrastructure.Migrations
                             Symbol = "GOLDPK",
                             Type = 3,
                             UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 10,
+                            CreatedAt = new DateTime(2026, 11, 8, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/mutual-funds/nav-history/a0674272-8a64-4fb8-b708-4e60a1e7f135?days=365",
+                            IsActive = true,
+                            Name = "Meezan Cash Fund",
+                            Symbol = "MCF",
+                            Type = 1,
+                            UpdatedAt = new DateTime(2026, 11, 8, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 

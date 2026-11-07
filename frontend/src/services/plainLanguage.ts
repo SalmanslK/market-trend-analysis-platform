@@ -1,4 +1,4 @@
-import { BacktestResult, BacktestVerdict, InstrumentAnalyticsDto, InstrumentType, NewsSentimentSummary, SignalAction } from './types/marketData'
+import { BacktestResult, BacktestVerdict, InstrumentAnalyticsDto, InstrumentType, NewsSentimentSummary, SignalAction, PortfolioComparison } from './types/marketData'
 import { formatDate, formatNumber } from './format'
 
 /**
@@ -185,7 +185,9 @@ export function describeInstrument(a: InstrumentAnalyticsDto, mood?: NewsSentime
 /**
  * A few sentences describing the whole market from all instruments' analytics.
  */
-export function describeMarket(all: InstrumentAnalyticsDto[], moods: NewsSentimentSummary[]): string[] {
+export function describeMarket(everything: InstrumentAnalyticsDto[], moods: NewsSentimentSummary[]): string[] {
+  // A cash fund is a reference for what money earns, not part of the market's mood
+  const all = everything.filter((a) => !a.isCash)
   if (all.length === 0) return []
   const sentences: string[] = []
 
@@ -375,4 +377,49 @@ export function describeNewsRuleRecord(r: BacktestResult, key: 'news' | 'combine
   const short = r.newsTest.years < MIN_RELIABLE_YEARS ? ' This is too little history to judge.' : ''
 
   return `Over ${r.newsTest.years.toFixed(1)} years, ${signedPct(annualReturn)} a year after costs with ${trades} trades: ${outcome} simply holding (${signedPct(holding.annualReturn)}). Worst fall ${maxDrawdown.toFixed(0)}% against ${holding.maxDrawdown.toFixed(0)}%.${short}`
+}
+
+/**
+ * Plain sentences comparing portfolio mixes: which earned most, which fell least, and the trade-off between them.
+ */
+export function describePortfolios(comparison: PortfolioComparison): string[] {
+  const results = comparison.results
+  if (results.length === 0) return []
+  const sentences: string[] = []
+  const years = results[0].years
+
+  const byReturn = [...results].sort((a, b) => b.annualReturn - a.annualReturn)
+  const risky = results.filter((r) => r.maxDrawdown < -1)
+  const byFall = [...risky].sort((a, b) => b.maxDrawdown - a.maxDrawdown)
+  const best = byReturn[0]
+  sentences.push(`Over these ${years.toFixed(1)} years, "${best.name}" earned the most: ${best.annualReturn.toFixed(1)}% a year, with a worst fall of ${best.maxDrawdown.toFixed(0)}%.`)
+
+  // Mixes that kept most of the best return for much less fall
+  const tradeOffs = risky
+    .filter((r) => r !== best && r.annualReturn >= best.annualReturn - 3 && r.maxDrawdown > best.maxDrawdown * 0.75)
+    .sort((a, b) => b.annualReturn - a.annualReturn)
+  if (tradeOffs.length > 0) {
+    const t = tradeOffs[0]
+    sentences.push(`"${t.name}" earned ${(best.annualReturn - t.annualReturn).toFixed(1)} points a year less, but its worst fall was ${t.maxDrawdown.toFixed(0)}% instead of ${best.maxDrawdown.toFixed(0)}%.`)
+  } else if (byFall.length > 0) {
+    const calm = byFall[0]
+    sentences.push(`The calmest mix with risky parts, "${calm.name}", fell at most ${calm.maxDrawdown.toFixed(0)}% and earned ${calm.annualReturn.toFixed(1)}% a year.`)
+  }
+
+  if (comparison.cashAnnualReturn != null)
+    sentences.push(`The cash fund earned ${comparison.cashAnnualReturn.toFixed(1)}% a year over the same dates without falling, so money waiting in cash wasn't idle.`)
+
+  const filtered = results.filter((r) => r.trendFilter)
+  for (const f of filtered) {
+    const plain = results.find((r) => !r.trendFilter && r.rebalance === f.rebalance && JSON.stringify(r.weights) === JSON.stringify(f.weights))
+    if (!plain) continue
+    const helped = f.annualReturn > plain.annualReturn && f.maxDrawdown >= plain.maxDrawdown
+    const hurt = f.annualReturn < plain.annualReturn && f.maxDrawdown <= plain.maxDrawdown
+    sentences.push(`The trend filter on "${plain.name}" ${helped ? 'helped' : hurt ? 'hurt' : 'was mixed'}: ${f.annualReturn.toFixed(1)}% a year and a worst fall of ${f.maxDrawdown.toFixed(0)}%, against ${plain.annualReturn.toFixed(1)}% and ${plain.maxDrawdown.toFixed(0)}% without it.`)
+  }
+
+  if (years < MIN_RELIABLE_YEARS)
+    sentences.push(`Only ${years.toFixed(1)} years can be compared, because one of the chosen instruments has a short history. One good or bad stretch can decide a result this short.`)
+
+  return sentences
 }

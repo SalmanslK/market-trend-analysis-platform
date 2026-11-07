@@ -11,6 +11,8 @@ public class InstrumentAnalyticsDto
     public string Symbol { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public InstrumentType Type { get; set; }
+    /// <summary>A cash (money market) fund: its price only creeps up, so Buy/Sell signals don't apply to it.</summary>
+    public bool IsCash { get; set; }
     public DateTime LastDate { get; set; }
     public decimal LastPrice { get; set; }
     public int DataPoints { get; set; }

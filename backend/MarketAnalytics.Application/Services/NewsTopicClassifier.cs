@@ -39,7 +39,8 @@ public static class NewsTopicClassifier
     private static readonly Regex ForeignMarket = new(
         @"\b(Sri Lankan?|Colombo|India|Indian|Nifty|Sensex|Bangladesh|Dhaka|Nepal)\b", Options);
     private static readonly Regex ClearlyPakistan = new(
-        @"\b(Pakistan|Pakistani|PSX|KSE|KMI|SBP|Karachi|Islamabad|Lahore|tola|PKR)\b", Options);
+        // Not "tola": Nepal and India price gold per tola too
+        @"\b(Pakistan|Pakistani|PSX|KSE|KMI|SBP|Karachi|Islamabad|Lahore|PKR)\b", Options);
 
     // Other countries' local markets: the Indian rupee ("falls 9 paise to 94.50"), Indian, Bangladeshi or Vietnamese gold rates
     private static readonly Regex ForeignLocalMarket = new(

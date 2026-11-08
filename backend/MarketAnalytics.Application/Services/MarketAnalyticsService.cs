@@ -93,11 +93,14 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         var confidence = mood?.Confidence ?? 0;
         var news = SignalRules.NewsScore(moodScore, articles);
         var combined = SignalRules.CombinedScore(analytics.Signal.Score, analytics.Signal.MaxScore, moodScore, articles);
-        var steadyCombined = SignalRules.CombinedScaledScore(analytics.SteadySignal.Score, moodScore, articles);
 
         analytics.NewsSignal = new ScaledSignalDto { Action = SignalRules.ActionForScaledScore(news), Score = (int)Math.Round(news), Articles = articles, NewsConfidence = confidence };
         analytics.CombinedSignal = new ScaledSignalDto { Action = SignalRules.ActionForScaledScore(combined), Score = (int)Math.Round(combined), Articles = articles, NewsConfidence = confidence };
-        analytics.SteadyCombinedSignal = new ScaledSignalDto { Action = SignalRules.ActionForScaledScore(steadyCombined), Score = (int)Math.Round(steadyCombined), Articles = articles, NewsConfidence = confidence };
+        if (analytics.SteadySignal is { } steadySignal)
+        {
+            var steadyCombined = SignalRules.CombinedScaledScore(steadySignal.Score, moodScore, articles);
+            analytics.SteadyCombinedSignal = new ScaledSignalDto { Action = SignalRules.ActionForScaledScore(steadyCombined), Score = (int)Math.Round(steadyCombined), Articles = articles, NewsConfidence = confidence };
+        }
     }
 
     private async Task<InstrumentAnalyticsDto?> BuildAsync(Instrument instrument, List<NewsSentimentSummaryDto> moods, CancellationToken cancellationToken)
@@ -114,8 +117,8 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         analytics.Symbol = instrument.Symbol;
         analytics.Name = instrument.Name;
         analytics.Type = instrument.Type;
-        analytics.IsCash = PortfolioService.IsCash(instrument.Symbol);
-        analytics.LowRiskKind = PortfolioService.LowRiskKind(instrument.Symbol);
+        analytics.IsCash = instrument.IsLowRisk;
+        analytics.LowRiskKind = instrument.LowRiskKind;
         var mood = moods.FirstOrDefault(m => m.Symbol == instrument.Symbol);
         ApplyNewsSignals(analytics, mood);
         analytics.NewsSignal.SharedWith = SharedNews(mood, moods);
@@ -183,9 +186,11 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         };
 
         ComputeRisk(prices, analytics);
-        ComputeIndicators(prices, analytics);
+        // Computed once: the latest figures and the steady signal's 20-day history read the same series
+        var series = IndicatorSeries.Compute(_indicators, prices);
+        ComputeIndicators(series, analytics);
         analytics.Signal = BuildSignal(analytics);
-        var daily = SignalHistory.TechnicalScores(_indicators, prices);
+        var daily = SignalHistory.TechnicalScores(series);
         if (daily.Count > 0)
         {
             var steady = SignalRules.SteadyScores(daily.Select(d => d.Score).ToList(), BacktestService.MaxTechnicalScore)[^1];
@@ -231,27 +236,22 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         analytics.MaxDrawdown1Y = maxDrawdown;
     }
 
-    private void ComputeIndicators(List<PriceDataPoint> prices, InstrumentAnalyticsDto analytics)
+    private static void ComputeIndicators(IndicatorSeries series, InstrumentAnalyticsDto analytics)
     {
         var lastDate = analytics.LastDate;
 
-        analytics.Rsi14 = _indicators.ComputeRsi(prices, SignalRules.RsiPeriod)[lastDate];
+        analytics.Rsi14 = series.Rsi[lastDate];
+        analytics.Macd = series.Macd[lastDate];
+        analytics.MacdSignal = series.MacdSignal[lastDate];
+        analytics.MacdHistogram = series.MacdHistogram[lastDate];
 
-        var (macd, signal, histogram) = _indicators.ComputeMacd(prices);
-        analytics.Macd = macd[lastDate];
-        analytics.MacdSignal = signal[lastDate];
-        analytics.MacdHistogram = histogram[lastDate];
-
-        var sma50 = _indicators.ComputeSma(prices, SignalRules.MediumTrendPeriod);
-        var sma200 = _indicators.ComputeSma(prices, SignalRules.LongTrendPeriod);
-        analytics.Sma50 = sma50[lastDate];
-        analytics.Sma200 = sma200[lastDate];
-        analytics.LongTermTrend = ComputeLongTermTrend(prices, sma50, sma200);
+        analytics.Sma50 = series.Sma50[lastDate];
+        analytics.Sma200 = series.Sma200[lastDate];
+        analytics.LongTermTrend = ComputeLongTermTrend(series.Prices, series.Sma50, series.Sma200);
         if (analytics.Sma50 is decimal fast && analytics.Sma200 is decimal slow)
             analytics.LongTermTrend.Phase = SignalRules.TrendPhase(analytics.LongTermTrend.Direction, analytics.LastPrice, fast, slow);
 
-        var (upper, lower) = _indicators.ComputeBollingerBands(prices);
-        if (upper[lastDate] is decimal upperBand && lower[lastDate] is decimal lowerBand)
+        if (series.UpperBand[lastDate] is decimal upperBand && series.LowerBand[lastDate] is decimal lowerBand)
             analytics.PercentB = SignalRules.PercentB(analytics.LastPrice, upperBand, lowerBand);
     }
 

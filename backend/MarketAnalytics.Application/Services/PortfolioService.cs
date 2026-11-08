@@ -14,7 +14,7 @@ namespace MarketAnalytics.Application.Services;
 /// - Rebalancing happens at the first close of each period. The trend filter uses each part's own golden cross
 ///   (50-period average above the 200-period) from the previous close, acted on at today's close; until a part has
 ///   200 prices, it counts as up.
-/// - Each buy or sell pays the cost, except moves into and out of cash, which Meezan's cash fund charges nothing for.
+/// - Each buy or sell pays the cost, except moves into and out of low-risk (cash and income) funds, which charge nothing.
 /// - Money not in the mix, or moved out by the trend filter, earns what the cash fund earned (nothing before it has data).
 /// </summary>
 public class PortfolioService : IPortfolioService
@@ -56,6 +56,8 @@ public class PortfolioService : IPortfolioService
     public async Task<PortfolioComparisonDto> CompareAsync(IReadOnlyList<PortfolioRequestDto> mixes, decimal costPercent, CancellationToken cancellationToken = default)
     {
         var instruments = (await _instrumentRepository.GetActiveInstrumentsAsync(cancellationToken)).ToList();
+        // Low-risk funds are never trend-filtered and cost nothing to move into or out of
+        var lowRisk = instruments.Where(i => i.IsLowRisk).Select(i => i.Symbol).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var prices = new Dictionary<string, List<PriceDataPoint>>(StringComparer.OrdinalIgnoreCase);
         foreach (var instrument in instruments)
         {
@@ -69,7 +71,7 @@ public class PortfolioService : IPortfolioService
             CostPercent = costPercent,
             Instruments = instruments
                 .Where(i => prices.ContainsKey(i.Symbol))
-                .Select(i => new PortfolioInstrumentDto { Symbol = i.Symbol, Name = i.Name, FirstDate = prices[i.Symbol][0].DateTime, IsCash = IsCash(i.Symbol), LowRiskKind = LowRiskKind(i.Symbol) })
+                .Select(i => new PortfolioInstrumentDto { Symbol = i.Symbol, Name = i.Name, FirstDate = prices[i.Symbol][0].DateTime, IsCash = i.IsLowRisk, LowRiskKind = i.LowRiskKind })
                 .OrderBy(i => i.IsCash).ThenBy(i => i.Symbol)
                 .ToList(),
         };
@@ -95,13 +97,13 @@ public class PortfolioService : IPortfolioService
         {
             var parts = mix.Weights.Keys.ToList();
             var series = parts.Select(s => Align(prices[s], dates, fillBefore: true)).ToList();
-            var trend = parts.Select(s => mix.TrendFilter && !IsCash(s) ? TrendUp(prices[s], dates) : null).ToList();
+            var trend = parts.Select(s => mix.TrendFilter && !lowRisk.Contains(s) ? TrendUp(prices[s], dates) : null).ToList();
             var run = Simulate(
                 dates,
                 series,
                 trend,
                 parts.Select(s => (double)mix.Weights[s] / 100).ToList(),
-                parts.Select(s => !IsCash(s)).ToList(),
+                parts.Select(s => !lowRisk.Contains(s)).ToList(),
                 cash,
                 mix.Rebalance,
                 (double)costPercent / 100);
@@ -119,22 +121,6 @@ public class PortfolioService : IPortfolioService
         return comparison;
     }
 
-    /// <summary>
-    /// Low-risk funds whose price only creeps up: Buy/Sell signals don't apply to them, they are left out of the signal
-    /// backtests, and moving money into or out of them costs nothing in a mix. MCF is the one cash earns in mixes.
-    /// </summary>
-    public static readonly IReadOnlyDictionary<string, string> LowRiskFunds = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-    {
-        [CashSymbol] = "Cash fund",
-        ["MRAF"] = "Cash fund",
-        ["MIIF"] = "Income fund",
-        ["MMP-I"] = "Income fund",
-    };
-
-    public static bool IsCash(string symbol) => LowRiskFunds.ContainsKey(symbol);
-
-    /// <summary>"Cash fund" or "Income fund" for a low-risk fund, otherwise null.</summary>
-    public static string? LowRiskKind(string symbol) => LowRiskFunds.GetValueOrDefault(symbol);
 
     /// <summary>
     /// Runs a mix day by day. Prices are aligned to the dates; trendUp, per part, is null when not filtered.

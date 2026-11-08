@@ -19,7 +19,7 @@ string[] symbols = { "KSE100", "KMI30", "MIF", "GOLDINT", "GOLDPK", "MGF" };
 
 var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseNpgsql(Environment.GetEnvironmentVariable("MA_CONN")).Options;
 using var db = new ApplicationDbContext(options);
-var articles = (await db.NewsArticles.AsNoTracking().ToListAsync()).Select(a => (a, NewsSentimentAnalyzer.Analyze(a.Title, a.Summary))).ToList();
+var articles = await db.NewsArticles.AsNoTracking().ToListAsync();
 var indicators = new IndicatorCalculationService();
 
 var data = new List<Data>();

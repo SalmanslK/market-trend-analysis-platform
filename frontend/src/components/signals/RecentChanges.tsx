@@ -7,7 +7,10 @@ import InfoTip from '../help/InfoTip'
 import { useSignalMode } from '../../services/signalMode'
 
 const NOTIFY_KEY = 'alerts.notify'
-const SEEN_KEY = 'alerts.lastSeenDate'
+// Changes already announced, by date, instrument, signal and new value. A date alone isn't enough: index prices
+// arrive before fund prices, so two changes dated the same day can appear hours apart
+const SEEN_KEY = 'alerts.seen'
+const MAX_SEEN = 500
 // The Worker checks prices every 6 hours, so checking every 30 minutes catches changes soon after they appear
 const CHECK_EVERY_MS = 30 * 60 * 1000
 const SHOWN_AT_FIRST = 8
@@ -85,8 +88,7 @@ export default function RecentChanges() {
     if (permission !== 'granted') return
     write(NOTIFY_KEY, 'on')
     // Only changes from now on are announced
-    const newest = alerts[0]?.date
-    if (newest) write(SEEN_KEY, newest)
+    markSeen(alerts)
     setNotify(true)
   }
 
@@ -153,13 +155,29 @@ export default function RecentChanges() {
   )
 }
 
-/** Notifies about important changes newer than the last one announced, when the viewer asked for it. */
+const alertKey = (a: SignalAlert) => `${a.date.slice(0, 10)}|${a.symbol}|${a.signal}|${a.to}`
+
+function readSeen(): Set<string> {
+  try {
+    return new Set(JSON.parse(read(SEEN_KEY) ?? '[]') as string[])
+  } catch {
+    return new Set()
+  }
+}
+
+function markSeen(alerts: SignalAlert[]) {
+  const seen = [...readSeen(), ...alerts.map(alertKey)]
+  // Keep the newest keys; older changes have long left the 30-day list
+  write(SEEN_KEY, JSON.stringify([...new Set(seen)].slice(-MAX_SEEN)))
+}
+
+/** Notifies about important changes not announced before, when the viewer asked for it. */
 function announce(alerts: SignalAlert[]) {
   if (read(NOTIFY_KEY) !== 'on' || !canNotify() || Notification.permission !== 'granted') return
-  const seen = read(SEEN_KEY) ?? ''
-  const fresh = alerts.filter((a) => a.important && a.date > seen)
+  const seen = readSeen()
+  const fresh = alerts.filter((a) => a.important && !seen.has(alertKey(a)))
   if (fresh.length === 0) return
-  write(SEEN_KEY, alerts[0].date)
+  markSeen(fresh)
   const body = fresh.slice(0, 4).map(describeAlert).join('\n') + (fresh.length > 4 ? `\nand ${fresh.length - 4} more` : '')
   try {
     new Notification('Market Analytics: signals changed', { body, tag: 'market-analytics-alerts' })

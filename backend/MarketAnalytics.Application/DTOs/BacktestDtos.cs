@@ -40,6 +40,12 @@ public class BacktestResultDto
     public decimal? BuyMinusSell30DFirstHalf { get; set; }
     public decimal? BuyMinusSell30DSecondHalf { get; set; }
 
+    /// <summary>The same outcomes and spreads for the steady technical signal (the daily score averaged over 20 days).</summary>
+    public List<SignalOutcomeDto> SteadyOutcomes { get; set; } = new();
+    public decimal? SteadyBuyMinusSell30D { get; set; }
+    public decimal? SteadyBuyMinusSell30DFirstHalf { get; set; }
+    public decimal? SteadyBuyMinusSell30DSecondHalf { get; set; }
+
     /// <summary>Holding's return per year in each half of the period, to compare with each rule's.</summary>
     public decimal HoldingFirstHalfAnnual { get; set; }
     public decimal HoldingSecondHalfAnnual { get; set; }

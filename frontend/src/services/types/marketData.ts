@@ -139,10 +139,10 @@ export interface InstrumentAnalyticsDto {
   signal: TechnicalSignal;
   newsSignal: ScaledSignal;
   combinedSignal: ScaledSignal;
-  /** The daily 5-vote score averaged over 20 trading days, -100 to +100 */
-  steadySignal: ScaledSignal;
-  /** The combined signal using the steady technical signal */
-  steadyCombinedSignal: ScaledSignal;
+  /** The daily 5-vote score averaged over 20 trading days, -100 to +100; null with too little history */
+  steadySignal?: ScaledSignal | null;
+  /** The combined signal using the steady technical signal; null with steadySignal */
+  steadyCombinedSignal?: ScaledSignal | null;
   /** Today's 5 votes, kept when the steady signal is shown in `signal` (see signalMode.ts) */
   dailySignal?: TechnicalSignal;
   metrics: Metric[];
@@ -303,6 +303,11 @@ export interface BacktestResult {
   buyMinusSell30DSecondHalf?: number;
   holdingFirstHalfAnnual: number;
   holdingSecondHalfAnnual: number;
+  /** The same outcomes and spreads for the steady technical signal */
+  steadyOutcomes: SignalOutcome[];
+  steadyBuyMinusSell30D?: number;
+  steadyBuyMinusSell30DFirstHalf?: number;
+  steadyBuyMinusSell30DSecondHalf?: number;
   rules: RuleResult[];
   newsTest: NewsBacktest;
   equityCurve: { date: string; buyAndHold: number; strategy: number; goldenCross: number; monthlyTrend: number; steadySignal: number }[];

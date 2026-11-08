@@ -164,3 +164,34 @@ public class MarketAnalyticsServiceTests
         Assert.Empty(MarketAnalyticsService.SharedNews(Mood("USDPKR", 0, 0), moods.Append(Mood("X", 0, 0))));
     }
 }
+
+public class SteadySignalAnalyticsTests
+{
+    private static readonly DateTime Start = new(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    private readonly MarketAnalyticsService _service = new(null!, null!, new IndicatorCalculationService(), Microsoft.Extensions.Logging.Abstractions.NullLogger<MarketAnalyticsService>.Instance);
+
+    [Fact]
+    public void SteadySignal_IsMissingWhenHistoryIsTooShort()
+    {
+        var prices = Enumerable.Range(0, 150).Select(i => new MarketAnalytics.Domain.ValueObjects.PriceDataPoint(Start.AddDays(i), 100m + i)).ToList();
+
+        var a = _service.ComputeAnalytics(prices);
+        MarketAnalyticsService.ApplyNewsSignals(a, null);
+
+        Assert.Null(a.SteadySignal);
+        Assert.Null(a.SteadyCombinedSignal);
+    }
+
+    [Fact]
+    public void SteadySignal_IsSetWithEnoughHistory()
+    {
+        var prices = Enumerable.Range(0, 400).Select(i => new MarketAnalytics.Domain.ValueObjects.PriceDataPoint(Start.AddDays(i), 100m + i % 50 + i / 10m)).ToList();
+
+        var a = _service.ComputeAnalytics(prices);
+        MarketAnalyticsService.ApplyNewsSignals(a, null);
+
+        Assert.NotNull(a.SteadySignal);
+        Assert.InRange(a.SteadySignal!.Score, -100, 100);
+        Assert.Equal("Hold", a.SteadyCombinedSignal!.Action);   // no news, so the combined signal holds
+    }
+}

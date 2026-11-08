@@ -41,14 +41,12 @@ public class AlertService : IAlertService
         // News for the window plus the 7 days that feed its first day's mood
         var articles = _newsRepository == null
             ? new()
-            : (await _newsRepository.GetPublishedBetweenAsync(since.AddDays(-SignalRules.NewsWindowDays - 1), DateTime.UtcNow.AddDays(1), cancellationToken))
-                .Select(a => (a, NewsSentimentAnalyzer.Analyze(a.Title, a.Summary)))
-                .ToList();
+            : await _newsRepository.GetPublishedBetweenAsync(since.AddDays(-SignalRules.NewsWindowDays - 1), DateTime.UtcNow.AddDays(1), cancellationToken);
 
         var alerts = new List<SignalAlertDto>();
         foreach (var instrument in await _instrumentRepository.GetActiveInstrumentsAsync(cancellationToken))
         {
-            if (PortfolioService.IsCash(instrument.Symbol))
+            if (instrument.IsLowRisk)
                 continue;
 
             var prices = await PriceHistory.LoadDailyAsync(_pricePointRepository, _fundPayoutRepository, instrument.Id, cancellationToken: cancellationToken);
@@ -69,13 +67,12 @@ public class AlertService : IAlertService
     /// </summary>
     public List<DailySignals> DailySignals(IReadOnlyList<PriceDataPoint> prices, IReadOnlyList<ScoredNews> news)
     {
-        var technical = SignalHistory.TechnicalScores(_indicators, prices);
+        var series = IndicatorSeries.Compute(_indicators, prices);
+        var technical = SignalHistory.TechnicalScores(series);
         if (technical.Count == 0)
             return new();
 
-        var sorted = prices.OrderBy(p => p.DateTime).ToList();
-        var sma50 = _indicators.ComputeSma(sorted, SignalRules.MediumTrendPeriod);
-        var sma200 = _indicators.ComputeSma(sorted, SignalRules.LongTrendPeriod);
+        var (sma50, sma200) = (series.Sma50, series.Sma200);
         var moods = NewsService.DailyMood(technical.Select(t => t.Date).ToList(), news, SignalRules.NewsWindowDays);
         var steady = SignalRules.SteadyScores(technical.Select(t => t.Score).ToList(), BacktestService.MaxTechnicalScore);
 

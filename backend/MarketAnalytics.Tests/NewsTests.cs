@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using MarketAnalytics.Application.Services;
+using MarketAnalytics.Domain.Entities;
 using MarketAnalytics.Infrastructure.News;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -287,5 +288,29 @@ public class RssNewsFetcherTests
         Assert.Matches(kse.Relevant, "PSX sheds 3,560 points amid panic selling");
         Assert.DoesNotMatch(kse.Relevant, "New Job Listing Signals Bigger Plans For Sony's Intelligent Pricing");
         Assert.DoesNotMatch(RssNewsFetcher.Excluded, "PSX sheds 3,560 points amid panic selling");
+    }
+}
+
+public class NewsFilterTests
+{
+    private static NewsArticle Searched(string symbol, string title) =>
+        new() { Title = title, Summary = "", Symbols = symbol, Topics = "", PublishedAt = DateTime.UtcNow };
+
+    [Theory]
+    [InlineData("USD/PKR closes at 281.40 in interbank", true)]
+    [InlineData("PKR depreciates against USD", true)]
+    [InlineData("Rupee registers gain against dollar", true)]
+    [InlineData("JazzWorld reports revenue of PKR 144.9bn for third quarter", false)]
+    [InlineData("Company raises USD 5 million in funding", false)]
+    public void UsdPkr_CountsCurrencyStoriesOnly(string title, bool expected)
+    {
+        Assert.Equal(expected, NewsService.IsDirect(Searched("USDPKR", title), "USDPKR"));
+    }
+
+    [Fact]
+    public void NepaliGoldRates_AreLeftOutDespiteTola()
+    {
+        Assert.False(NewsService.IsDirect(Searched("GOLDPK", "Gold price in Nepal increases by Rs 1,500 per tola"), "GOLDPK"));
+        Assert.True(NewsService.IsDirect(Searched("GOLDPK", "Gold price per tola rises Rs1,500"), "GOLDPK"));
     }
 }

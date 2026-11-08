@@ -199,14 +199,14 @@ public class NewsService : INewsService
     /// <summary>
     /// An instrument's direct news with its sentiment from the instrument's point of view, by Pakistan-time date.
     /// </summary>
-    public static List<ScoredNews> ScoreForSymbol(IEnumerable<(NewsArticle Article, SentimentResult Sentiment)> articles, string symbol) =>
+    public static List<ScoredNews> ScoreForSymbol(IEnumerable<NewsArticle> articles, string symbol) =>
         articles
-            .Where(a => IsDirect(a.Article, symbol))
+            .Where(a => IsDirect(a, symbol))
             .Select(a =>
             {
                 // Read from this instrument's point of view: a stronger dollar is bad news for gold but good for USD/PKR
-                var sentiment = NewsSentimentAnalyzer.AnalyzeFor(symbol, a.Article.Title, a.Article.Summary);
-                return new ScoredNews((a.Article.PublishedAt + PakistanOffset).Date, sentiment.Score, sentiment.Confidence / 100.0, sentiment.Label);
+                var sentiment = NewsSentimentAnalyzer.AnalyzeFor(symbol, a.Title, a.Summary);
+                return new ScoredNews((a.PublishedAt + PakistanOffset).Date, sentiment.Score, sentiment.Confidence / 100.0, sentiment.Label);
             })
             .OrderBy(n => n.Date)
             .ToList();
@@ -299,7 +299,8 @@ public class NewsService : INewsService
 
     // A currency story names a currency or the exchange rate; "revenue of PKR144.9bn" isn't one
     private static readonly Regex CurrencyStory = new(
-        @"\b(rupee|dollar|greenback|interbank|open market|exchange rate|forex|currency|reserves|remittances?|current account)\b",
+        // "USD/PKR closes at 281.40" counts; an amount such as "PKR 144.9bn" or "USD 5 million" doesn't
+        @"\b(rupee|dollar|greenback|interbank|open market|exchange rate|forex|currency|reserves|remittances?|current account)\b|\b(PKR|USD)\b(?!\s?[\d.,])",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     /// <summary>

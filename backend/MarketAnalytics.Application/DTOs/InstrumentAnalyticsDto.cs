@@ -62,11 +62,12 @@ public class InstrumentAnalyticsDto
     /// <summary>
     /// The steady technical signal: the daily 5-vote score averaged over the last 20 trading days, -100 to +100.
     /// It changes far less often than the daily signal and did better in testing; the pages show it by default.
+    /// Null when the history is too short for all five rules (200+ prices); the pages then show the daily signal.
     /// </summary>
-    public ScaledSignalDto SteadySignal { get; set; } = new();
+    public ScaledSignalDto? SteadySignal { get; set; }
 
-    /// <summary>The combined signal using the steady technical signal instead of the daily one.</summary>
-    public ScaledSignalDto SteadyCombinedSignal { get; set; } = new();
+    /// <summary>The combined signal using the steady technical signal instead of the daily one; null with SteadySignal.</summary>
+    public ScaledSignalDto? SteadyCombinedSignal { get; set; }
 
     /// <summary>All the standard metrics that can be calculated from closing prices.</summary>
     public List<MetricDto> Metrics { get; set; } = new();

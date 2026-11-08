@@ -63,7 +63,7 @@ public class BacktestService : IBacktestService
         var results = new List<BacktestResultDto>();
         var news = await LoadNewsAsync(cancellationToken);
         // A cash fund's price only creeps up, so there is nothing for Buy/Sell rules to time
-        foreach (var instrument in (await _instrumentRepository.GetActiveInstrumentsAsync(cancellationToken)).Where(i => !PortfolioService.IsCash(i.Symbol)))
+        foreach (var instrument in (await _instrumentRepository.GetActiveInstrumentsAsync(cancellationToken)).Where(i => !i.IsLowRisk))
         {
             try
             {
@@ -84,19 +84,19 @@ public class BacktestService : IBacktestService
         return instrument == null ? null : await BuildAsync(instrument, costPercent, await LoadNewsAsync(cancellationToken), cancellationToken);
     }
 
-    private async Task<List<(NewsArticle Article, SentimentResult Sentiment)>> LoadNewsAsync(CancellationToken cancellationToken)
+    private async Task<List<NewsArticle>> LoadNewsAsync(CancellationToken cancellationToken)
     {
         if (_newsRepository == null)
             return new();
 
         var articles = await _newsRepository.GetPublishedBetweenAsync(DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc), DateTime.UtcNow.AddDays(1), cancellationToken);
-        return articles.Select(a => (a, NewsSentimentAnalyzer.Analyze(a.Title, a.Summary))).ToList();
+        return articles;
     }
 
     private async Task<BacktestResultDto> BuildAsync(
         Instrument instrument,
         decimal costPercent,
-        List<(NewsArticle Article, SentimentResult Sentiment)> news,
+        List<NewsArticle> news,
         CancellationToken cancellationToken)
     {
         var prices = await PriceHistory.LoadDailyAsync(_pricePointRepository, _fundPayoutRepository, instrument.Id, cancellationToken: cancellationToken);
@@ -122,7 +122,9 @@ public class BacktestService : IBacktestService
     {
         var result = new BacktestResultDto { CostPercent = costPercent, CashInterestPercent = AssumedCashInterestPercent };
 
-        var days = ComputeDailyScores(prices);
+        // One set of indicator series for the daily scores and the trend rules
+        var series = IndicatorSeries.Compute(_indicators, prices);
+        var days = SignalHistory.TechnicalScores(series);
         if (days.Count < MinTradingDays)
             return result;
 
@@ -152,22 +154,28 @@ public class BacktestService : IBacktestService
         result.Strategy = Performance(strategy.Equity, years, strategy.Trades, strategy.TimeInvested);
         result.StrategyWithInterest = Performance(withInterest.Equity, years, withInterest.Trades, withInterest.TimeInvested);
         result.Verdict = VerdictFor(result.Strategy, result.BuyAndHold);
-        result.Outcomes = BuildOutcomes(dates, closes, scores);
+        result.Outcomes = BuildOutcomes(dates, closes, scores.Select(SignalRules.ActionFor).ToList());
 
         var middle = dates.Count / 2;
         result.BuyMinusSell30D = BuyMinusSell(dates, closes, scores, 0, dates.Count);
         result.BuyMinusSell30DFirstHalf = BuyMinusSell(dates, closes, scores, 0, middle);
         result.BuyMinusSell30DSecondHalf = BuyMinusSell(dates, closes, scores, middle, dates.Count);
 
+        // The same for the steady signal, so the page can show whichever signal the reader chose
+        var steadyScores = SignalRules.SteadyScores(scores, MaxTechnicalScore);
+        var steadyPositions = steadyScores.Select(SignalRules.PositionForScaledScore).ToList();
+        result.SteadyOutcomes = BuildOutcomes(dates, closes, steadyScores.Select(SignalRules.ActionForScaledScore).ToList());
+        result.SteadyBuyMinusSell30D = BuyMinusSell(dates, closes, steadyPositions, 0, dates.Count);
+        result.SteadyBuyMinusSell30DFirstHalf = BuyMinusSell(dates, closes, steadyPositions, 0, middle);
+        result.SteadyBuyMinusSell30DSecondHalf = BuyMinusSell(dates, closes, steadyPositions, middle, dates.Count);
+
         // Slower trend rules, fixed in advance, on the same dates and with the same costs as the signal
-        var byDate = prices.OrderBy(p => p.DateTime).ToList();
-        var sma50 = _indicators.ComputeSma(byDate, SignalRules.MediumTrendPeriod);
-        var sma200 = _indicators.ComputeSma(byDate, SignalRules.LongTrendPeriod);
+        var (sma50, sma200) = (series.Sma50, series.Sma200);
         var medium = dates.Select(d => sma50[d]!.Value).ToList();
         var longTerm = dates.Select(d => sma200[d]!.Value).ToList();
         var goldenCross = Simulate(dates, closes, GoldenCrossScores(medium, longTerm), cost, cashInterest: 0);
         var monthlyTrend = Simulate(dates, closes, MonthlyTrendScores(dates, days.Select(d => d.Price).ToList(), longTerm), cost, cashInterest: 0);
-        var steadySignal = Simulate(dates, closes, SignalRules.SteadyScores(scores, MaxTechnicalScore).Select(SignalRules.PositionForScaledScore).ToList(), cost, cashInterest: 0);
+        var steadySignal = Simulate(dates, closes, steadyPositions, cost, cashInterest: 0);
 
         var firstHalfYears = (dates[middle] - dates[0]).TotalDays / 365.25;
         var secondHalfYears = (dates[^1] - dates[middle]).TotalDays / 365.25;
@@ -367,9 +375,8 @@ public class BacktestService : IBacktestService
         return muchSmallerFall && betterPerFall ? "LowerRisk" : "DidNotHelp";
     }
 
-    private static List<SignalOutcomeDto> BuildOutcomes(List<DateTime> dates, List<double> closes, List<int> scores)
+    private static List<SignalOutcomeDto> BuildOutcomes(List<DateTime> dates, List<double> closes, List<string> actions)
     {
-        var actions = scores.Select(SignalRules.ActionFor).ToList();
         var forward = Horizons.ToDictionary(h => h, h => ForwardChanges(dates, closes, h));
 
         var outcomes = Actions.Append("All").Select(action =>

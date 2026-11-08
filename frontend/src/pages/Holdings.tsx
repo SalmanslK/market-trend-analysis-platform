@@ -21,6 +21,8 @@ export interface Holding {
 const STORAGE_KEY = 'holdings'
 // Indices can't be bought directly; their index funds (e.g. KMIF for KMI-30) can
 const NOT_OWNABLE = ['KSE100', 'KMI30']
+// Priced in US dollars (gold per ounce); converted to rupees at the latest USD/PKR rate
+const USD_PRICED = ['GOLDINT']
 
 function loadHoldings(): Holding[] {
   try {
@@ -86,16 +88,22 @@ export default function Holdings() {
     setDraft({ symbol: '', units: '', buyPrice: '', buyDate: '' })
   }
 
+  const usdPkr = bySymbol.get('USDPKR')?.lastPrice
   const rows = holdings
     .map((h) => {
       const a = bySymbol.get(h.symbol)
       if (!a) return null
-      const value = h.units * a.lastPrice
-      const cost = h.buyPrice ? h.units * h.buyPrice : undefined
+      const inDollars = USD_PRICED.includes(a.symbol)
+      if (inDollars && !usdPkr) return null
+      // Rupees per unit of the instrument's own price (1 for rupee prices)
+      const toRupees = inDollars ? usdPkr! : 1
+      const value = h.units * a.lastPrice * toRupees
+      // The price paid is in the same currency as the price; dollar prices use today's rate, so the gain is the dollar gain
+      const cost = h.buyPrice ? h.units * h.buyPrice * toRupees : undefined
       // Payouts after the buy date (all listed payouts when no date), in rupees for these units
       const payouts = a.payouts.filter((p) => !h.buyDate || p.date.slice(0, 10) > h.buyDate)
       const paidOut = payouts.reduce((sum, p) => sum + p.amountPerUnit * h.units, 0)
-      return { h, a, value, cost, paidOut, payoutCount: payouts.length }
+      return { h, a, value, cost, paidOut, payoutCount: payouts.length, inDollars }
     })
     .filter((r): r is NonNullable<typeof r> => r != null)
 
@@ -173,7 +181,7 @@ export default function Holdings() {
           </button>
         </div>
         <p style={{ color: COLORS.muted, fontSize: '12px', marginTop: '8px' }}>
-          Units: fund units, tolas of gold (GOLDPK), ounces (GOLDINT) or US dollars (USDPKR). Saving an investment you already have replaces it.
+          Units: fund units, tolas of gold (GOLDPK), ounces (GOLDINT) or US dollars (USDPKR). Enter the price paid in the same currency as the price: US dollars for GOLDINT, whose value is converted to rupees at the latest USD/PKR rate. Saving an investment you already have replaces it.
         </p>
       </section>
 
@@ -194,14 +202,14 @@ export default function Holdings() {
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ h, a, value, cost, paidOut, payoutCount }) => (
+              {rows.map(({ h, a, value, cost, paidOut, payoutCount, inDollars }) => (
                 <tr key={h.symbol}>
                   <td style={{ ...cellStyle, textAlign: 'left' }}>
                     <Link to={`/instrument/${a.symbol}`} style={{ color: COLORS.link, textDecoration: 'none', fontWeight: 'bold' }}>{a.symbol}</Link>
                     <div style={{ fontSize: '12px', color: COLORS.muted }}>{a.name}{h.buyDate ? `, bought ${formatDate(h.buyDate)}` : ''}</div>
                   </td>
                   <td style={cellStyle}>{formatNumber(h.units, h.units % 1 ? 2 : 0)}</td>
-                  <td style={cellStyle}>{formatNumber(a.lastPrice)}</td>
+                  <td style={cellStyle}>{inDollars ? `$${formatNumber(a.lastPrice)}` : formatNumber(a.lastPrice)}</td>
                   <td style={{ ...cellStyle, fontWeight: 'bold' }}>{formatNumber(value, 0)}</td>
                   <td style={{ ...cellStyle, color: changeColor(cost ? value - cost : undefined) }}>
                     {cost ? formatPercent((value / cost - 1) * 100, 1) : '-'}

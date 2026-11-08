@@ -46,7 +46,8 @@ export function useSignalMode(): SignalMode {
  * summary reads the choice the same way. Today's votes stay in `dailySignal` for the explanation.
  */
 export function applySignalMode(a: InstrumentAnalyticsDto, mode: SignalMode): InstrumentAnalyticsDto {
-  if (mode === 'daily' || !a.steadySignal) return { ...a, dailySignal: a.signal }
+  // Too little history for a steady reading: show the daily signal rather than an empty Hold
+  if (mode === 'daily' || !a.steadySignal || !a.steadyCombinedSignal) return { ...a, dailySignal: a.signal }
   return {
     ...a,
     dailySignal: a.signal,
@@ -55,7 +56,7 @@ export function applySignalMode(a: InstrumentAnalyticsDto, mode: SignalMode): In
   }
 }
 
-/** The backtest with the chosen technical signal in the "signal", "technical" and "combined" rules. */
+/** The backtest with the chosen technical signal in the "signal", "technical" and "combined" rules, outcomes and spreads. */
 export function applyBacktestMode(r: BacktestResult, mode: SignalMode): BacktestResult {
   if (mode === 'daily') return r
   const steadyRule = r.rules.find((x) => x.key === 'steadySignal')
@@ -71,6 +72,10 @@ export function applyBacktestMode(r: BacktestResult, mode: SignalMode): Backtest
     ...r,
     strategy: steadyRule.performance,
     verdict: steadyRule.verdict,
+    outcomes: r.steadyOutcomes ?? r.outcomes,
+    buyMinusSell30D: r.steadyBuyMinusSell30D,
+    buyMinusSell30DFirstHalf: r.steadyBuyMinusSell30DFirstHalf,
+    buyMinusSell30DSecondHalf: r.steadyBuyMinusSell30DSecondHalf,
     rules: r.rules.filter((x) => x.key !== 'steadySignal').map((x) => (x.key === 'signal' ? { ...steadyRule, key: 'signal' } : x)),
     equityCurve: r.equityCurve.map((p) => ({ ...p, strategy: p.steadySignal })),
     newsTest: {

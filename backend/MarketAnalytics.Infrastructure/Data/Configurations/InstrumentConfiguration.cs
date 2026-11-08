@@ -30,6 +30,11 @@ public class InstrumentConfiguration : IEntityTypeConfiguration<Instrument>
             .IsRequired()
             .HasMaxLength(500);
 
+        builder.Property(i => i.LowRiskKind)
+            .HasMaxLength(50);
+
+        builder.Ignore(i => i.IsLowRisk);
+
         builder.Property(i => i.CreatedAt)
             .IsRequired();
 

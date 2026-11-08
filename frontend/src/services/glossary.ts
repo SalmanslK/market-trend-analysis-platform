@@ -117,9 +117,9 @@ export const glossary = {
     howToRead: 'Higher is better. It lets you compare a calm mix with a bumpy one: a mix with a lower return can still have a higher Sharpe ratio.',
   },
   cashFund: {
-    title: 'Cash fund',
-    what: 'A money market fund such as Meezan Cash Fund. It invests in very short-term Islamic deposits and government papers, so its price creeps up almost every day and rarely falls.',
-    howToRead: 'It shows what money earns while it waits. Buy/Sell signals don\'t apply to it. It pays most of its return out as yearly payouts; returns here count them as reinvested.',
+    title: 'Cash and income funds',
+    what: 'Low-risk Meezan funds. Cash funds (Meezan Cash Fund, Rozana Amdani) invest in very short-term Islamic deposits and government papers; income funds (Islamic Income Fund, Munafa Plan I) in slightly longer Islamic bonds and deposits. Their price creeps up almost every day and rarely falls.',
+    howToRead: 'They show what money earns while it waits. Buy/Sell signals don\'t apply to them. They pay their return out as payouts: yearly for most, daily for Rozana Amdani, whose price stays at Rs 50. Returns here count payouts as reinvested.',
   },
   backtest: {
     title: 'Track record (backtest)',

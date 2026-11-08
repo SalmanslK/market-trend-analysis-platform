@@ -112,6 +112,8 @@ export interface InstrumentAnalyticsDto {
   type: InstrumentType;
   /** A cash (money market) fund: Buy/Sell signals don't apply */
   isCash: boolean;
+  /** "Cash fund" or "Income fund" when isCash */
+  lowRiskKind?: string;
   lastDate: string;
   lastPrice: number;
   dataPoints: number;
@@ -338,7 +340,7 @@ export interface PortfolioComparison {
   costPercent: number;
   cashAnnualReturn?: number;
   results: PortfolioResult[];
-  instruments: { symbol: string; name: string; firstDate: string; isCash: boolean }[];
+  instruments: { symbol: string; name: string; firstDate: string; isCash: boolean; lowRiskKind?: string }[];
 }
 
 /** A signal or trend change from one day's close to the next */

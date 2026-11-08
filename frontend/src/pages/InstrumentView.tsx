@@ -102,7 +102,7 @@ export default function InstrumentView() {
           )}
           {analytics.isCash ? (
             <span style={{ color: COLORS.muted, fontSize: '14px' }}>
-              Cash fund: Buy/Sell signals don't apply<InfoTip term="cashFund" />
+              {analytics.lowRiskKind ?? 'Cash fund'}: Buy/Sell signals don't apply<InfoTip term="cashFund" />
             </span>
           ) : (<>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: COLORS.muted, fontSize: '14px' }}>

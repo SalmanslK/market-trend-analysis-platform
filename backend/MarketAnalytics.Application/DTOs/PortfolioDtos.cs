@@ -76,4 +76,6 @@ public class PortfolioInstrumentDto
     public string Name { get; set; } = string.Empty;
     public DateTime FirstDate { get; set; }
     public bool IsCash { get; set; }
+    /// <summary>"Cash fund" or "Income fund" for a low-risk fund.</summary>
+    public string? LowRiskKind { get; set; }
 }

@@ -189,9 +189,9 @@ export default function Dashboard() {
                   </td>
                   {a.isCash ? (
                     <td colSpan={4} style={{ ...cellStyle, textAlign: 'center' }}>
-                      <Tip text="A cash fund's price creeps up almost every day, so Buy/Sell signals and trends don't apply. It shows what money earns while it waits; see the Portfolio page.">
+                      <Tip text={`A ${(a.lowRiskKind ?? 'cash fund').toLowerCase()}'s price creeps up almost every day, so Buy/Sell signals and trends don't apply. It shows what money earns while it waits; see the Portfolio page.`}>
                         <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '12px', fontSize: '13px', backgroundColor: '#e3f2fd', color: '#0d47a1', fontWeight: 'bold' }}>
-                          Cash fund · no signals
+                          {a.lowRiskKind ?? 'Cash fund'} · no signals
                         </span>
                       </Tip>
                     </td>

@@ -69,7 +69,7 @@ public class PortfolioService : IPortfolioService
             CostPercent = costPercent,
             Instruments = instruments
                 .Where(i => prices.ContainsKey(i.Symbol))
-                .Select(i => new PortfolioInstrumentDto { Symbol = i.Symbol, Name = i.Name, FirstDate = prices[i.Symbol][0].DateTime, IsCash = IsCash(i.Symbol) })
+                .Select(i => new PortfolioInstrumentDto { Symbol = i.Symbol, Name = i.Name, FirstDate = prices[i.Symbol][0].DateTime, IsCash = IsCash(i.Symbol), LowRiskKind = LowRiskKind(i.Symbol) })
                 .OrderBy(i => i.IsCash).ThenBy(i => i.Symbol)
                 .ToList(),
         };
@@ -119,7 +119,22 @@ public class PortfolioService : IPortfolioService
         return comparison;
     }
 
-    public static bool IsCash(string symbol) => symbol.Equals(CashSymbol, StringComparison.OrdinalIgnoreCase);
+    /// <summary>
+    /// Low-risk funds whose price only creeps up: Buy/Sell signals don't apply to them, they are left out of the signal
+    /// backtests, and moving money into or out of them costs nothing in a mix. MCF is the one cash earns in mixes.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string> LowRiskFunds = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        [CashSymbol] = "Cash fund",
+        ["MRAF"] = "Cash fund",
+        ["MIIF"] = "Income fund",
+        ["MMP-I"] = "Income fund",
+    };
+
+    public static bool IsCash(string symbol) => LowRiskFunds.ContainsKey(symbol);
+
+    /// <summary>"Cash fund" or "Income fund" for a low-risk fund, otherwise null.</summary>
+    public static string? LowRiskKind(string symbol) => LowRiskFunds.GetValueOrDefault(symbol);
 
     /// <summary>
     /// Runs a mix day by day. Prices are aligned to the dates; trendUp, per part, is null when not filtered.

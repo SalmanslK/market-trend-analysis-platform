@@ -252,6 +252,42 @@ namespace MarketAnalytics.Infrastructure.Migrations
                             Symbol = "MCF",
                             Type = 1,
                             UpdatedAt = new DateTime(2026, 11, 8, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 11,
+                            CreatedAt = new DateTime(2026, 11, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/mutual-funds/nav-history/5385b72f-44fe-4f98-bee3-0f275a05b148?days=365",
+                            IsActive = true,
+                            Name = "Meezan Rozana Amdani Fund",
+                            Symbol = "MRAF",
+                            Type = 1,
+                            UpdatedAt = new DateTime(2026, 11, 9, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 12,
+                            CreatedAt = new DateTime(2026, 11, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/mutual-funds/nav-history/b4323cd2-b729-4122-9678-7150f95c868a?days=365",
+                            IsActive = true,
+                            Name = "Meezan Islamic Income Fund",
+                            Symbol = "MIIF",
+                            Type = 1,
+                            UpdatedAt = new DateTime(2026, 11, 9, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 13,
+                            CreatedAt = new DateTime(2026, 11, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/mutual-funds/nav-history/4021c591-4da4-48f5-ba76-5b7b6059298c?days=365",
+                            IsActive = true,
+                            Name = "Meezan Daily Income Fund - Meezan Munafa Plan I",
+                            Symbol = "MMP-I",
+                            Type = 1,
+                            UpdatedAt = new DateTime(2026, 11, 9, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 

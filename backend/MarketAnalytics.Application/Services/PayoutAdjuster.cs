@@ -32,10 +32,10 @@ public static class PayoutAdjuster
             var best = -1;
             var bestMiss = decimal.MaxValue;
             var delay = 0;
-            for (int i = 1; i < prices.Count; i++)
+            // Funds such as Meezan Rozana Amdani pay daily, so find the window by binary search instead of scanning
+            for (int i = Math.Max(1, FirstOnOrAfter(prices, from)); i < prices.Count; i++)
             {
                 var date = prices[i].DateTime.Date;
-                if (date < from) continue;
                 if (date > to) break;
                 var fall = prices[i - 1].Price - prices[i].Price;
                 var miss = Math.Abs(fall - payout.AmountPerUnit) + DelayPenalty * payout.AmountPerUnit * delay++;
@@ -49,6 +49,18 @@ public static class PayoutAdjuster
                 result.Add((payout, best));
         }
         return result;
+    }
+
+    private static int FirstOnOrAfter(IReadOnlyList<PriceDataPoint> prices, DateTime date)
+    {
+        int low = 0, high = prices.Count;
+        while (low < high)
+        {
+            var middle = (low + high) / 2;
+            if (prices[middle].DateTime.Date < date) low = middle + 1;
+            else high = middle;
+        }
+        return low;
     }
 
     /// <summary>

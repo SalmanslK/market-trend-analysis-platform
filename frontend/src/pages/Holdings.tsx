@@ -208,7 +208,7 @@ export default function Holdings() {
                   </td>
                   <td style={cellStyle}>{paidOut > 0 ? `${formatNumber(paidOut, 0)} (${payoutCount})` : '-'}</td>
                   <td style={{ ...cellStyle, textAlign: 'center' }}>
-                    {a.isCash ? <span style={{ color: COLORS.muted }}>cash</span> : <ScaledSignalBadge signal={a.combinedSignal} />}
+                    {a.isCash ? <span style={{ color: COLORS.muted }}>{(a.lowRiskKind ?? 'cash fund').toLowerCase()}</span> : <ScaledSignalBadge signal={a.combinedSignal} />}
                   </td>
                   <td style={{ ...cellStyle, textAlign: 'center' }}>
                     {a.isCash ? '' : <TrendBadge trend={a.longTermTrend} />}

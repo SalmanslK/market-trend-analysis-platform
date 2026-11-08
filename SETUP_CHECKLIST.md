@@ -339,6 +339,12 @@ instruments over payout-adjusted prices. **Meezan Cash Fund (MCF)** was added as
 listed from 2018, its prices go back to 2009); it is marked as cash, so it shows no Buy/Sell signals and is left out of the
 signal backtests and the market summary counts.
 
+Three more low-risk Meezan funds are tracked the same way (no signals, no trading cost in mixes): **MRAF** (Meezan Rozana
+Amdani Fund, a cash fund whose price stays at Rs 50 and which pays its return out daily, 2,500+ payouts since 2019, so its
+return comes entirely from the payout adjustment), **MIIF** (Meezan Islamic Income Fund; prices from 2007, payouts listed
+from 2018, so earlier falls are unadjusted payouts) and **MMP-I** (Meezan Daily Income Fund, Meezan Munafa Plan I, from
+Aug 2023). Payouts are matched to price days by binary search, since daily payouts made a full scan slow.
+
 - All mixes in one comparison use the same dates, from when every chosen instrument has prices.
 - Rebalancing at the first close of each year, half-year or quarter, or never. The optional trend filter keeps each risky
   part in cash while its own golden cross is down, acting at the close after the trend turns.

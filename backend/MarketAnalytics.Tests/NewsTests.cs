@@ -73,7 +73,7 @@ public class NewsSentimentAnalyzerTests
         var result = NewsSentimentAnalyzer.Analyze("PSX sheds 3,560 points amid panic selling in jittery October", "");
 
         Assert.Equal("Negative", result.Label);
-        Assert.Equal(-100, result.Score);
+        Assert.True(result.Score <= -80);
         Assert.Contains("sheds", result.NegativeWords);
         Assert.True(result.Confidence > 80);
     }
@@ -84,7 +84,17 @@ public class NewsSentimentAnalyzerTests
         var result = NewsSentimentAnalyzer.Analyze("KSE-100 surges to record high as bulls return", "");
 
         Assert.Equal("Positive", result.Label);
-        Assert.Equal(100, result.Score);
+        Assert.True(result.Score >= 80);
+    }
+
+    [Fact]
+    public void StrongWords_ScoreHigherThanMildOnes()
+    {
+        var strong = NewsSentimentAnalyzer.Analyze("PSX surges 2,000 points", "").Score;
+        var plain = NewsSentimentAnalyzer.Analyze("PSX gains 900 points", "").Score;
+        var mild = NewsSentimentAnalyzer.Analyze("PSX edges up slightly", "").Score;
+
+        Assert.True(strong > plain && plain > mild && mild > 0);
     }
 
     [Theory]
@@ -95,9 +105,51 @@ public class NewsSentimentAnalyzerTests
     [InlineData("KSE-100 ends three-day losing streak", "Positive")]
     [InlineData("PSX Benchmark Index Up 2.5% WoW", "Positive")]
     [InlineData("A look at Top Stocks at PSX as Market ends October in Red", "Negative")]
+    [InlineData("PSX stages strong comeback on easing fears", "Positive")]
+    [InlineData("PSX Closing Bell: Bulls Head for the Exit", "Negative")]
+    [InlineData("PSX reverses gains as geopolitics weigh", "Negative")]
+    [InlineData("PSX reclaims 175,000-point level", "Positive")]
+    [InlineData("Stocks dumped as PSX dives over 3,000 points", "Negative")]
+    [InlineData("Gold price up by Rs 1500", "Positive")]
+    [InlineData("Pakistan rupee at all time low owing to political instability", "Negative")]
     public void CommonMarketPhrasing_IsRecognised(string title, string expected)
     {
         Assert.Equal(expected, NewsSentimentAnalyzer.Analyze(title, "").Label);
+    }
+
+    [Theory]
+    [InlineData("KSE100", "PSX rebounds over 1,000 points on oil price fall", "Positive")]   // cheaper oil helps Pakistan
+    [InlineData("KSE100", "PSX ends four-session rally on oil surge", "Negative")]
+    [InlineData("GOLDPK", "Gold prices surge as dollar weakens", "Positive")]
+    [InlineData("GOLDPK", "Gold drops over 2% as dollar strengthens", "Negative")]
+    [InlineData("GOLDPK", "Gold prices remain unchanged, silver declines in domestic market", "Neutral")]
+    [InlineData("GOLDPK", "Gold firms, silver slides as oil surge revives inflation pressure", "Positive")]
+    [InlineData("USDPKR", "Rupee gains against US dollar", "Negative")]                 // rupee stronger -> USD/PKR falls
+    [InlineData("USDPKR", "Dollar hits historic high at Rs170 in interbank market", "Positive")]
+    [InlineData("USDPKR", "Pakistan's foreign exchange reserves climb to record high", "Negative")]
+    public void Sentiment_IsReadFromTheInstrumentsPointOfView(string symbol, string title, string expected)
+    {
+        Assert.Equal(expected, NewsSentimentAnalyzer.AnalyzeFor(symbol, title, "").Label);
+    }
+
+    [Fact]
+    public void OtherSubjects_DontCountInTheGeneralReading()
+    {
+        // The headline is about gold; silver falling says nothing about it
+        var result = NewsSentimentAnalyzer.Analyze("Gold holds steady in Pakistan, silver rates decline", "");
+
+        Assert.Equal("Neutral", result.Label);
+    }
+
+    [Theory]
+    [InlineData("Rupee falls 9 paise to 94.50 against US dollar in early trade", true)]
+    [InlineData("Rupee falls to record low of 95.63 against U.S. dollar", true)]
+    [InlineData("Gold price cut by Tk 2,740 a bhari", true)]
+    [InlineData("Gold Rate Today in Pakistan | Latest Gold Prices Per Tola and 10 Grams", false)]
+    [InlineData("Pakistani rupee edges higher against US dollar", false)]
+    public void ForeignLocalMarkets_AreRecognised(string title, bool expected)
+    {
+        Assert.Equal(expected, NewsTopicClassifier.IsForeignLocalMarket(title));
     }
 
     [Fact]
@@ -111,23 +163,13 @@ public class NewsSentimentAnalyzerTests
     }
 
     [Fact]
-    public void EndedRally_IsNoLongerReadAsPositive()
+    public void MixedWording_ScoresBetweenTheTwo()
     {
-        // Known limit: "oil surge" still reads as positive wording, so this lands on Neutral rather than Negative
-        var result = NewsSentimentAnalyzer.Analyze("PSX ends four-session rally on oil surge", "");
+        var mixed = NewsSentimentAnalyzer.Analyze("Stocks rebound after early losses", "");
+        var clear = NewsSentimentAnalyzer.Analyze("Stocks rebound", "");
 
-        Assert.NotEqual("Positive", result.Label);
-        Assert.Contains(result.NegativeWords, w => w.Contains("rally"));
-    }
-
-    [Fact]
-    public void MixedWording_HasLowConfidence()
-    {
-        var result = NewsSentimentAnalyzer.Analyze("Stocks rebound after early losses", "");
-
-        Assert.Equal(0, result.Score);
-        Assert.Equal(0, result.Confidence);
-        Assert.Equal("Neutral", result.Label);
+        Assert.InRange(mixed.Score, 1, clear.Score - 1);
+        Assert.True(mixed.Confidence < clear.Confidence);
     }
 
     [Fact]
@@ -135,18 +177,8 @@ public class NewsSentimentAnalyzerTests
     {
         var result = NewsSentimentAnalyzer.Analyze("State Bank eyes open banking ecosystem", "");
 
-        Assert.Equal(new SentimentResult(0, 0, "Neutral", new(), new()).Label, result.Label);
+        Assert.Equal("Neutral", result.Label);
         Assert.Equal(0, result.Confidence);
-    }
-
-    [Theory]
-    [InlineData("Rupee gains against US dollar", -1)]   // rupee stronger -> USD/PKR falls
-    [InlineData("Dollar falls against rupee", 1)]       // dollar is the subject -> tone applies as is
-    [InlineData("Remittances rise 10% in October", 1)]  // rupee not mentioned
-    public void UsdPkrDirection_FlipsWhenRupeeIsTheSubject(string title, int expected)
-    {
-        Assert.Equal(expected, NewsSentimentAnalyzer.DirectionFor("USDPKR", title));
-        Assert.Equal(1, NewsSentimentAnalyzer.DirectionFor("KSE100", title));
     }
 
     [Fact]

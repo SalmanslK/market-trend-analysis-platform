@@ -167,13 +167,30 @@ archive builds up from the first run (which backfills about 30 days).
 about it (gold news for gold, rupee news for USD/PKR). Wider topics (interest rates, IMF, oil) are shown as
 *background* and are not counted in that instrument's news mood.
 
-**Sentiment** (`NewsSentimentAnalyzer`) is read from the wording: a financial word list (gains, surges, record
-high vs sheds, slump, panic selling), reversal phrases ("snaps four-day rally" is negative), title words counting
-double. Score -100 to +100; confidence grows with the number of matching words and how much they agree. The
-matched words are returned so readers can see why. For USD/PKR the score is flipped when the rupee is the subject
-("Rupee gains" means USD/PKR falls). The per-instrument news mood is the confidence-weighted average over 7 days.
-A word list can misread headlines such as "PSX ends rally on oil surge"; an LLM would be more accurate but needs a
-paid API key.
+**Sentiment** (`NewsSentimentAnalyzer`, rule-based, no AI) is read from the wording, from each instrument's point of view:
+
+- A financial word list (gains, surges, reclaims, record high vs sheds, dives, rout, all-time low) and phrases read before
+  single words ("snaps four-day rally", "pares gains" and "bulls head for the exit" are negative; "easing fears" and "ends
+  losing streak" are positive; "up by Rs1,500" counts).
+- Headlines are split into clauses and each clause's subject is found. Words count through how that subject affects the
+  instrument: a stronger dollar is bad for gold and means USD/PKR rises, cheaper oil is good for Pakistani stocks and the
+  rupee, the rupee gaining means USD/PKR falls, and silver or US tech stocks say nothing about gold.
+- A headline whose own subject is unchanged, steady or stable is neutral.
+- Strong words (surges, plunges) count 1.5x, mild ones (edges up, slight) half; the title counts double and its first
+  clause double again; background clauses ("amid volatility") count half. One plain title word scores 80, mixed wording
+  less. Confidence grows with the number of matching words and how much they agree. The matched words are shown.
+- Stories about other countries' local markets (Indian rupee quotes such as "falls 9 paise to 94.50", Indian, Bangladeshi
+  or Vietnamese gold rates) don't count unless the title clearly mentions Pakistan, and USD/PKR only counts currency stories.
+
+Checked by hand in Nov 2026 against headlines labelled up, down or neutral (the old word list in brackets): on a sample
+the rules were tuned on, 93% read correctly (79%); on a fresh sample, 80% before further fixes (75%); and on a third
+sample never looked at before, 96% of 45 (76%). The old rules counted every foreign story, and 35% of the stories linked
+to USD/PKR were about the Indian rupee; the filter now leaves out all but 1 of 13 in the last sample.
+
+The per-instrument news mood is the confidence-weighted average over 7 days. Weighting recent news more was tested
+(`scripts/research/news-and-ma-research.cs`): the faster the fade, the worse the news signal did (half-life 1 day: -2.7%
+a year; 7 days equal: +7.8%; 14 days equal: +12.7%), and no weighting made the news mood predict the next 5 days
+(correlation 0.00 to 0.05). News mostly reports moves already made, so the 7-day window is kept.
 
 **Biggest moves**: for each of an instrument's largest daily moves in the last 30 days, the API returns the news
 published from the day before to the next trading day (so weekend reports of a Friday move are included).
@@ -277,18 +294,26 @@ Results on the 6 instruments with at least 3 years of news (Nov 2026, 0.5% per t
 | Holding | +22.6% | -25.6% | 1.01 | 0 |
 | Golden cross | +19.9% | -22.6% | 1.03 | 1.5 |
 | Monthly trend check | +18.3% | -23.7% | 0.98 | 1.9 |
-| Both agree (the combined signal) | +15.4% | -18.8% | 0.95 | 6.3 |
-| Balanced average of technical and news | +11.8% | -32.9% | 0.70 | 12.2 |
+| Both agree (the combined signal) | +16.2% | -17.7% | 0.99 | 6.2 |
+| Balanced average of technical and news | +10.5% | -33.7% | 0.64 | 12.6 |
 | Technical | +8.3% | -33.8% | 0.51 | 19.4 |
-| News | +5.1% | -25.7% | 0.39 | 19.9 |
-| Simple average of technical and news (old combined) | +3.6% | -37.0% | 0.24 | 23.1 |
+| News | +7.8% | -21.7% | 0.55 | 18.1 |
+| Simple average of technical and news (old combined) | +7.4% | -33.1% | 0.47 | 18.4 |
 
 Holding did best on return. No rule beat it reliably, and choosing rules quarter by quarter did worse
 (+25.6% against +28.4% over the same period). Technical, news and the simple average trailed by more than luck explains. With cash at an assumed
 10% a year, golden cross roughly matches holding (+22.9% against +22.6%). Both agree had the smallest falls. It and the
 choice of golden cross were picked after earlier tests on this data. Older news is a sample of a few stories per week,
 sentiment is read from headline wording, index dividends are excluded, and the history is mostly a rising market.
-Fund figures count payouts (added Nov 2026; holding rose from +21.8% to +22.6%, partly from newer prices too).
+Fund figures count payouts (added Nov 2026; holding rose from +21.8% to +22.6%, partly from newer prices too). News and
+combined figures use the corrected sentiment (Nov 2026; before it: news +5.1%, both agree +15.4%).
+
+**Moving averages** (`scripts/research/news-and-ma-research.cs`, full history, 0.5% per trade, holding +19.5% a year):
+the 5-vote technical signal earned +6.8% with 18.6 trades a year. Averaging its score over the last 20 days earned +16.7%
+with 1.8 trades; the golden cross +17.2% and price above both its 50- and 200-day averages +17.4%, each with a smaller
+worst fall than holding (-29% against -34%) but behind it in both halves of the history. Faster averages (price vs 50-day,
+EMA 12/26) did little better than the plain signal. In the combined signal, a technical score averaged over 5 to 20
+days earned +18.8% to +19.2% against +16.2% (holding +22.6%), with 1.4 to 3.1 trades a year instead of 6.2.
 
 ## Alerts (what changed)
 

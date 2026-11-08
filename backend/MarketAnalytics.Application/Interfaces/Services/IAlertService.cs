@@ -8,7 +8,8 @@ namespace MarketAnalytics.Application.Interfaces.Services;
 public interface IAlertService
 {
     /// <summary>
-    /// Changes in the last <paramref name="days"/> days (at most 90), newest first.
+    /// Changes in the last <paramref name="days"/> days (at most 90), newest first. The technical and combined changes
+    /// use the steady technical signal unless <paramref name="steady"/> is false.
     /// </summary>
-    Task<List<SignalAlertDto>> GetRecentAsync(int days, CancellationToken cancellationToken = default);
+    Task<List<SignalAlertDto>> GetRecentAsync(int days, bool steady = true, CancellationToken cancellationToken = default);
 }

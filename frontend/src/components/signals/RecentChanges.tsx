@@ -4,6 +4,7 @@ import { alertsApi } from '../../services/api/alertsApi'
 import { SignalAlert, SignalAction } from '../../services/types/marketData'
 import { COLORS, formatDate, signalStyles } from '../../services/format'
 import InfoTip from '../help/InfoTip'
+import { useSignalMode } from '../../services/signalMode'
 
 const NOTIFY_KEY = 'alerts.notify'
 const SEEN_KEY = 'alerts.lastSeenDate'
@@ -46,6 +47,8 @@ function describeAlert(a: SignalAlert): string {
  * for new important changes while the app is open.
  */
 export default function RecentChanges() {
+  // Technical and combined changes follow the signal chosen at the top of the page
+  const mode = useSignalMode()
   const [alerts, setAlerts] = useState<SignalAlert[]>([])
   const [showAll, setShowAll] = useState(false)
   const [expanded, setExpanded] = useState(false)
@@ -54,7 +57,7 @@ export default function RecentChanges() {
 
   useEffect(() => {
     let cancelled = false
-    const check = () => alertsApi.getRecent(30)
+    const check = () => alertsApi.getRecent(30, mode)
       .then((result) => {
         if (cancelled) return
         setAlerts(result)
@@ -69,7 +72,7 @@ export default function RecentChanges() {
       cancelled = true
       window.clearInterval(timer)
     }
-  }, [])
+  }, [mode])
 
   const toggleNotify = async () => {
     if (notify) {

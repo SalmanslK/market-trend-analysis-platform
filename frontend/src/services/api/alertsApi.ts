@@ -11,9 +11,9 @@ const api = axios.create({
 })
 
 export const alertsApi = {
-  /** Signal and trend changes in the last `days` days, newest first */
-  getRecent: async (days = 30): Promise<SignalAlert[]> => {
-    const response = await api.get<SignalAlert[]>('/alerts', { params: { days } })
+  /** Signal and trend changes in the last `days` days, newest first, for the steady or daily technical signal */
+  getRecent: async (days = 30, technical: 'steady' | 'daily' = 'steady'): Promise<SignalAlert[]> => {
+    const response = await api.get<SignalAlert[]>('/alerts', { params: { days, technical } })
     return response.data
   },
 }

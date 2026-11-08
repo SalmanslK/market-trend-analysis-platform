@@ -167,6 +167,7 @@ public class BacktestService : IBacktestService
         var longTerm = dates.Select(d => sma200[d]!.Value).ToList();
         var goldenCross = Simulate(dates, closes, GoldenCrossScores(medium, longTerm), cost, cashInterest: 0);
         var monthlyTrend = Simulate(dates, closes, MonthlyTrendScores(dates, days.Select(d => d.Price).ToList(), longTerm), cost, cashInterest: 0);
+        var steadySignal = Simulate(dates, closes, SignalRules.SteadyScores(scores, MaxTechnicalScore).Select(SignalRules.PositionForScaledScore).ToList(), cost, cashInterest: 0);
 
         var firstHalfYears = (dates[middle] - dates[0]).TotalDays / 365.25;
         var secondHalfYears = (dates[^1] - dates[middle]).TotalDays / 365.25;
@@ -188,8 +189,8 @@ public class BacktestService : IBacktestService
             };
         }
 
-        result.Rules = new List<RuleResultDto> { Rule("signal", strategy), Rule("goldenCross", goldenCross), Rule("monthlyTrend", monthlyTrend) };
-        result.EquityCurve = ThinCurve(dates, buyAndHold, strategy.Equity, goldenCross.Equity, monthlyTrend.Equity);
+        result.Rules = new List<RuleResultDto> { Rule("signal", strategy), Rule("steadySignal", steadySignal), Rule("goldenCross", goldenCross), Rule("monthlyTrend", monthlyTrend) };
+        result.EquityCurve = ThinCurve(dates, buyAndHold, strategy.Equity, goldenCross.Equity, monthlyTrend.Equity, steadySignal.Equity);
         result.NewsTest = RunNewsTest(dates, closes, scores, news ?? Array.Empty<ScoredNews>(), cost);
         return result;
     }
@@ -210,12 +211,15 @@ public class BacktestService : IBacktestService
         var testDates = dates.Skip(start).ToList();
         var testCloses = closes.Skip(start).ToList();
         var testTechnical = technicalScores.Skip(start).ToList();
+        // Averaged over the whole history first, so the first test days already have 20 days behind them
+        var testSteady = SignalRules.SteadyScores(technicalScores, MaxTechnicalScore).Skip(start).ToList();
         var testMoods = moods.Skip(start).ToList();
         var years = (testDates[^1] - testDates[0]).TotalDays / 365.25;
 
         var technicalScaled = testTechnical.Select(t => t * 100.0 / MaxTechnicalScore).ToList();
         var newsScaled = testMoods.Select(m => SignalRules.NewsScore(m.Score, m.Articles)).ToList();
         var combinedScaled = testTechnical.Select((t, i) => SignalRules.CombinedScore(t, MaxTechnicalScore, testMoods[i].Score, testMoods[i].Articles)).ToList();
+        var steadyCombinedScaled = testSteady.Select((t, i) => SignalRules.CombinedScaledScore(t, testMoods[i].Score, testMoods[i].Articles)).ToList();
 
         var holding = new double[testCloses.Count];
         holding[0] = 1;
@@ -232,7 +236,7 @@ public class BacktestService : IBacktestService
         test.Holding = Performance(holding, years, trades: 1, timeInvested: 100);
 
         var equity = new Dictionary<string, double[]>();
-        foreach (var (key, scaled) in new[] { ("technical", technicalScaled), ("news", newsScaled), ("combined", combinedScaled) })
+        foreach (var (key, scaled) in new[] { ("technical", technicalScaled), ("news", newsScaled), ("combined", combinedScaled), ("steadyTechnical", testSteady), ("steadyCombined", steadyCombinedScaled) })
         {
             var positions = scaled.Select(SignalRules.PositionForScaledScore).ToList();
             var run = Simulate(testDates, testCloses, positions, cost, cashInterest: 0);
@@ -261,6 +265,8 @@ public class BacktestService : IBacktestService
                     Technical = (decimal)(equity["technical"][i] * 100),
                     News = (decimal)(equity["news"][i] * 100),
                     Combined = (decimal)(equity["combined"][i] * 100),
+                    SteadyTechnical = (decimal)(equity["steadyTechnical"][i] * 100),
+                    SteadyCombined = (decimal)(equity["steadyCombined"][i] * 100),
                 });
             }
         }
@@ -434,7 +440,7 @@ public class BacktestService : IBacktestService
         return buys.Count > 0 && sells.Count > 0 ? (decimal)(buys.Average() - sells.Average()) : null;
     }
 
-    private static List<EquityPointDto> ThinCurve(List<DateTime> dates, double[] buyAndHold, double[] strategy, double[] goldenCross, double[] monthlyTrend)
+    private static List<EquityPointDto> ThinCurve(List<DateTime> dates, double[] buyAndHold, double[] strategy, double[] goldenCross, double[] monthlyTrend, double[] steadySignal)
     {
         var step = Math.Max(1, dates.Count / MaxCurvePoints);
         var curve = new List<EquityPointDto>();
@@ -448,6 +454,7 @@ public class BacktestService : IBacktestService
                     Strategy = (decimal)(strategy[i] * 100),
                     GoldenCross = (decimal)(goldenCross[i] * 100),
                     MonthlyTrend = (decimal)(monthlyTrend[i] * 100),
+                    SteadySignal = (decimal)(steadySignal[i] * 100),
                 });
         }
         return curve;

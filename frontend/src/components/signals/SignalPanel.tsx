@@ -1,5 +1,5 @@
 import { InstrumentAnalyticsDto } from '../../services/types/marketData'
-import { COLORS, formatDate, TREND_DISCLAIMER } from '../../services/format'
+import { COLORS, formatDate, TREND_DISCLAIMER, signalStyles } from '../../services/format'
 import { describeTrend, directionNote, signalMeaning } from '../../services/plainLanguage'
 import InfoTip from '../help/InfoTip'
 import TrendBadge from '../trend/TrendBadge'
@@ -31,7 +31,7 @@ export default function SignalPanel({ analytics }: SignalPanelProps) {
           <ScaledSignalBadge signal={analytics.combinedSignal} large />
         </div>
         <div style={{ padding: '10px 12px', border: `1px solid ${COLORS.border}`, borderRadius: '6px' }}>
-          <div style={{ fontSize: '12px', color: COLORS.muted, marginBottom: '6px' }}>Technical<InfoTip term="signal" /></div>
+          <div style={{ fontSize: '12px', color: COLORS.muted, marginBottom: '6px' }}>Technical{signal.steady ? ' (steady)' : ' (daily)'}<InfoTip term="signal" /></div>
           <SignalBadge signal={signal} large />
         </div>
         <div style={{ padding: '10px 12px', border: `1px solid ${COLORS.border}`, borderRadius: '6px' }}>
@@ -53,7 +53,17 @@ export default function SignalPanel({ analytics }: SignalPanelProps) {
         <strong>{signalMeaning[signal.action].headline}.</strong> {signalMeaning[signal.action].detail}
       </p>
       <p style={{ color: COLORS.muted, fontSize: '13px', marginBottom: '12px' }}>
-        Each indicator below votes ▲ up, ▼ down or ● no view, giving {signal.score > 0 ? '+' : ''}{signal.score} of {signal.maxScore} votes.<InfoTip term="score" /> Based on daily prices up to {formatDate(analytics.lastDate)}.
+        {signal.steady && analytics.dailySignal ? (
+          <>
+            This is the steady signal: the daily vote count averaged over the last 20 trading days, {signal.score > 0 ? '+' : ''}{signal.score} on a scale of -100 to +100.<InfoTip term="steadySignal" />{' '}
+            Today the indicators below give {analytics.dailySignal.score > 0 ? '+' : ''}{analytics.dailySignal.score} of {analytics.dailySignal.maxScore} votes,
+            which on its own would say {signalStyles[analytics.dailySignal.action].label}. Based on daily prices up to {formatDate(analytics.lastDate)}.
+          </>
+        ) : (
+          <>
+            Each indicator below votes ▲ up, ▼ down or ● no view, giving {signal.score > 0 ? '+' : ''}{signal.score} of {signal.maxScore} votes.<InfoTip term="score" /> Based on daily prices up to {formatDate(analytics.lastDate)}.
+          </>
+        )}
       </p>
 
       <ul style={{ listStyle: 'none' }}>

@@ -20,10 +20,15 @@ public class AlertsController : ControllerBase
 
     /// <summary>
     /// Signal and trend changes in the last <paramref name="days"/> days (default 30, at most 90), newest first.
+    /// technical: steady (default, the 20-day average) or daily (today's 5 votes).
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<List<SignalAlertDto>>> GetRecent([FromQuery] int days = 30, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<List<SignalAlertDto>>> GetRecent(
+        [FromQuery] int days = 30,
+        [FromQuery] string technical = "steady",
+        CancellationToken cancellationToken = default)
     {
-        return Ok(await _alertService.GetRecentAsync(days, cancellationToken));
+        var steady = !technical.Equals("daily", StringComparison.OrdinalIgnoreCase);
+        return Ok(await _alertService.GetRecentAsync(days, steady, cancellationToken));
     }
 }

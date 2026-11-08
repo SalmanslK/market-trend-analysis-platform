@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { analyticsApi } from '../services/api/analyticsApi'
 import { InstrumentAnalyticsDto, InstrumentType } from '../services/types/marketData'
@@ -6,6 +6,7 @@ import { changeColor, COLORS, formatDate, formatNumber, formatPercent } from '..
 import ScaledSignalBadge from '../components/signals/ScaledSignalBadge'
 import TrendBadge from '../components/trend/TrendBadge'
 import InfoTip from '../components/help/InfoTip'
+import { applySignalMode, useSignalMode } from '../services/signalMode'
 import PlainSummary from '../components/help/PlainSummary'
 
 export interface Holding {
@@ -52,7 +53,9 @@ const inputStyle = { width: '100%', padding: '6px', fontSize: '15px', boxSizing:
 
 export default function Holdings() {
   const [holdings, setHoldings] = useState<Holding[]>(loadHoldings)
-  const [analytics, setAnalytics] = useState<InstrumentAnalyticsDto[]>([])
+  const [loaded, setAnalytics] = useState<InstrumentAnalyticsDto[]>([])
+  const mode = useSignalMode()
+  const analytics = useMemo(() => loaded.map((a) => applySignalMode(a, mode)), [loaded, mode])
   const [draft, setDraft] = useState<{ symbol: string; units: string; buyPrice: string; buyDate: string }>({ symbol: '', units: '', buyPrice: '', buyDate: '' })
   const [error, setError] = useState<string | null>(null)
 

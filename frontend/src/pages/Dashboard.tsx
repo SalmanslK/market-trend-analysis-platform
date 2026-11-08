@@ -13,6 +13,7 @@ import ScaledSignalBadge from '../components/signals/ScaledSignalBadge'
 import SignalBadge from '../components/signals/SignalBadge'
 import TrendBadge from '../components/trend/TrendBadge'
 import RecentChanges from '../components/signals/RecentChanges'
+import { applySignalMode, useSignalMode } from '../services/signalMode'
 import RangeBar from '../components/analytics/RangeBar'
 
 type SortKey = 'symbol' | 'change1D' | 'change1M' | 'changeYtd' | 'change1Y' | 'rsi14' | 'signal' | 'combined' | 'trend' | 'news'
@@ -25,7 +26,10 @@ const cellStyle = { padding: '10px', borderBottom: `1px solid ${COLORS.border}`,
 const headerStyle = { ...cellStyle, backgroundColor: '#f5f5f5', cursor: 'pointer', userSelect: 'none' as const, whiteSpace: 'nowrap' as const }
 
 export default function Dashboard() {
-  const [analytics, setAnalytics] = useState<InstrumentAnalyticsDto[]>([])
+  const [loaded, setAnalytics] = useState<InstrumentAnalyticsDto[]>([])
+  // The technical and combined signals chosen at the top of the page
+  const mode = useSignalMode()
+  const analytics = useMemo(() => loaded.map((a) => applySignalMode(a, mode)), [loaded, mode])
   const [moods, setMoods] = useState<NewsSentimentSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

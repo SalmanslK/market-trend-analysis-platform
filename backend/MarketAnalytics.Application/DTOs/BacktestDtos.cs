@@ -60,7 +60,7 @@ public class BacktestResultDto
 /// </summary>
 public class RuleResultDto
 {
-    /// <summary>signal, goldenCross or monthlyTrend.</summary>
+    /// <summary>signal, steadySignal, goldenCross or monthlyTrend.</summary>
     public string Key { get; set; } = string.Empty;
     public PerformanceDto Performance { get; set; } = new();
     /// <summary>Helped, LowerRisk or DidNotHelp, compared with holding.</summary>
@@ -91,7 +91,7 @@ public class NewsBacktestDto
 
 public class NewsRuleResultDto
 {
-    /// <summary>technical, news or combined.</summary>
+    /// <summary>technical, news, combined, steadyTechnical or steadyCombined.</summary>
     public string Key { get; set; } = string.Empty;
     public PerformanceDto Performance { get; set; } = new();
     public string Verdict { get; set; } = "DidNotHelp";
@@ -108,6 +108,8 @@ public class NewsEquityPointDto
     public decimal Technical { get; set; }
     public decimal News { get; set; }
     public decimal Combined { get; set; }
+    public decimal SteadyTechnical { get; set; }
+    public decimal SteadyCombined { get; set; }
 }
 
 public class PerformanceDto
@@ -151,4 +153,5 @@ public class EquityPointDto
     public decimal Strategy { get; set; }
     public decimal GoldenCross { get; set; }
     public decimal MonthlyTrend { get; set; }
+    public decimal SteadySignal { get; set; }
 }

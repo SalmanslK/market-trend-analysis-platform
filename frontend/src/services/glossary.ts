@@ -31,6 +31,11 @@ export const glossary = {
     what: 'Buy or Sell from the tone of the last 7 days of news about this instrument, from -100 to +100. +20 or more is Buy, +60 or more Strong Buy, -20 or less Sell, -60 or less Strong Sell. With fewer than 3 stories it stays on Hold.',
     howToRead: 'Sentiment is read automatically from headline wording, so complicated headlines can be misread. Many headlines report moves that have already happened, so news can lag the price.',
   },
+  steadySignal: {
+    title: 'Steady or daily technical signal',
+    what: 'Daily: today\'s five indicator votes, which can flip from Buy to Sell from one day to the next. Steady: the same daily score averaged over the last 20 trading days, so one odd day doesn\'t change the call.',
+    howToRead: 'In testing over each instrument\'s history, at 0.5% per trade, the steady signal earned about +17% a year with 2 trades a year, the daily one about +7% with 19 trades; simply holding earned about +20%. Steady is the default; the combined signal, alerts and track record follow your choice.',
+  },
   combinedSignal: {
     title: 'Combined signal',
     what: 'Buy or Sell only when the technical and news signals clearly point the same way (each at least +20, or each at most -20). Its score is their average. Otherwise it says Hold.',

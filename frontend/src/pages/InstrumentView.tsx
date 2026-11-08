@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { instrumentsApi } from '../services/api/instrumentsApi'
 import { pricesApi } from '../services/api/pricesApi'
@@ -21,6 +21,7 @@ import InstrumentNews from '../components/news/InstrumentNews'
 import { describeInstrument } from '../services/plainLanguage'
 import { intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences } from '../services/preferences'
+import { applySignalMode, useSignalMode } from '../services/signalMode'
 import { changeColor, COLORS, formatDate, formatNumber, formatPercent, daysSince, STALE_AFTER_DAYS } from '../services/format'
 
 export default function InstrumentView() {
@@ -30,7 +31,9 @@ export default function InstrumentView() {
 
   const [instruments, setInstruments] = useState<InstrumentDto[]>([])
   const [priceData, setPriceData] = useState<PriceDataDto[]>([])
-  const [analytics, setAnalytics] = useState<InstrumentAnalyticsDto | null>(null)
+  const [loaded, setAnalytics] = useState<InstrumentAnalyticsDto | null>(null)
+  const mode = useSignalMode()
+  const analytics = useMemo(() => (loaded ? applySignalMode(loaded, mode) : null), [loaded, mode])
   const [mood, setMood] = useState<NewsSentimentSummary>()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

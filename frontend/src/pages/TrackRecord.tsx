@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   CartesianGrid,
@@ -17,6 +17,7 @@ import { changeColor, COLORS, formatDate, formatPercent, signalStyles } from '..
 import { compareWithHolding, describeBacktests, describeRuleRecord, describeTrendRules, MIN_RELIABLE_YEARS, ruleNames, verdictStyles } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
 import PlainSummary from '../components/help/PlainSummary'
+import { applyBacktestMode, useSignalMode } from '../services/signalMode'
 import NewsSignalComparison from '../components/signals/NewsSignalComparison'
 
 const COST_OPTIONS = [0, 0.25, 0.5, 1, 2]
@@ -185,7 +186,10 @@ export default function TrackRecord() {
   const [params, setParams] = useSearchParams()
   const selected = params.get('symbol') ?? ''
   const [cost, setCost] = useState(DEFAULT_COST)
-  const [results, setResults] = useState<BacktestResult[]>([])
+  const [loaded, setResults] = useState<BacktestResult[]>([])
+  // The technical and combined signals chosen at the top of the page
+  const mode = useSignalMode()
+  const results = useMemo(() => loaded.map((r) => applyBacktestMode(r, mode)), [loaded, mode])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

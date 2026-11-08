@@ -217,6 +217,14 @@ Score >= 3 Strong Buy, 1 to 2 Buy, 0 Hold, -1 to -2 Sell, <= -3 Strong Sell. Rul
 most -20), scored as their average; otherwise Hold, which keeps any existing position. Rules live in `SignalRules`, shared
 by the live signals and the backtest. All three signals display on the same -100 to +100 scale.
 
+**Steady technical signal** (the default): the daily vote score averaged over the last 20 trading days
+(`SignalRules.SteadyScores`), -100 to +100 with the same Buy/Sell thresholds. The daily score flips often and trading
+costs eat its gains; in testing the 20-day average earned about +17% a year with 2 trades against +7% with 19 trades
+(holding about +20%). A switch at the top of the Overview, instrument, Track Record and My Holdings pages chooses steady or
+daily (remembered in the browser); the combined signal (`steadyCombinedSignal`), alerts (`/api/alerts?technical=`) and
+track record (`steadySignal`, `steadyTechnical`, `steadyCombined` rules) follow it. The instrument page still lists
+today's five votes.
+
 **Long-term trend**, shown beside them: Up while the 50-period average is above the 200-period average (golden cross),
 otherwise Down, with the date it last changed. The averages cross weeks after a turn, so it also shows a phase:
 **recovering** when the trend is Down but the price is back above both averages, **weakening** when it is Up but the

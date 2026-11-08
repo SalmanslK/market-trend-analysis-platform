@@ -57,6 +57,15 @@ public class InstrumentAnalyticsDto
     /// <summary>Buy or Sell only when the technical and news signals clearly agree, otherwise Hold.</summary>
     public ScaledSignalDto CombinedSignal { get; set; } = new();
 
+    /// <summary>
+    /// The steady technical signal: the daily 5-vote score averaged over the last 20 trading days, -100 to +100.
+    /// It changes far less often than the daily signal and did better in testing; the pages show it by default.
+    /// </summary>
+    public ScaledSignalDto SteadySignal { get; set; } = new();
+
+    /// <summary>The combined signal using the steady technical signal instead of the daily one.</summary>
+    public ScaledSignalDto SteadyCombinedSignal { get; set; } = new();
+
     /// <summary>All the standard metrics that can be calculated from closing prices.</summary>
     public List<MetricDto> Metrics { get; set; } = new();
 

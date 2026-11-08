@@ -9,12 +9,14 @@ import Portfolio from './pages/Portfolio'
 import Holdings from './pages/Holdings'
 import Settings from './pages/Settings'
 import Navigation from './components/layout/Navigation'
+import SignalModeBar from './components/layout/SignalModeBar'
 
 function App() {
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="app">
         <Navigation />
+        <SignalModeBar />
         {/* Same width as the navigation bar so page content lines up with it */}
         <main style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <Routes>

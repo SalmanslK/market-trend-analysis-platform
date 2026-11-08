@@ -33,7 +33,7 @@ public class AlertService : IAlertService
         _fundPayoutRepository = fundPayoutRepository;
     }
 
-    public async Task<List<SignalAlertDto>> GetRecentAsync(int days, CancellationToken cancellationToken = default)
+    public async Task<List<SignalAlertDto>> GetRecentAsync(int days, bool steady = true, CancellationToken cancellationToken = default)
     {
         days = Math.Clamp(days, 1, MaxDays);
         var since = DateTime.UtcNow.Date.AddDays(-days);
@@ -53,7 +53,7 @@ public class AlertService : IAlertService
 
             var prices = await PriceHistory.LoadDailyAsync(_pricePointRepository, _fundPayoutRepository, instrument.Id, cancellationToken: cancellationToken);
             var history = DailySignals(prices, NewsService.ScoreForSymbol(articles, instrument.Symbol));
-            foreach (var change in Changes(history, since))
+            foreach (var change in Changes(history, since, steady))
             {
                 change.Symbol = instrument.Symbol;
                 change.Name = instrument.Name;
@@ -77,6 +77,7 @@ public class AlertService : IAlertService
         var sma50 = _indicators.ComputeSma(sorted, SignalRules.MediumTrendPeriod);
         var sma200 = _indicators.ComputeSma(sorted, SignalRules.LongTrendPeriod);
         var moods = NewsService.DailyMood(technical.Select(t => t.Date).ToList(), news, SignalRules.NewsWindowDays);
+        var steady = SignalRules.SteadyScores(technical.Select(t => t.Score).ToList(), BacktestService.MaxTechnicalScore);
 
         return technical.Select((t, i) =>
         {
@@ -87,7 +88,9 @@ public class AlertService : IAlertService
                 SignalRules.ActionFor(t.Score),
                 SignalRules.ActionForScaledScore(SignalRules.NewsScore(mood.Score, mood.Articles)),
                 SignalRules.ActionForScaledScore(combined),
-                SignalRules.GoldenCross(sma50[t.Date]!.Value, sma200[t.Date]!.Value) > 0 ? "Up" : "Down");
+                SignalRules.GoldenCross(sma50[t.Date]!.Value, sma200[t.Date]!.Value) > 0 ? "Up" : "Down",
+                SignalRules.ActionForScaledScore(steady[i]),
+                SignalRules.ActionForScaledScore(SignalRules.CombinedScaledScore(steady[i], mood.Score, mood.Articles)));
         }).ToList();
     }
 
@@ -96,7 +99,7 @@ public class AlertService : IAlertService
     /// (Buy to Hold, Hold to Sell...), not Buy to Strong Buy. Important: the combined signal turned to Buy or Sell, or
     /// the trend changed; a move to Hold means "stay as you are", so it isn't a call to act.
     /// </summary>
-    public static List<SignalAlertDto> Changes(IReadOnlyList<DailySignals> history, DateTime since)
+    public static List<SignalAlertDto> Changes(IReadOnlyList<DailySignals> history, DateTime since, bool steady = true)
     {
         var changes = new List<SignalAlertDto>();
         for (int i = 1; i < history.Count; i++)
@@ -113,8 +116,9 @@ public class AlertService : IAlertService
                 changes.Add(new SignalAlertDto { Date = after.Date, Signal = signal, From = from, To = to, Important = important });
             }
 
-            Add("Combined", before.Combined, after.Combined);
-            Add("Technical", before.Technical, after.Technical);
+            // The technical and combined signals follow the chosen version: steady (20-day average) or daily
+            Add("Combined", steady ? before.SteadyCombined : before.Combined, steady ? after.SteadyCombined : after.Combined);
+            Add("Technical", steady ? before.SteadyTechnical : before.Technical, steady ? after.SteadyTechnical : after.Technical);
             Add("News", before.News, after.News);
             Add("Trend", before.Trend, after.Trend);
         }
@@ -130,4 +134,4 @@ public class AlertService : IAlertService
     };
 }
 
-public record DailySignals(DateTime Date, string Technical, string News, string Combined, string Trend);
+public record DailySignals(DateTime Date, string Technical, string News, string Combined, string Trend, string SteadyTechnical = "Hold", string SteadyCombined = "Hold");

@@ -73,6 +73,8 @@ export interface TechnicalSignal {
   score: number;
   maxScore: number;
   reasons: SignalReason[];
+  /** Set when this is the steady signal shown in place of the daily one (see signalMode.ts) */
+  steady?: boolean;
 }
 
 export interface LongTermTrend {
@@ -135,6 +137,12 @@ export interface InstrumentAnalyticsDto {
   signal: TechnicalSignal;
   newsSignal: ScaledSignal;
   combinedSignal: ScaledSignal;
+  /** The daily 5-vote score averaged over 20 trading days, -100 to +100 */
+  steadySignal: ScaledSignal;
+  /** The combined signal using the steady technical signal */
+  steadyCombinedSignal: ScaledSignal;
+  /** Today's 5 votes, kept when the steady signal is shown in `signal` (see signalMode.ts) */
+  dailySignal?: TechnicalSignal;
   metrics: Metric[];
   /** Fund cash payouts, newest first; prices and returns are adjusted for them */
   payouts: Payout[];
@@ -240,7 +248,7 @@ export interface SignalOutcome {
   horizons: HorizonOutcome[];
 }
 
-export type TradingRuleKey = 'signal' | 'goldenCross' | 'monthlyTrend';
+export type TradingRuleKey = 'signal' | 'steadySignal' | 'goldenCross' | 'monthlyTrend';
 
 export interface RuleResult {
   key: TradingRuleKey;
@@ -251,7 +259,7 @@ export interface RuleResult {
 }
 
 export interface NewsRuleResult {
-  key: 'technical' | 'news' | 'combined';
+  key: 'technical' | 'news' | 'combined' | 'steadyTechnical' | 'steadyCombined';
   performance: Performance;
   verdict: BacktestVerdict;
   buyMinusSell30D?: number;
@@ -269,7 +277,7 @@ export interface NewsBacktest {
   coveragePercent: number;
   holding: Performance;
   rules: NewsRuleResult[];
-  equityCurve: { date: string; holding: number; technical: number; news: number; combined: number }[];
+  equityCurve: { date: string; holding: number; technical: number; news: number; combined: number; steadyTechnical: number; steadyCombined: number }[];
 }
 
 export interface BacktestResult {
@@ -295,7 +303,7 @@ export interface BacktestResult {
   holdingSecondHalfAnnual: number;
   rules: RuleResult[];
   newsTest: NewsBacktest;
-  equityCurve: { date: string; buyAndHold: number; strategy: number; goldenCross: number; monthlyTrend: number }[];
+  equityCurve: { date: string; buyAndHold: number; strategy: number; goldenCross: number; monthlyTrend: number; steadySignal: number }[];
 }
 
 export type RebalanceSchedule = 'Never' | 'Yearly' | 'HalfYearly' | 'Quarterly'

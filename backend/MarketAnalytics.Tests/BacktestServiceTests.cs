@@ -155,7 +155,7 @@ public class BacktestServiceTests
     {
         var result = _service.Run(Wavy(1200));
 
-        Assert.Equal(new[] { "signal", "goldenCross", "monthlyTrend" }, result.Rules.Select(r => r.Key));
+        Assert.Equal(new[] { "signal", "steadySignal", "goldenCross", "monthlyTrend" }, result.Rules.Select(r => r.Key));
         Assert.Equal(result.Strategy.TotalReturn, result.Rules[0].Performance.TotalReturn);
         Assert.Equal(result.Verdict, result.Rules[0].Verdict);
         // Slower rules are slower: fewer trades than the signal
@@ -277,7 +277,7 @@ public class BacktestServiceTests
         var test = BacktestService.RunNewsTest(dates, closes, technical, news, cost: 0.005);
 
         Assert.True(test.HasEnoughNews);
-        Assert.Equal(new[] { "technical", "news", "combined" }, test.Rules.Select(r => r.Key));
+        Assert.Equal(new[] { "technical", "news", "combined", "steadyTechnical", "steadyCombined" }, test.Rules.Select(r => r.Key));
         Assert.Equal(Start.AddDays(300), test.StartDate);
         Assert.Equal(500, test.TradingDays);
         Assert.InRange(test.CoveragePercent, 99m, 100m);

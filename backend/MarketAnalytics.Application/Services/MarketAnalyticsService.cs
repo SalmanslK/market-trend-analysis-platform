@@ -93,9 +93,11 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         var confidence = mood?.Confidence ?? 0;
         var news = SignalRules.NewsScore(moodScore, articles);
         var combined = SignalRules.CombinedScore(analytics.Signal.Score, analytics.Signal.MaxScore, moodScore, articles);
+        var steadyCombined = SignalRules.CombinedScaledScore(analytics.SteadySignal.Score, moodScore, articles);
 
         analytics.NewsSignal = new ScaledSignalDto { Action = SignalRules.ActionForScaledScore(news), Score = (int)Math.Round(news), Articles = articles, NewsConfidence = confidence };
         analytics.CombinedSignal = new ScaledSignalDto { Action = SignalRules.ActionForScaledScore(combined), Score = (int)Math.Round(combined), Articles = articles, NewsConfidence = confidence };
+        analytics.SteadyCombinedSignal = new ScaledSignalDto { Action = SignalRules.ActionForScaledScore(steadyCombined), Score = (int)Math.Round(steadyCombined), Articles = articles, NewsConfidence = confidence };
     }
 
     private async Task<InstrumentAnalyticsDto?> BuildAsync(Instrument instrument, List<NewsSentimentSummaryDto> moods, CancellationToken cancellationToken)
@@ -182,6 +184,12 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         ComputeRisk(prices, analytics);
         ComputeIndicators(prices, analytics);
         analytics.Signal = BuildSignal(analytics);
+        var daily = SignalHistory.TechnicalScores(_indicators, prices);
+        if (daily.Count > 0)
+        {
+            var steady = SignalRules.SteadyScores(daily.Select(d => d.Score).ToList(), BacktestService.MaxTechnicalScore)[^1];
+            analytics.SteadySignal = new ScaledSignalDto { Action = SignalRules.ActionForScaledScore(steady), Score = (int)Math.Round(steady) };
+        }
         analytics.Metrics = TechnicalMetrics.Compute(prices, _indicators, benchmarkPrices);
 
         return analytics;

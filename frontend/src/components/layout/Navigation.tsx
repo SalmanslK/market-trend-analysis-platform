@@ -34,7 +34,7 @@ export default function Navigation() {
   }
 
   return (
-    <nav aria-label="Main" style={{ backgroundColor: '#333', padding: '0.75rem 0' }}>
+    <nav aria-label="Main" style={{ backgroundColor: '#0e3b2e', padding: '0.75rem 0' }}>
       <div style={{
         maxWidth: '1200px',
         margin: '0 auto',

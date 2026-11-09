@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { newsApi } from '../../services/api/newsApi'
 import { InstrumentMoves, NewsArticle, NewsSentimentSummary } from '../../services/types/marketData'
-import { changeColor, COLORS, formatDate, formatNumber, formatPercent } from '../../services/format'
+import { changeColor, COLORS, formatDate, formatNumber, formatPercent, SURFACE } from '../../services/format'
 import { describeMood } from '../../services/plainLanguage'
 import InfoTip from '../help/InfoTip'
 import ArticleCard from './ArticleCard'
@@ -11,7 +11,7 @@ interface InstrumentNewsProps {
   symbol: string
 }
 
-const sectionStyle = { padding: '20px', backgroundColor: 'white', borderRadius: '6px', marginTop: '12px' }
+const sectionStyle = { padding: '20px', ...SURFACE, marginTop: '12px' }
 
 export default function InstrumentNews({ symbol }: InstrumentNewsProps) {
   const [mood, setMood] = useState<NewsSentimentSummary>()

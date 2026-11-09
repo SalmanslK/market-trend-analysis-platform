@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import { InstrumentAnalyticsDto } from '../../services/types/marketData'
-import { changeColor, COLORS, formatDate, formatNumber, formatPercent } from '../../services/format'
+import { changeColor, COLORS, formatDate, formatNumber, formatPercent, SURFACE } from '../../services/format'
 import { GlossaryKey } from '../../services/glossary'
 import { describeDrawdown, describeRange, describeRsi, volatilityLevel } from '../../services/plainLanguage'
 import InfoTip from '../help/InfoTip'
@@ -30,7 +30,7 @@ export default function KeyStats({ analytics: a }: KeyStatsProps) {
   const volatility = volatilityLevel(a.volatility1Y)
 
   return (
-    <section style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px' }}>
+    <section style={{ padding: '20px', ...SURFACE }}>
       <h2 style={{ fontSize: '1.2rem', marginBottom: '4px' }}>Performance &amp; Risk</h2>
       <p style={{ color: COLORS.muted, fontSize: '13px', marginBottom: '12px' }}>
         How much the price has changed, and how bumpy the ride has been.<InfoTip term="change" />

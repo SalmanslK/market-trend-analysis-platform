@@ -33,6 +33,7 @@ public class DataUpdateBackgroundService : BackgroundService
             {
                 using var scope = _serviceProvider.CreateScope();
                 await scope.ServiceProvider.GetRequiredService<MarketDataUpdater>().UpdateAllAsync(stoppingToken);
+                await RecordSignalsAsync(scope.ServiceProvider.GetRequiredService<SignalRecorder>(), _logger, stoppingToken);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -40,6 +41,22 @@ public class DataUpdateBackgroundService : BackgroundService
             }
 
             await Task.Delay(_updateInterval, stoppingToken);
+        }
+    }
+
+    /// <summary>
+    /// Saves the day's signals for the forward record. A failure is logged and must not stop the price updates;
+    /// only shutting down (cancellation) ends the loop.
+    /// </summary>
+    internal static async Task RecordSignalsAsync(SignalRecorder recorder, ILogger logger, CancellationToken stoppingToken)
+    {
+        try
+        {
+            await recorder.RecordAsync(stoppingToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogError(ex, "Error recording signals");
         }
     }
 }

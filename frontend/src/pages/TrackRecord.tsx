@@ -13,13 +13,16 @@ import {
 } from 'recharts'
 import { backtestApi } from '../services/api/backtestApi'
 import { BacktestResult, RuleResult, SignalAction, SignalOutcome } from '../services/types/marketData'
-import { changeColor, COLORS, formatDate, formatPercent, signalStyles } from '../services/format'
+import { changeColor, COLORS, formatDate, formatPercent, signalStyles, SURFACE } from '../services/format'
 import { compareWithHolding, describeBacktests, describeRuleRecord, describeTrendRules, MIN_RELIABLE_YEARS, ruleNames, verdictStyles } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
 import PlainSummary from '../components/help/PlainSummary'
 import { applyBacktestMode, useSignalMode } from '../services/signalMode'
 import { useFeatures } from '../services/features'
+import AnswerCard from '../components/help/AnswerCard'
+import { trackRecordAnswer } from '../services/answers'
 import NewsSignalComparison from '../components/signals/NewsSignalComparison'
+import LiveRecord from '../components/signals/LiveRecord'
 
 const COST_OPTIONS = [0, 0.25, 0.5, 1, 2]
 const DEFAULT_COST = 0.5
@@ -27,8 +30,10 @@ const OUTCOME_HORIZON_DAYS = 30
 
 const cellStyle = { padding: '10px', borderBottom: `1px solid ${COLORS.border}`, textAlign: 'right' as const }
 const headerStyle = { ...cellStyle, backgroundColor: '#f5f5f5', whiteSpace: 'nowrap' as const }
-const cardStyle = { padding: '20px', backgroundColor: 'white', borderRadius: '6px', marginTop: '12px' }
+const cardStyle = { padding: '20px', ...SURFACE, marginTop: '12px' }
 const noteStyle = { fontSize: '13px', color: '#546e7a', lineHeight: 1.45 }
+// The small grey line under a figure, e.g. its worst fall
+const subNoteStyle = { fontSize: '12px', color: COLORS.muted }
 
 const RULE_COLORS = { ahead: COLORS.up, tied: COLORS.neutral, behind: COLORS.down }
 
@@ -48,7 +53,7 @@ function RuleCell({ result, ruleKey }: { result: BacktestResult; ruleKey: RuleRe
   return (
     <td style={cellStyle}>
       <strong style={{ color: RULE_COLORS[comparison] }}>{formatPercent(rule.performance.annualReturn, 1)}</strong>
-      <div style={{ fontSize: '12px', color: COLORS.muted }}>
+      <div style={subNoteStyle}>
         {rule.performance.trades} trades, fall {rule.performance.maxDrawdown.toFixed(0)}%
       </div>
     </td>
@@ -82,7 +87,7 @@ function InstrumentDetail({ result }: { result: BacktestResult }) {
             <Line type="monotone" dataKey="Simply holding" stroke="#000000" strokeWidth={2} dot={false} isAnimationActive={false} />
             <Line type="monotone" dataKey={ruleNames.goldenCross} stroke="#2e7d32" strokeWidth={2} dot={false} isAnimationActive={false} />
             <Line type="monotone" dataKey={ruleNames.monthlyTrend} stroke="#ef6c00" strokeWidth={1.5} dot={false} isAnimationActive={false} />
-            <Line type="monotone" dataKey={ruleNames.signal} stroke="#1976d2" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey={ruleNames.signal} stroke="#155e75" strokeWidth={1.5} dot={false} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -189,6 +194,51 @@ function OldScoreSection({ results, detail, cost }: { results: BacktestResult[];
   )
 }
 
+// Results of scripts/research/risk-rules-research.cs: the rule and the pass mark were written down before the test
+const CASH_RULE_RESULTS = [
+  { period: '2006-2015, to check the idea', holding: 14.4, holdingFall: -63, rule: 12.8, ruleFall: -25 },
+  { period: '2016-2026, held back', holding: 12.7, holdingFall: -57, rule: 15.6, ruleFall: -23 },
+]
+
+/** The one rule that passed a test fixed in advance, with its numbers and limits. */
+function StrongerThanCashResult() {
+  return (
+    <section aria-labelledby="cash-rule" style={{ ...cardStyle, borderTop: `4px solid ${COLORS.up}` }}>
+      <h2 id="cash-rule" style={{ fontSize: '1.2rem', marginBottom: '6px' }}>The rule that passed: stronger than cash<InfoTip term="strongerThanCash" /></h2>
+      <p style={{ fontSize: '14px', color: '#2f3d37', lineHeight: 1.5 }}>
+        Once a month, stay in stocks only if they earned more than cash over the past 12 months; otherwise wait in cash.
+        We wrote the rule and what would count as a pass down before testing it, checked it on 2006 to 2015, then looked once at
+        2016 to 2026, which had been held back. It passed both: about the same return as holding, with a much smaller worst fall.
+      </p>
+      <div style={{ overflowX: 'auto', marginTop: '10px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+          <thead>
+            <tr>
+              <th style={{ ...headerStyle, textAlign: 'left', whiteSpace: 'normal' }}>Meezan Islamic Fund</th>
+              <th style={headerStyle}>Holding</th>
+              <th style={{ ...headerStyle, whiteSpace: 'normal' }}>Stronger than cash</th>
+            </tr>
+          </thead>
+          <tbody>
+            {CASH_RULE_RESULTS.map((r) => (
+              <tr key={r.period}>
+                <td style={{ ...cellStyle, textAlign: 'left' }}>{r.period}</td>
+                <td style={cellStyle}>{formatPercent(r.holding, 1)}<div style={subNoteStyle}>fall {r.holdingFall}%</div></td>
+                <td style={cellStyle}><strong>{formatPercent(r.rule, 1)}</strong><div style={{ fontSize: '12px', color: COLORS.up, fontWeight: 600 }}>fall {r.ruleFall}%</div></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p style={{ ...noteStyle, marginTop: '8px' }}>
+        Figures are returns a year with payouts included, and the worst fall from a peak. It switched about once a year, at 0.5% a trade, with cash earning the State Bank rate less 1%. Limits: about four big falls in
+        21 years decide the result, Pakistan's cash rates were unusually high (up to 21%), and it was tested on stocks, not gold.
+        Each instrument's page shows where it stands now. Volatility-based and news-based rules were tested the same way and failed.
+      </p>
+    </section>
+  )
+}
+
 export default function TrackRecord() {
   const [params, setParams] = useSearchParams()
   const selected = params.get('symbol') ?? ''
@@ -229,6 +279,17 @@ export default function TrackRecord() {
         Would acting on the app's signals have worked? This replays them over past prices.<InfoTip term="backtest" />
       </p>
 
+      {(() => {
+        const verdict = trackRecordAnswer(tested)
+        return verdict && (
+          <AnswerCard question="Would following the signals have paid off?" answer={verdict.answer} facts={verdict.facts} meaning={verdict.meaning} />
+        )
+      })()}
+
+      <StrongerThanCashResult />
+      <LiveRecord />
+
+      <h2 style={{ fontSize: '1.2rem', margin: '20px 0 6px' }}>The detail, instrument by instrument</h2>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
         <label htmlFor="cost">Cost per trade<InfoTip term="tradingCost" /></label>
         <select id="cost" value={cost} onChange={(e) => setCost(Number(e.target.value))} style={{ padding: '8px', fontSize: '15px' }}>
@@ -248,10 +309,16 @@ export default function TrackRecord() {
         />
       )}
 
-      <h2 style={{ fontSize: '1.2rem', margin: '20px 0 8px' }}>Technical signal and trend rules, over all price history</h2>
-      {tested.length > 0 && <PlainSummary points={describeTrendRules(tested, shownCost)} />}
+      {/* While the figures are being calculated, say so instead of showing empty tables */}
+      {loading && tested.length === 0 && (
+        <p role="status" style={{ ...SURFACE, padding: '20px', color: COLORS.muted }}>Calculating the track record from all price history; this takes a few seconds...</p>
+      )}
 
-      <div style={{ overflowX: 'auto', backgroundColor: 'white', borderRadius: '6px' }}>
+      {tested.length > 0 && (<>
+      <h2 style={{ fontSize: '1.2rem', margin: '20px 0 8px' }}>Technical signal and trend rules, over all price history</h2>
+      <PlainSummary points={describeTrendRules(tested, shownCost)} />
+
+      <div style={{ overflowX: 'auto', ...SURFACE }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
           <thead>
             <tr>
@@ -268,11 +335,11 @@ export default function TrackRecord() {
               <tr
                 key={r.symbol}
                 onClick={() => setParams({ symbol: r.symbol }, { replace: true })}
-                style={{ cursor: 'pointer', backgroundColor: detail?.symbol === r.symbol ? '#e8f1fb' : undefined }}
+                style={{ cursor: 'pointer', backgroundColor: detail?.symbol === r.symbol ? '#e6efe9' : undefined }}
               >
                 <td style={{ ...cellStyle, textAlign: 'left' }}>
                   <strong style={{ color: COLORS.link }}>{r.symbol}</strong>
-                  <div style={{ fontSize: '12px', color: COLORS.muted }}>{r.name}</div>
+                  <div style={subNoteStyle}>{r.name}</div>
                 </td>
                 <td style={cellStyle}>
                   {r.years.toFixed(1)}
@@ -280,7 +347,7 @@ export default function TrackRecord() {
                 </td>
                 <td style={cellStyle}>
                   <strong>{formatPercent(r.buyAndHold.annualReturn, 1)}</strong>
-                  <div style={{ fontSize: '12px', color: COLORS.muted }}>fall {r.buyAndHold.maxDrawdown.toFixed(0)}%</div>
+                  <div style={subNoteStyle}>fall {r.buyAndHold.maxDrawdown.toFixed(0)}%</div>
                 </td>
                 <RuleCell result={r} ruleKey="goldenCross" />
                 <RuleCell result={r} ruleKey="monthlyTrend" />
@@ -290,6 +357,7 @@ export default function TrackRecord() {
           </tbody>
         </table>
       </div>
+      </>)}
       {notTested.length > 0 && (
         <p style={{ color: COLORS.muted, fontSize: '13px', marginTop: '8px' }}>Not enough history to test: {notTested.map((r) => r.symbol).join(', ')}.</p>
       )}
@@ -309,8 +377,8 @@ export default function TrackRecord() {
           <li><strong>Fair test:</strong> each day uses only the prices known that day, trades happen at the next day's close, and every trade pays the cost above. All rules use standard settings and were not adjusted to fit this data.</li>
           <li><strong>The long-term trend rule was picked after seeing this test,</strong> so its figures may flatter it. The real test is how it does from here on.</li>
           <li><strong>Few trades means weak evidence.</strong> The slower rules made only a handful of trades, so one or two well-timed moves can decide the result.</li>
-          <li><strong>Dividends are only partly included.</strong> Fund prices count payouts as reinvested, but index prices leave out the dividends of the stocks in them, and some of MIF's older payouts aren't published, so real returns from holding were somewhat higher.</li>
-          <li><strong>Cash earns nothing here,</strong> which is harsh on every rule when interest rates are high.</li>
+          <li><strong>Dividends are only partly included.</strong> Fund prices count payouts as reinvested, but index prices leave out the dividends of the stocks in them, so real returns from holding an index were somewhat higher. MIF's payouts from 2005 to 2013 aren't published, so they are estimated from its price drops on payout days.</li>
+          <li><strong>Cash earns nothing in these replays</strong> (the stronger-than-cash test above did pay interest on cash), which is harsh on every rule when interest rates are high.</li>
           <li><strong>The history is mostly a rising market,</strong> which favours holding. A long falling market could look different, and past results don't guarantee future ones.</li>
         </ul>
         <p style={{ marginTop: '8px' }}>This is not financial advice. See the <Link to="/guide" style={{ color: COLORS.link }}>Guide</Link> for what each term means.</p>

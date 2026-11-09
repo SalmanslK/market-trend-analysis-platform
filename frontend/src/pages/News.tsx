@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { newsApi } from '../services/api/newsApi'
 import { NewsArticle, NewsSentimentSummary, NewsTopic, SentimentLabel } from '../services/types/marketData'
-import { COLORS } from '../services/format'
+import { COLORS, SURFACE } from '../services/format'
 import ArticleCard from '../components/news/ArticleCard'
 import SentimentChip from '../components/news/SentimentChip'
 import InfoTip from '../components/help/InfoTip'
@@ -145,13 +145,13 @@ export default function News() {
             Include {backgroundCount} background {backgroundCount === 1 ? 'story' : 'stories'}<InfoTip term="background" />
           </label>
         )}
-        {symbol && <Link to={`/instrument/${symbol}`} style={{ color: COLORS.link }}>Open {symbol} charts →</Link>}
+        {symbol && <Link to={`/instrument/${symbol}`} style={{ color: COLORS.link }}>Open {symbol} charts</Link>}
         <span style={{ color: COLORS.muted, fontSize: '13px' }}>{loading ? 'Loading...' : `${visible.length} stories in the last 30 days`}</span>
       </div>
 
       {error && <div style={{ color: COLORS.down, marginBottom: '12px' }}>{error}</div>}
 
-      <div style={{ padding: '0 20px 8px', backgroundColor: 'white', borderRadius: '6px' }}>
+      <div style={{ padding: '0 20px 8px', ...SURFACE }}>
         {!loading && visible.length === 0 && <p style={{ padding: '16px 0', color: COLORS.muted }}>No stories match these filters.</p>}
         {visible.slice(0, shown).map((a) => <ArticleCard key={a.id} article={a} symbol={symbol || undefined} />)}
         {visible.length > shown && (

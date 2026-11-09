@@ -3,9 +3,11 @@ import { useSearchParams } from 'react-router-dom'
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { portfolioApi } from '../services/api/portfolioApi'
 import { PortfolioComparison, PortfolioMix, PortfolioResult, RebalanceSchedule } from '../services/types/marketData'
-import { changeColor, COLORS, formatDate, formatPercent } from '../services/format'
+import { changeColor, COLORS, formatDate, formatPercent, SURFACE } from '../services/format'
 import { describePortfolios } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
+import AnswerCard from '../components/help/AnswerCard'
+import { portfolioAnswer } from '../services/answers'
 import PlainSummary from '../components/help/PlainSummary'
 
 // Prices that can't be bought directly in rupees as they are: an exchange rate and gold priced in dollars
@@ -17,7 +19,7 @@ const SCHEDULES: { value: RebalanceSchedule; label: string }[] = [
   { value: 'HalfYearly', label: 'Every 6 months' },
   { value: 'Quarterly', label: 'Every 3 months' },
 ]
-const LINE_COLORS = ['#1565c0', '#2e7d32', '#ef6c00', '#6a1b9a', '#c62828', '#00838f', '#5d4037', '#455a64', '#ad1457', '#827717']
+const LINE_COLORS = ['#155e75', '#2e7d32', '#ef6c00', '#6a1b9a', '#c62828', '#00838f', '#5d4037', '#455a64', '#ad1457', '#827717']
 const STORAGE_KEY = 'portfolio.myMix'
 const DEFAULT_MIX: PortfolioMix = { name: 'My mix', weights: { MIF: 60, MGF: 20, MCF: 20 }, rebalance: 'Yearly', trendFilter: false }
 
@@ -130,14 +132,22 @@ export default function Portfolio() {
         What if you had split your money between stocks, gold and cash? This replays mixes over past prices.<InfoTip term="portfolio" />
       </p>
 
+      {comparison && (() => {
+        const verdict = portfolioAnswer(comparison)
+        return verdict && (
+          <AnswerCard question="Does spreading money between stocks, gold and cash help?" answer={verdict.answer} facts={verdict.facts} meaning={verdict.meaning} />
+        )
+      })()}
+
       {comparison && comparison.results.length > 0 && (
         <PlainSummary
+          maxPoints={2}
           points={describePortfolios(comparison)}
           footer="Past results don't guarantee future ones. This isn't financial advice: think about your own goals and how much of a fall you could live with."
         />
       )}
 
-      <section style={{ padding: '16px 20px', backgroundColor: 'white', borderRadius: '6px', margin: '16px 0' }}>
+      <section style={{ padding: '16px 20px', ...SURFACE, margin: '16px 0' }}>
         <h2 style={{ fontSize: '1.15rem', marginBottom: '8px' }}>Build your own mix</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '8px' }}>
           {instruments.map((i) => (
@@ -213,7 +223,7 @@ export default function Portfolio() {
 
       {comparison && comparison.results.length > 0 && (
         <>
-          <div style={{ overflowX: 'auto', backgroundColor: 'white', borderRadius: '6px' }}>
+          <div style={{ overflowX: 'auto', ...SURFACE }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead>
                 <tr>
@@ -235,7 +245,7 @@ export default function Portfolio() {
           </div>
 
           {chartData.length > 0 && (
-            <section style={{ padding: '16px 12px', backgroundColor: 'white', borderRadius: '6px', marginTop: '16px' }}>
+            <section style={{ padding: '16px 12px', ...SURFACE, marginTop: '16px' }}>
               <h2 style={{ fontSize: '1.15rem', margin: '0 8px 8px' }}>Growth of 100</h2>
               <div style={{ height: '360px' }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -255,7 +265,7 @@ export default function Portfolio() {
           )}
 
           {shownResults.length > 0 && (
-            <section style={{ padding: '16px 20px', backgroundColor: 'white', borderRadius: '6px', marginTop: '16px' }}>
+            <section style={{ padding: '16px 20px', ...SURFACE, marginTop: '16px' }}>
               <h2 style={{ fontSize: '1.15rem', marginBottom: '4px' }}>Year by year</h2>
               <p style={{ color: COLORS.muted, fontSize: '13px', marginBottom: '8px' }}>The first and last years are partial.</p>
               <div style={{ overflowX: 'auto' }}>
@@ -300,7 +310,7 @@ function ResultRow({ result: r, mine, shown, color, onToggle }: { result: Portfo
   const rest = 100 - Object.values(r.weights).reduce((a, b) => a + b, 0)
   const schedule = SCHEDULES.find((s) => s.value === r.rebalance)?.label.toLowerCase()
   return (
-    <tr style={{ backgroundColor: mine ? '#e3f2fd' : undefined }}>
+    <tr style={{ backgroundColor: mine ? '#e6efe9' : undefined }}>
       <td style={{ ...cellStyle, textAlign: 'left' }}>
         <input type="checkbox" checked={shown} onChange={onToggle} aria-label={`Show ${r.name} on the chart`} style={{ accentColor: color }} />
       </td>

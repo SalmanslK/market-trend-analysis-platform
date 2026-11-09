@@ -53,4 +53,12 @@ public class InstrumentRepository : IInstrumentRepository
             .Select(g => new { InstrumentId = g.Key, LastUpdate = g.Max(u => u.CreatedAt) })
             .ToDictionaryAsync(x => x.InstrumentId, x => x.LastUpdate, cancellationToken);
     }
+
+    public async Task<Dictionary<int, DateTime>> GetLatestPriceDatesAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.PricePoints
+            .GroupBy(p => p.InstrumentId)
+            .Select(g => new { InstrumentId = g.Key, Latest = g.Max(p => p.DateTime) })
+            .ToDictionaryAsync(x => x.InstrumentId, x => x.Latest, cancellationToken);
+    }
 }

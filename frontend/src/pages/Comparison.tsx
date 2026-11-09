@@ -17,12 +17,12 @@ import IntervalSelector from '../components/controls/IntervalSelector'
 import TimeframeSelector from '../components/controls/TimeframeSelector'
 import { intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences } from '../services/preferences'
-import { formatNumber } from '../services/format'
+import { formatNumber, SURFACE } from '../services/format'
 import PlainSummary from '../components/help/PlainSummary'
 
 // One distinct colour per instrument (13 today, with spares); with fewer colours than instruments two lines matched
 const SERIES_COLORS = [
-  '#1565c0', '#c62828', '#2e7d32', '#ef6c00', '#6a1b9a', '#00838f', '#5d4037', '#ad1457',
+  '#155e75', '#c62828', '#2e7d32', '#ef6c00', '#6a1b9a', '#00838f', '#5d4037', '#ad1457',
   '#455a64', '#9e9d24', '#283593', '#00897b', '#d84315', '#7cb342', '#8e24aa', '#f9a825',
 ]
 
@@ -200,7 +200,7 @@ export default function Comparison() {
         <div>No data available for the selected instruments and timeframe.</div>
       ) : (
         <>
-          <div style={{ width: '100%', height: '500px', padding: '20px', backgroundColor: 'white' }}>
+          <div style={{ width: '100%', height: '500px', padding: '20px', ...SURFACE }}>
             <h2 style={{ marginBottom: '10px' }}>
               % Change | {intervalLabels[interval]} ({timeframeLabels[timeframe]})
             </h2>

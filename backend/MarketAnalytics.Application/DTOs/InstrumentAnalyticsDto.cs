@@ -77,6 +77,35 @@ public class InstrumentAnalyticsDto
 
     /// <summary>Payouts over the last 12 months as a percentage of the latest price; null when there were none.</summary>
     public decimal? PayoutYield1Y { get; set; }
+
+    /// <summary>
+    /// The "stronger than cash" check (see StrongerThanCash). Null for cash and income funds, currencies and
+    /// dollar-priced instruments, and when the instrument or the Meezan Cash Fund lacks 12 months of recent history.
+    /// </summary>
+    public CashTestDto? StrongerThanCash { get; set; }
+
+    /// <summary>
+    /// Why the stronger-than-cash check couldn't be made for an instrument it applies to; null when it was made or
+    /// doesn't apply. Lets the pages say "not available" instead of silently leaving the check out.
+    /// </summary>
+    public string? StrongerThanCashUnavailable { get; set; }
+}
+
+/// <summary>
+/// Whether an instrument beat cash over the 12 months before this month's check. The rule holds the instrument only
+/// while it does, and cash otherwise; it is re-checked on the first trading day of each month.
+/// </summary>
+public class CashTestDto
+{
+    public bool AheadOfCash { get; set; }
+    /// <summary>The instrument's return over the 12 months to the check, in percent (payouts included).</summary>
+    public decimal Return12M { get; set; }
+    /// <summary>The Meezan Cash Fund's return over the same 12 months, in percent.</summary>
+    public decimal CashReturn12M { get; set; }
+    /// <summary>The first trading day of this month, when the check was made.</summary>
+    public DateTime CheckedOn { get; set; }
+    /// <summary>The check since which the answer has been the same; null if it hasn't changed in the stored history.</summary>
+    public DateTime? Since { get; set; }
 }
 
 /// <summary>

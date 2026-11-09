@@ -21,7 +21,7 @@ export default function SignalModeBar() {
   if (!shown) return null
 
   return (
-    <div style={{ backgroundColor: '#eceff1', borderBottom: `1px solid ${COLORS.border}` }}>
+    <div style={{ backgroundColor: '#e9eef3', borderBottom: `1px solid ${COLORS.border}` }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '8px 20px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
         <span style={{ color: COLORS.neutral }}>
           Technical signal<InfoTip term="steadySignal" />

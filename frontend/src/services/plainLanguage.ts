@@ -1,4 +1,4 @@
-import { BacktestResult, BacktestVerdict, InstrumentAnalyticsDto, InstrumentType, NewsSentimentSummary, SignalAction, PortfolioComparison } from './types/marketData'
+import { BacktestResult, BacktestVerdict, CashTest, InstrumentAnalyticsDto, InstrumentType, NewsSentimentSummary, SignalAction, PortfolioComparison } from './types/marketData'
 import { formatDate, formatNumber } from './format'
 
 /**
@@ -183,10 +183,8 @@ export function describeInstrument(a: InstrumentAnalyticsDto, mood?: NewsSentime
     const newsText = a.newsSignal.articles >= 3 ? labels[a.newsSignal.action] : `Hold (only ${a.newsSignal.articles} recent ${a.newsSignal.articles === 1 ? 'story' : 'stories'})`
     const combinedText = a.combinedSignal.action === 'Hold' ? 'Hold (stay as you are), because technical and news don\'t clearly agree' : labels[a.combinedSignal.action]
     points.unshift(`Combined signal: ${combinedText}. Technical says ${labels[a.signal.action]}, news says ${newsText}.`)
-  } else {
-    const technical = a.signal.action === 'Hold' ? 'Hold (stay as you are)' : labels[a.signal.action]
-    points.unshift(`Technical signal: ${technical}${a.signal.steady ? ', from the last 20 trading days' : ', from today\'s prices'}.`)
   }
+  // Without news, the technical signal is already shown with its meaning right above the summary
 
   return {
     headline: `${signalMeaning[a.signal.action].headline}. ${a.name} is at ${formatNumber(a.lastPrice)} (${priceMeaning(a)}).`,
@@ -277,7 +275,8 @@ export const verdictStyles: Record<BacktestVerdict, { label: string; background:
   DidNotHelp: { label: 'Did worse than holding', background: '#ffcdd2', color: '#b71c1c' },
 }
 
-const signedPct = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
+/** 2.345 -> "+2.3%": a return with its sign, to one decimal */
+export const signedPct = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
 
 /** How acting on a rule would have compared with holding, for one instrument. */
 export function describeRuleRecord(r: BacktestResult, key: 'signal' | 'goldenCross' | 'monthlyTrend'): string {
@@ -437,4 +436,37 @@ export function describePortfolios(comparison: PortfolioComparison): string[] {
     sentences.push(`Only ${years.toFixed(1)} years can be compared, because one of the chosen instruments has a short history. One good or bad stretch can decide a result this short.`)
 
   return sentences
+}
+
+/** The long-term trend in one sentence, saying when the price has already turned against it. */
+export function trendInWords(trend: InstrumentAnalyticsDto['longTermTrend']): string {
+  const { direction, phase } = trend
+  if (direction === 'Down' && phase === 'Recovering') return 'The long-term trend is still down, but the price is already back above its averages.'
+  if (direction === 'Up' && phase === 'Weakening') return 'The long-term trend is still up, but the price has dipped below its averages.'
+  if (direction === 'Up') return 'The long-term trend is up.'
+  if (direction === 'Down') return 'The long-term trend is down.'
+  return 'Not enough history yet for a long-term trend.'
+}
+
+/** Gold instruments: the stronger-than-cash rule was tested on stocks, not on gold. */
+export const GOLD_SYMBOLS = ['GOLDPK', 'GOLDINT', 'MGF']
+
+/**
+ * The stronger-than-cash check in words: a short label and one or two sentences. The rule holds an instrument only
+ * while its last 12 months beat cash, and cash otherwise, checked on the first trading day of each month.
+ */
+export function cashTestInWords(symbol: string, test: CashTest): { word: string; tone: 'good' | 'bad'; sentence: string } {
+  const since = test.since ? ` It has been ${test.aheadOfCash ? 'ahead' : 'behind'} since ${formatDate(test.since)}.` : ''
+  const untested = GOLD_SYMBOLS.includes(symbol) ? ' The rule was tested on stocks; for gold it is untested.' : ''
+  return test.aheadOfCash
+    ? {
+      word: 'Ahead of cash',
+      tone: 'good',
+      sentence: `In the 12 months to ${formatDate(test.checkedOn)} it earned ${signedPct(test.return12M)}, more than cash's ${signedPct(test.cashReturn12M)}, so the "stronger than cash" rule stays invested.${since}${untested}`,
+    }
+    : {
+      word: 'Behind cash',
+      tone: 'bad',
+      sentence: `In the 12 months to ${formatDate(test.checkedOn)} it earned ${signedPct(test.return12M)}, less than cash's ${signedPct(test.cashReturn12M)}, so the "stronger than cash" rule would wait in cash until it catches up. It is checked again at the start of next month.${since}${untested}`,
+    }
 }

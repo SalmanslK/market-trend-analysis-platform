@@ -17,7 +17,7 @@ builder.Services.AddOpenApi();
 // Unhandled errors return a short JSON problem description instead of a stack trace
 builder.Services.AddProblemDetails();
 
-// Optional parts of the app (appsettings.json "Features"); news and sentiment are off by default
+// Optional parts of the app (appsettings.json "Features"); news is switched on there, and off if the setting is missing
 builder.Services.Configure<MarketAnalytics.Api.FeatureSettings>(builder.Configuration.GetSection("Features"));
 
 // Backtest and price responses are large JSON; compression cuts them to a fraction
@@ -48,6 +48,7 @@ builder.Services.AddScoped<InstrumentDataFetcherFactory>();
 // The same updates the Worker runs on its schedule, for the "Check for new data" button
 builder.Services.AddScoped<MarketDataUpdater>();
 builder.Services.AddScoped<NewsUpdater>();
+builder.Services.AddScoped<SignalRecorder>();
 
 // Register application services
 builder.Services.AddScoped<IResamplingService, ResamplingService>();

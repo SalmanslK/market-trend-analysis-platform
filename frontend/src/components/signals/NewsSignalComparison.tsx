@@ -10,7 +10,7 @@ import {
   YAxis,
 } from 'recharts'
 import { BacktestResult, NewsRuleResult } from '../../services/types/marketData'
-import { COLORS, formatDate, formatPercent } from '../../services/format'
+import { COLORS, formatDate, formatPercent, SURFACE } from '../../services/format'
 import { compareWithHolding, describeNewsTests, MIN_RELIABLE_YEARS } from '../../services/plainLanguage'
 import InfoTip from '../help/InfoTip'
 import PlainSummary from '../help/PlainSummary'
@@ -55,7 +55,7 @@ export default function NewsSignalComparison({ results, detail, cost, onSelect }
   }))
 
   return (
-    <section style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px', marginBottom: '12px' }}>
+    <section style={{ padding: '20px', ...SURFACE, marginBottom: '12px' }}>
       <h2 style={{ fontSize: '1.2rem' }}>Technical, news or both?</h2>
       <p style={{ fontSize: '13px', color: '#546e7a', margin: '4px 0 10px', lineHeight: 1.45 }}>
         The three Buy/Sell signals<InfoTip term="combinedSignal" /> against simply holding, for each instrument over the same dates, starting when its news begins.
@@ -83,7 +83,7 @@ export default function NewsSignalComparison({ results, detail, cost, onSelect }
                 <tr
                   key={r.symbol}
                   onClick={() => onSelect(r.symbol)}
-                  style={{ cursor: 'pointer', backgroundColor: shown?.symbol === r.symbol ? '#e8f1fb' : undefined }}
+                  style={{ cursor: 'pointer', backgroundColor: shown?.symbol === r.symbol ? '#e6efe9' : undefined }}
                 >
                   <td style={{ ...cellStyle, textAlign: 'left' }}>
                     <strong style={{ color: COLORS.link }}>{r.symbol}</strong>
@@ -123,7 +123,7 @@ export default function NewsSignalComparison({ results, detail, cost, onSelect }
                 <Legend />
                 <ReferenceLine y={100} stroke="#999" />
                 <Line type="monotone" dataKey="Simply holding" stroke="#000000" strokeWidth={2} dot={false} isAnimationActive={false} />
-                <Line type="monotone" dataKey="Technical" stroke="#1976d2" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                <Line type="monotone" dataKey="Technical" stroke="#155e75" strokeWidth={1.5} dot={false} isAnimationActive={false} />
                 <Line type="monotone" dataKey="News" stroke="#ef6c00" strokeWidth={1.5} dot={false} isAnimationActive={false} />
                 <Line type="monotone" dataKey="Combined" stroke="#7b1fa2" strokeWidth={2} dot={false} isAnimationActive={false} />
               </LineChart>

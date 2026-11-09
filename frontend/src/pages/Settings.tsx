@@ -85,7 +85,7 @@ export default function Settings() {
         <p style={{ margin: '6px 0 15px', color: COLORS.muted }}>
           Pick a suggested setting, or choose your own, then save. Instrument and Compare pages will open with it. Saved in this browser.
         </p>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
           <label style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
             Interval:
             <IntervalSelector
@@ -105,7 +105,7 @@ export default function Settings() {
             style={{
               padding: '8px 16px',
               fontSize: '16px',
-              backgroundColor: '#1976d2',
+              backgroundColor: '#155e75',
               color: 'white',
               border: 'none',
               borderRadius: '4px',
@@ -132,8 +132,8 @@ export default function Settings() {
                 style={{
                   padding: '8px 12px',
                   fontSize: '14px',
-                  backgroundColor: isCurrent ? '#e3f2fd' : 'white',
-                  border: `1px solid ${isCurrent ? '#1976d2' : '#ccc'}`,
+                  backgroundColor: isCurrent ? '#e6efe9' : 'white',
+                  border: `1px solid ${isCurrent ? '#155e75' : '#ccc'}`,
                   borderRadius: '4px',
                   cursor: 'pointer',
                   textAlign: 'left',

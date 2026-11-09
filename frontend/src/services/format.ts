@@ -5,19 +5,29 @@ import { SignalAction } from './types/marketData'
  * light tints used for boxes, so muted text and links stay readable.
  */
 export const COLORS = {
-  up: '#2e7d32',
-  down: '#c62828',
-  neutral: '#616161',
-  muted: '#5f6368',
-  border: '#e0e0e0',
-  link: '#1565c0',
+  up: '#17663a',
+  down: '#b3261e',
+  neutral: '#5b6560',
+  muted: '#55605a',
+  border: '#d8ddd8',
+  // Deep teal-blue: clearly a link, and never confused with the green that means "up"
+  link: '#155e75',
+  ink: '#0e3b2e',
+  text: '#2f3d37',
+  tint: '#eef2ee',
 }
 
-/** The look of every card: white, rounded, with a soft shadow instead of a hard border */
+/** The look of every card: white paper on the page, with a hairline rule rather than a shadow */
 export const SURFACE = {
   backgroundColor: 'white',
-  borderRadius: '12px',
-  boxShadow: '0 1px 2px rgba(16, 42, 67, 0.06), 0 1px 3px rgba(16, 42, 67, 0.08)',
+  borderRadius: '10px',
+  border: `1px solid ${COLORS.border}`,
+}
+
+/** The page's main answer: the same paper, marked by an ink bar so it reads first */
+export const ANSWER_SURFACE = {
+  ...SURFACE,
+  borderLeft: `5px solid ${COLORS.ink}`,
 }
 
 /** 166409.25 -> "166,409.25" */

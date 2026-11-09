@@ -260,7 +260,7 @@ export default function Dashboard() {
                   {a.isCash ? (
                     <td colSpan={news ? 4 : 2} style={{ ...cellStyle, textAlign: 'center' }}>
                       <Tip text={`A ${(a.lowRiskKind ?? 'cash fund').toLowerCase()}'s price creeps up almost every day, so Buy/Sell signals and trends don't apply. It shows what money earns while it waits; see the Portfolio page.`}>
-                        <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '12px', fontSize: '13px', backgroundColor: '#e3f2fd', color: '#0d47a1', fontWeight: 'bold' }}>
+                        <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '12px', fontSize: '13px', backgroundColor: '#e6efe9', color: '#155e75', fontWeight: 'bold' }}>
                           {a.lowRiskKind ?? 'Cash fund'} · no signals
                         </span>
                       </Tip>

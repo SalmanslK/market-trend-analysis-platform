@@ -11,10 +11,10 @@ interface AtAGlanceProps {
 type Tone = 'good' | 'mixed' | 'bad' | 'calm'
 
 const TONES: Record<Tone, { color: string; background: string }> = {
-  good: { color: '#1b5e20', background: '#e8f5e9' },
-  mixed: { color: '#7a4f01', background: '#fff4dc' },
-  bad: { color: '#a23a12', background: '#fdeee9' },
-  calm: { color: '#0d47a1', background: '#e3f2fd' },
+  good: { color: '#17663a', background: '#9fd0b0' },
+  mixed: { color: '#7a4f01', background: '#e9c27a' },
+  bad: { color: '#a23a12', background: '#eeab98' },
+  calm: { color: '#155e75', background: '#9cc6d3' },
 }
 
 /** One word for where an instrument stands: its long-term trend, and whether the price has already turned. */
@@ -112,19 +112,17 @@ export default function AtAGlance({ analytics }: AtAGlanceProps) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
         {cards.map((card) => (
           <div key={card.key} style={{ ...SURFACE, padding: '18px 18px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ fontSize: '13px', color: COLORS.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>{card.title}</div>
-            <div>
-              <span style={{ display: 'inline-block', padding: '3px 12px', borderRadius: '999px', fontWeight: 700, fontSize: '16px', color: TONES[card.tone].color, backgroundColor: TONES[card.tone].background }}>
-                {card.word}
-              </span>
+            <div style={{ fontSize: '15px', color: COLORS.muted, fontWeight: 700 }}>{card.title}</div>
+            {/* The status in one large word, underlined in its tone: what a glance should catch first */}
+            <div style={{ fontSize: '28px', fontWeight: 700, lineHeight: 1.15, color: TONES[card.tone].color, borderBottom: `4px solid ${TONES[card.tone].background}`, paddingBottom: '6px' }}>
+              {card.word}
             </div>
-            <p style={{ fontSize: '14px', lineHeight: 1.5, color: '#334e68', flex: 1 }}>
+            <p style={{ fontSize: '14px', lineHeight: 1.5, color: '#2f3d37', flex: 1 }}>
               {card.sentence}
-              <InfoTip term={card.key === 'cash' ? 'cashFund' : 'change'} />
-              {card.versusCash && <InfoTip term="strongerThanCash" />}
+              {card.versusCash ? <InfoTip term="strongerThanCash" /> : <InfoTip term={card.key === 'cash' ? 'cashFund' : 'change'} />}
               {card.signal && <> Technical signal: <strong>{card.signal}</strong>.<InfoTip term="signal" /></>}
             </p>
-            <Link to={card.link} style={{ color: COLORS.link, fontWeight: 600, fontSize: '14px' }}>{card.linkText} →</Link>
+            <Link to={card.link} style={{ color: COLORS.link, fontWeight: 700, fontSize: '15px' }}>{card.linkText}</Link>
           </div>
         ))}
       </div>

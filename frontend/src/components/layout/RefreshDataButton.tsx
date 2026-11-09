@@ -66,7 +66,7 @@ export default function RefreshDataButton({ onRefreshed }: RefreshDataButtonProp
           padding: '6px 14px',
           border: `1px solid ${COLORS.link}`,
           borderRadius: '6px',
-          backgroundColor: running ? '#e3f2fd' : 'white',
+          backgroundColor: running ? '#e6efe9' : 'white',
           color: COLORS.link,
           fontSize: '14px',
           fontWeight: 'bold',

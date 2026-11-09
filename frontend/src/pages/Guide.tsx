@@ -46,12 +46,12 @@ export default function Guide() {
       </p>
 
       {/* The questions people actually ask, answered in a sentence or two, before the reference material */}
-      <section aria-labelledby="quick-answers" style={{ ...cardStyle, borderTop: '4px solid #1565c0' }}>
+      <section aria-labelledby="quick-answers" style={{ ...cardStyle, borderTop: '4px solid #155e75' }}>
         <h2 id="quick-answers" style={{ fontSize: '1.2rem', marginBottom: '8px' }}>Quick answers</h2>
         {QUICK_ANSWERS(news).map(([question, answer]) => (
           <details key={question} style={{ borderTop: `1px solid ${COLORS.border}`, padding: '10px 0' }}>
-            <summary style={{ cursor: 'pointer', fontWeight: 600, color: '#102a43' }}>{question}</summary>
-            <p style={{ marginTop: '6px', color: '#334e68' }}>{answer}</p>
+            <summary style={{ cursor: 'pointer', fontWeight: 600, color: '#0e3b2e' }}>{question}</summary>
+            <p style={{ marginTop: '6px', color: '#2f3d37' }}>{answer}</p>
           </details>
         ))}
       </section>

@@ -47,7 +47,7 @@ export default function LiveRecord() {
   return (
     <section aria-labelledby="live-record" style={sectionStyle}>
       {heading}
-      <p style={{ fontSize: '14px', color: '#334e68', lineHeight: 1.5 }}>
+      <p style={{ fontSize: '14px', color: '#2f3d37', lineHeight: 1.5 }}>
         Every day the app saves each instrument's signals as shown, before anyone knows what happens next. Each reading is then scored by
         how prices moved over the {record.horizonDays} trading days after the next day's close. This is the honest test: unlike the replays
         above, it can't be fitted to the past.

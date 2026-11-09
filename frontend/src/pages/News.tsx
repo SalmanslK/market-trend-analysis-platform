@@ -145,7 +145,7 @@ export default function News() {
             Include {backgroundCount} background {backgroundCount === 1 ? 'story' : 'stories'}<InfoTip term="background" />
           </label>
         )}
-        {symbol && <Link to={`/instrument/${symbol}`} style={{ color: COLORS.link }}>Open {symbol} charts →</Link>}
+        {symbol && <Link to={`/instrument/${symbol}`} style={{ color: COLORS.link }}>Open {symbol} charts</Link>}
         <span style={{ color: COLORS.muted, fontSize: '13px' }}>{loading ? 'Loading...' : `${visible.length} stories in the last 30 days`}</span>
       </div>
 

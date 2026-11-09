@@ -83,7 +83,7 @@ export default function NewsSignalComparison({ results, detail, cost, onSelect }
                 <tr
                   key={r.symbol}
                   onClick={() => onSelect(r.symbol)}
-                  style={{ cursor: 'pointer', backgroundColor: shown?.symbol === r.symbol ? '#e8f1fb' : undefined }}
+                  style={{ cursor: 'pointer', backgroundColor: shown?.symbol === r.symbol ? '#e6efe9' : undefined }}
                 >
                   <td style={{ ...cellStyle, textAlign: 'left' }}>
                     <strong style={{ color: COLORS.link }}>{r.symbol}</strong>
@@ -123,7 +123,7 @@ export default function NewsSignalComparison({ results, detail, cost, onSelect }
                 <Legend />
                 <ReferenceLine y={100} stroke="#999" />
                 <Line type="monotone" dataKey="Simply holding" stroke="#000000" strokeWidth={2} dot={false} isAnimationActive={false} />
-                <Line type="monotone" dataKey="Technical" stroke="#1976d2" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                <Line type="monotone" dataKey="Technical" stroke="#155e75" strokeWidth={1.5} dot={false} isAnimationActive={false} />
                 <Line type="monotone" dataKey="News" stroke="#ef6c00" strokeWidth={1.5} dot={false} isAnimationActive={false} />
                 <Line type="monotone" dataKey="Combined" stroke="#7b1fa2" strokeWidth={2} dot={false} isAnimationActive={false} />
               </LineChart>

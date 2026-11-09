@@ -19,7 +19,7 @@ const SCHEDULES: { value: RebalanceSchedule; label: string }[] = [
   { value: 'HalfYearly', label: 'Every 6 months' },
   { value: 'Quarterly', label: 'Every 3 months' },
 ]
-const LINE_COLORS = ['#1565c0', '#2e7d32', '#ef6c00', '#6a1b9a', '#c62828', '#00838f', '#5d4037', '#455a64', '#ad1457', '#827717']
+const LINE_COLORS = ['#155e75', '#2e7d32', '#ef6c00', '#6a1b9a', '#c62828', '#00838f', '#5d4037', '#455a64', '#ad1457', '#827717']
 const STORAGE_KEY = 'portfolio.myMix'
 const DEFAULT_MIX: PortfolioMix = { name: 'My mix', weights: { MIF: 60, MGF: 20, MCF: 20 }, rebalance: 'Yearly', trendFilter: false }
 
@@ -310,7 +310,7 @@ function ResultRow({ result: r, mine, shown, color, onToggle }: { result: Portfo
   const rest = 100 - Object.values(r.weights).reduce((a, b) => a + b, 0)
   const schedule = SCHEDULES.find((s) => s.value === r.rebalance)?.label.toLowerCase()
   return (
-    <tr style={{ backgroundColor: mine ? '#e3f2fd' : undefined }}>
+    <tr style={{ backgroundColor: mine ? '#e6efe9' : undefined }}>
       <td style={{ ...cellStyle, textAlign: 'left' }}>
         <input type="checkbox" checked={shown} onChange={onToggle} aria-label={`Show ${r.name} on the chart`} style={{ accentColor: color }} />
       </td>

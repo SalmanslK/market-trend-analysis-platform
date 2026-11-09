@@ -22,7 +22,7 @@ import PlainSummary from '../components/help/PlainSummary'
 
 // One distinct colour per instrument (13 today, with spares); with fewer colours than instruments two lines matched
 const SERIES_COLORS = [
-  '#1565c0', '#c62828', '#2e7d32', '#ef6c00', '#6a1b9a', '#00838f', '#5d4037', '#ad1457',
+  '#155e75', '#c62828', '#2e7d32', '#ef6c00', '#6a1b9a', '#00838f', '#5d4037', '#ad1457',
   '#455a64', '#9e9d24', '#283593', '#00897b', '#d84315', '#7cb342', '#8e24aa', '#f9a825',
 ]
 

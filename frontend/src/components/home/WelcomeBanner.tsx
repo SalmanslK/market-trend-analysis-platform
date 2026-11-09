@@ -31,18 +31,18 @@ export default function WelcomeBanner() {
   return (
     <section
       aria-labelledby="welcome-title"
-      style={{ position: 'relative', marginBottom: '24px', padding: '20px 22px', borderRadius: '12px', background: 'linear-gradient(135deg, #102a43 0%, #1f4e79 100%)', color: 'white' }}
+      style={{ position: 'relative', marginBottom: '24px', padding: '20px 22px', borderRadius: '12px', backgroundColor: '#0e3b2e', color: 'white' }}
     >
       <button
         type="button"
         onClick={close}
         aria-label="Close the welcome message"
-        style={{ position: 'absolute', top: '10px', right: '12px', border: 'none', background: 'none', color: '#d9e2ec', fontSize: '20px', lineHeight: 1 }}
+        style={{ position: 'absolute', top: '10px', right: '12px', border: 'none', background: 'none', color: '#d8ddd8', fontSize: '20px', lineHeight: 1 }}
       >
         ✕
       </button>
       <h2 id="welcome-title" style={{ color: 'white', fontSize: '1.25rem', marginBottom: '6px' }}>Welcome! Here's how to use this app</h2>
-      <p style={{ color: '#d9e2ec', marginBottom: '12px', maxWidth: '760px' }}>
+      <p style={{ color: '#d8ddd8', marginBottom: '12px', maxWidth: '760px' }}>
         It follows Pakistan stocks, gold, the dollar rate and Meezan funds, and explains in plain words what their prices have been doing.
       </p>
       <ol style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px 20px', listStyle: 'none', padding: 0 }}>
@@ -52,8 +52,8 @@ export default function WelcomeBanner() {
           ['3', 'Add what you own', 'under My Holdings to follow your own money.'],
         ].map(([n, title, text]) => (
           <li key={n} style={{ display: 'flex', gap: '10px' }}>
-            <span aria-hidden="true" style={{ flex: '0 0 26px', height: '26px', borderRadius: '50%', backgroundColor: '#81c784', color: '#102a43', fontWeight: 700, textAlign: 'center', lineHeight: '26px' }}>{n}</span>
-            <span><strong>{title}</strong> <span style={{ color: '#d9e2ec' }}>{text}</span></span>
+            <span aria-hidden="true" style={{ flex: '0 0 26px', height: '26px', borderRadius: '50%', backgroundColor: '#81c784', color: '#0e3b2e', fontWeight: 700, textAlign: 'center', lineHeight: '26px' }}>{n}</span>
+            <span><strong>{title}</strong> <span style={{ color: '#d8ddd8' }}>{text}</span></span>
           </li>
         ))}
       </ol>

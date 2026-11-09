@@ -27,9 +27,9 @@ import SignalBadge from '../components/signals/SignalBadge'
 import { changeColor, COLORS, formatDate, formatNumber, formatPercent, daysSince, STALE_AFTER_DAYS, SURFACE } from '../services/format'
 
 // The reading tiles in the answer card at the top
-const tileStyle = { padding: '12px 14px', borderRadius: '10px', backgroundColor: '#f0f4f8' }
-const tileLabelStyle = { fontSize: '12px', color: COLORS.muted, fontWeight: 600, textTransform: 'uppercase' as const }
-const tileTextStyle = { fontSize: '14px', marginTop: '6px', color: '#334e68' }
+const tileStyle = { padding: '12px 14px', borderRadius: '10px', backgroundColor: '#eef2ee' }
+const tileLabelStyle = { fontSize: '14px', color: COLORS.muted, fontWeight: 700 }
+const tileTextStyle = { fontSize: '14px', marginTop: '6px', color: '#2f3d37' }
 
 export default function InstrumentView() {
   // The URL is the source of truth for the selected instrument, so links between instruments work
@@ -113,7 +113,7 @@ export default function InstrumentView() {
             </div>
             {analytics && (
               <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '12px', marginTop: '6px' }}>
-                <span style={{ fontSize: '30px', fontWeight: 700, color: '#102a43' }}>{formatNumber(analytics.lastPrice)}</span>
+                <span style={{ fontSize: '30px', fontWeight: 700, color: '#0e3b2e' }}>{formatNumber(analytics.lastPrice)}</span>
                 <span style={{ fontSize: '17px', color: changeColor(analytics.change1D) }}>
                   {formatPercent(analytics.change1D)} <span style={{ fontSize: '13px', color: COLORS.muted }}>today</span>
                 </span>
@@ -167,7 +167,7 @@ export default function InstrumentView() {
                     <div style={{ ...tileLabelStyle, marginBottom: '6px' }}>
                       Stronger than cash?<InfoTip term="strongerThanCash" />
                     </div>
-                    <span style={{ display: 'inline-block', padding: '3px 12px', borderRadius: '999px', fontWeight: 700, fontSize: '16px', color: '#334e68', backgroundColor: '#e4e7eb' }}>
+                    <span style={{ display: 'inline-block', padding: '3px 12px', borderRadius: '999px', fontWeight: 700, fontSize: '16px', color: '#2f3d37', backgroundColor: '#e4e7eb' }}>
                       Not available
                     </span>
                     <p style={tileTextStyle}>{analytics.strongerThanCashUnavailable}</p>

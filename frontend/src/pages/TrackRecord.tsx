@@ -87,7 +87,7 @@ function InstrumentDetail({ result }: { result: BacktestResult }) {
             <Line type="monotone" dataKey="Simply holding" stroke="#000000" strokeWidth={2} dot={false} isAnimationActive={false} />
             <Line type="monotone" dataKey={ruleNames.goldenCross} stroke="#2e7d32" strokeWidth={2} dot={false} isAnimationActive={false} />
             <Line type="monotone" dataKey={ruleNames.monthlyTrend} stroke="#ef6c00" strokeWidth={1.5} dot={false} isAnimationActive={false} />
-            <Line type="monotone" dataKey={ruleNames.signal} stroke="#1976d2" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey={ruleNames.signal} stroke="#155e75" strokeWidth={1.5} dot={false} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -205,7 +205,7 @@ function StrongerThanCashResult() {
   return (
     <section aria-labelledby="cash-rule" style={{ ...cardStyle, borderTop: `4px solid ${COLORS.up}` }}>
       <h2 id="cash-rule" style={{ fontSize: '1.2rem', marginBottom: '6px' }}>The rule that passed: stronger than cash<InfoTip term="strongerThanCash" /></h2>
-      <p style={{ fontSize: '14px', color: '#334e68', lineHeight: 1.5 }}>
+      <p style={{ fontSize: '14px', color: '#2f3d37', lineHeight: 1.5 }}>
         Once a month, stay in stocks only if they earned more than cash over the past 12 months; otherwise wait in cash.
         We wrote the rule and what would count as a pass down before testing it, checked it on 2006 to 2015, then looked once at
         2016 to 2026, which had been held back. It passed both: about the same return as holding, with a much smaller worst fall.
@@ -335,7 +335,7 @@ export default function TrackRecord() {
               <tr
                 key={r.symbol}
                 onClick={() => setParams({ symbol: r.symbol }, { replace: true })}
-                style={{ cursor: 'pointer', backgroundColor: detail?.symbol === r.symbol ? '#e8f1fb' : undefined }}
+                style={{ cursor: 'pointer', backgroundColor: detail?.symbol === r.symbol ? '#e6efe9' : undefined }}
               >
                 <td style={{ ...cellStyle, textAlign: 'left' }}>
                   <strong style={{ color: COLORS.link }}>{r.symbol}</strong>

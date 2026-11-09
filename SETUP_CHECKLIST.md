@@ -236,6 +236,17 @@ anywhere reachable, so they are the one-day NAV drop on each July ex-date (sever
 Rs 17.50 and Rs 10.00), which also carries that day's market move. No payout in FY2009, FY2018 or FY2019. Effect:
 MIF 2005-2019 went from -0.7% a year (price only) to +13.6% a year (with payouts); since 2005, from +4.3% to +15.5%.
 
+**How much to hold in stocks** (`scripts/research/risk-rules-research.cs`, rules committed before running; MIF with
+payouts, cash at the policy rate minus 1%, 0.5% per trade; development to 2015, holdout 2016 on; pass = worst fall at
+least 25% smaller than holding's and yearly return no more than 2 points lower):
+- Cut stocks when markets turn jumpy (volatility targeting): failed. 2006-2015 +10.3% a year against +14.4% holding.
+- **Stronger than cash** (hold stocks only while their last 12 months beat cash; checked monthly): **passed both
+  periods**, the first rule in this project to do so. 2006-2015: +12.8% a year, worst fall -25%, against +14.4% and
+  -63% for holding. 2016-2026: +15.6% a year, worst fall -23%, against +12.7% and -57%. About one switch a year.
+- Robustness, checked after the result: 6-, 9- and 12-month lookbacks all cut MIF's worst fall to -25%..-41% with
+  similar returns; on KSE-100 and KMI30 since 2021 (no big crash) it matched holding. Caveats: about 4 big falls in
+  21 years decide the result, and cash in Pakistan paid unusually well (up to 21%), which helps the rule.
+
 **Biggest moves**: for each of an instrument's largest daily moves in the last 30 days, the API returns the news
 published from the day before to the next trading day (so weekend reports of a Friday move are included).
 

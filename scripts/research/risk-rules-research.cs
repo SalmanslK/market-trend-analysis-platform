@@ -148,3 +148,36 @@ var yrs = (dates[span[^1]] - dates[span[0]]).Days / 365.25;
 Console.WriteLine($"Information only, strongest of stocks/gold/cash {dates[span[0]]:yyyy-MM} to {dates[span[^1]]:yyyy-MM}: " +
     $"{(Math.Pow(v3, 1 / yrs) - 1) * 100:+0.0}%/yr worst {fall3 * 100:0}% against holding MIF {(Math.Pow(holdS, 1 / yrs) - 1) * 100:+0.0}%/yr worst {fallS * 100:0}% " +
     $"(months in stocks {picks["stocks"]}, gold {picks["gold"]}, cash {picks["cash"]})");
+
+// Added AFTER seeing the results above (Nov 9 2026), as a robustness check only; it does not change any verdict:
+// is R2 sensitive to its 12-month lookback, and does it behave the same on KSE100 and KMI30 (from 2021)?
+Console.WriteLine("\nRobustness check (added after the results): R2 with other lookbacks and instruments, whole period");
+foreach (var symbol in new[] { "MIF", "KSE100", "KMI30" })
+{
+    var (sd, sc) = await Load(symbol);
+    foreach (var months in new[] { 6, 9, 12 })
+    {
+        var first = sd[0].AddMonths(months).AddDays(5);
+        var idx = Enumerable.Range(0, sd.Count).Where(i => sd[i] >= first).ToList();
+        double r = 1, h = 1, rp = 1, hp = 1, rf = 0, hf = 0, inStocks = 0, switches = 0;
+        double? held = null;
+        for (int k = 0; k < idx.Count - 1; k++)
+        {
+            int i = idx[k], j = idx[k + 1];
+            if (held is null || sd[i].Month != sd[idx[k - 1]].Month)
+            {
+                var back = sd[i].AddMonths(-months);
+                double want = sc[i] / sc[IndexOnOrBefore(sd, back)] > CashGrowth(back, sd[i]) ? 1 : 0;
+                if (held is double was && was != want) { r *= 1 - Cost; switches++; }
+                held = want;
+            }
+            r *= held == 1 ? sc[j] / sc[i] : CashGrowth(sd[i], sd[j]);
+            h *= sc[j] / sc[i];
+            inStocks += held!.Value;
+            rp = Math.Max(rp, r); hp = Math.Max(hp, h); rf = Math.Min(rf, r / rp - 1); hf = Math.Min(hf, h / hp - 1);
+        }
+        var y = (sd[idx[^1]] - sd[idx[0]]).Days / 365.25;
+        Console.WriteLine($"  {symbol,-7} {months,2} months {sd[idx[0]]:yyyy-MM} on: holding {(Math.Pow(h, 1 / y) - 1) * 100,5:+0.0;-0.0}%/yr worst {hf * 100,4:0}% | " +
+            $"rule {(Math.Pow(r, 1 / y) - 1) * 100,5:+0.0;-0.0}%/yr worst {rf * 100,4:0}%, in stocks {100 * inStocks / idx.Count:0}%, {switches / y:0.0} switches/yr");
+    }
+}

@@ -221,6 +221,16 @@ story volume, and a 30-day window. On the first 70%, none passed: the strongest 
 unused for a future test. Conclusion: with this news (about 5,900 stories since 2021), no reading of it predicts prices;
 news stays a description of what happened, and Buy/Sell decisions rest on the technical signals.
 
+The State Bank's policy rate was tested next (`scripts/research/policy-rate-research.cs`, rules committed before the rate
+history was fetched; rates in `scripts/research/data/sbp-policy-rate.csv` from the State Bank's published history).
+Question: do stocks do better in the 6 months after a rate cut than after a rise? On MIF 2005-2015: +4.3% after a cut
+against -0.9% after a rise, a difference of +5.1 points but t = 0.7 against a pass mark of 2. The period holds only
+about 6 rate cycles, so one or two of them (the 2008 crash came while rates were rising) decide the result. The "stocks after a cut, cash
+after a rise" rule looked far better (+9.6% a year against -0.6%), but that comparison is unreliable: MIF has no
+payouts recorded before 2020, so holding is understated, and it fails anyway because the first test did. 2016 onward
+stays unused for a future test. Data gap found: MIF's payouts before 2020 are missing, so its long-run price history is
+not a total return before then.
+
 **Biggest moves**: for each of an instrument's largest daily moves in the last 30 days, the API returns the news
 published from the day before to the next trading day (so weekend reports of a Friday move are included).
 

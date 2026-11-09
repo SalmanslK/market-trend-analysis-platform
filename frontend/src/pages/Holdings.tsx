@@ -60,6 +60,11 @@ export default function Holdings() {
   const analytics = useMemo(() => loaded.map((a) => applySignalMode(a, mode)), [loaded, mode])
   const [draft, setDraft] = useState<{ symbol: string; units: string; buyPrice: string; buyDate: string }>({ symbol: '', units: '', buyPrice: '', buyDate: '' })
   const [error, setError] = useState<string | null>(null)
+  // Show "enter the units" only after a first try, not while the person is still filling in the form
+  const [triedToAdd, setTriedToAdd] = useState(false)
+  // The last removed holding, so a mistaken removal can be undone
+  const [removed, setRemoved] = useState<Holding | null>(null)
+  const [saved, setSaved] = useState<string | null>(null)
 
   useEffect(() => {
     analyticsApi.getAll()
@@ -77,6 +82,7 @@ export default function Holdings() {
 
   const add = () => {
     const units = Number(draft.units)
+    setTriedToAdd(true)
     if (!draft.symbol || !(units > 0)) return
     const holding: Holding = {
       symbol: draft.symbol,
@@ -84,9 +90,35 @@ export default function Holdings() {
       buyPrice: Number(draft.buyPrice) > 0 ? Number(draft.buyPrice) : undefined,
       buyDate: draft.buyDate || undefined,
     }
+    const replacing = holdings.some((h) => h.symbol === holding.symbol)
     update([...holdings.filter((h) => h.symbol !== holding.symbol), holding])
     setDraft({ symbol: '', units: '', buyPrice: '', buyDate: '' })
+    setTriedToAdd(false)
+    setRemoved(null)
+    setSaved(`${replacing ? 'Updated' : 'Added'} ${holding.symbol}.`)
   }
+
+  const remove = (holding: Holding) => {
+    update(holdings.filter((x) => x.symbol !== holding.symbol))
+    setRemoved(holding)
+    setSaved(null)
+  }
+
+  const undoRemove = () => {
+    if (!removed) return
+    update([...holdings, removed])
+    setSaved(`Restored ${removed.symbol}.`)
+    setRemoved(null)
+  }
+
+  const unitsProblem = !draft.symbol
+    ? 'Choose an investment first.'
+    : !draft.units.trim()
+      ? 'Enter how many units you own.'
+      : !(Number(draft.units) > 0)
+        ? 'Units must be a number above 0.'
+        : null
+  const alreadyHeld = holdings.some((h) => h.symbol === draft.symbol)
 
   const usdPkr = bySymbol.get('USDPKR')?.lastPrice
   const rows = holdings
@@ -174,14 +206,19 @@ export default function Holdings() {
           <button
             type="button"
             onClick={add}
-            disabled={!draft.symbol || !(Number(draft.units) > 0)}
-            style={{ padding: '8px 16px', backgroundColor: COLORS.link, color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', height: '36px' }}
+            style={{ padding: '8px 16px', backgroundColor: COLORS.link, color: 'white', border: 'none', borderRadius: '6px', fontSize: '14px', height: '36px' }}
           >
-            Save
+            {alreadyHeld ? 'Update holding' : 'Add to my holdings'}
           </button>
         </div>
+        {triedToAdd && unitsProblem && (
+          <p role="alert" style={{ color: COLORS.down, fontSize: '13px', marginTop: '8px' }}>{unitsProblem}</p>
+        )}
+        {alreadyHeld && !unitsProblem && (
+          <p style={{ color: COLORS.muted, fontSize: '13px', marginTop: '8px' }}>You already hold {draft.symbol}: saving replaces its units, price and date.</p>
+        )}
         <p style={{ color: COLORS.muted, fontSize: '12px', marginTop: '8px' }}>
-          Units: fund units, tolas of gold (GOLDPK), ounces (GOLDINT) or US dollars (USDPKR). Enter the price paid in the same currency as the price: US dollars for GOLDINT, whose value is converted to rupees at the latest USD/PKR rate. Saving an investment you already have replaces it.
+          Units: fund units, tolas of gold (GOLDPK), ounces (GOLDINT) or US dollars (USDPKR). Enter the price paid in the same currency as the price: US dollars for GOLDINT, whose value is converted to rupees at the latest USD/PKR rate.
         </p>
       </section>
 
@@ -224,7 +261,7 @@ export default function Holdings() {
                   <td style={cellStyle}>
                     <button
                       type="button"
-                      onClick={() => update(holdings.filter((x) => x.symbol !== h.symbol))}
+                      onClick={() => remove(h)}
                       aria-label={`Remove ${h.symbol}`}
                       style={{ border: 'none', background: 'none', color: COLORS.down, cursor: 'pointer', fontSize: '16px' }}
                     >
@@ -248,8 +285,26 @@ export default function Holdings() {
         </div>
       )}
 
+      {(saved || removed) && (
+        <div role="status" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px', padding: '8px 12px', marginBottom: '12px', backgroundColor: removed ? '#fff3e0' : '#e8f5e9', borderRadius: '6px', fontSize: '14px' }}>
+          {removed ? <>Removed {removed.symbol}.</> : saved}
+          {removed && (
+            <button type="button" onClick={undoRemove} style={{ border: `1px solid ${COLORS.border}`, background: 'white', borderRadius: '6px', padding: '3px 10px', color: COLORS.link }}>
+              Undo
+            </button>
+          )}
+        </div>
+      )}
+
       {rows.length === 0 && analytics.length > 0 && (
-        <p style={{ color: COLORS.muted }}>No holdings yet. Add one above.</p>
+        <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px', lineHeight: 1.5 }}>
+          <strong>No holdings yet.</strong>
+          <ol style={{ margin: '6px 0 0', paddingLeft: '20px', color: COLORS.neutral }}>
+            <li>Choose an investment above, for example MIF (Meezan Islamic Fund).</li>
+            <li>Enter how many units you own. The price paid and date are optional, for your gain and payouts.</li>
+            <li>Add it. Your list is saved in this browser only.</li>
+          </ol>
+        </div>
       )}
 
       <ul style={{ color: COLORS.muted, fontSize: '13px', lineHeight: 1.5, marginTop: '16px', paddingLeft: '20px' }}>

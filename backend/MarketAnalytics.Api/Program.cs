@@ -4,7 +4,9 @@ using MarketAnalytics.Application.Interfaces.Services;
 using MarketAnalytics.Application.Services;
 using MarketAnalytics.Infrastructure.Data;
 using MarketAnalytics.Infrastructure.DataFetchers;
+using MarketAnalytics.Infrastructure.News;
 using MarketAnalytics.Infrastructure.Repositories;
+using MarketAnalytics.Infrastructure.Updates;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,7 +38,13 @@ builder.Services.AddScoped<IFundPayoutRepository, FundPayoutRepository>();
 builder.Services.AddHttpClient<JsonApiDataFetcher>();
 builder.Services.AddHttpClient<HtmlScraperDataFetcher>();
 builder.Services.AddHttpClient<CurrencyApiDataFetcher>();
+builder.Services.AddHttpClient<FundPayoutFetcher>();
+builder.Services.AddHttpClient<RssNewsFetcher>();
 builder.Services.AddScoped<InstrumentDataFetcherFactory>();
+
+// The same updates the Worker runs on its schedule, for the "Check for new data" button
+builder.Services.AddScoped<MarketDataUpdater>();
+builder.Services.AddScoped<NewsUpdater>();
 
 // Register application services
 builder.Services.AddScoped<IResamplingService, ResamplingService>();

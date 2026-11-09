@@ -108,6 +108,10 @@ It doesn't start automatically after a reboot, and .NET updates may close the AP
 If prices are more than 4 days old, the Overview and instrument pages show a warning. `GET /api/health` reports whether
 the database answers and the newest price date.
 
+**Check for new data now:** a button on the Overview and Settings pages (`POST /api/data/refresh`) runs the same price,
+payout and news update as the Worker (`MarketDataUpdater` and `NewsUpdater` in Infrastructure, shared by both) and says
+what it found. One refresh runs at a time; a second request gets "already running".
+
 **Backups:** `start-app` backs up the database (prices, news, payouts) to the `backups` folder once a day and keeps the
 newest 14; run `scripts/backup-db.ps1` for one now. Restore with
 `pg_restore -h localhost -U postgres -d MarketAnalytics --clean backups/<file>.dump`.

@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useIsNarrow } from '../../services/useIsNarrow'
 
+// In the order people use them: the market, their own money, then deeper analysis and help
 const LINKS = [
   { path: '/', label: 'Overview' },
-  { path: '/news', label: 'News' },
-  { path: '/comparison', label: 'Comparison' },
-  { path: '/track-record', label: 'Track Record' },
-  { path: '/portfolio', label: 'Portfolio' },
   { path: '/holdings', label: 'My Holdings' },
+  { path: '/news', label: 'News' },
+  { path: '/portfolio', label: 'Portfolio' },
+  { path: '/comparison', label: 'Compare' },
+  { path: '/track-record', label: 'Track Record' },
   { path: '/guide', label: 'Guide' },
   { path: '/settings', label: 'Settings' },
 ]
@@ -29,7 +30,7 @@ export default function Navigation() {
   }
 
   return (
-    <nav style={{ backgroundColor: '#333', padding: '0.75rem 0' }}>
+    <nav aria-label="Main" style={{ backgroundColor: '#333', padding: '0.75rem 0' }}>
       <div style={{
         maxWidth: '1200px',
         margin: '0 auto',
@@ -74,12 +75,16 @@ export default function Navigation() {
             <Link
               key={path}
               to={path}
+              aria-current={isActive(path) ? 'page' : undefined}
               style={{
-                color: isActive(path) ? '#4CAF50' : '#fff',
+                // White text everywhere for contrast; the current page is marked by a bar and a lighter background
+                color: '#fff',
+                fontWeight: isActive(path) ? 'bold' : 'normal',
                 textDecoration: 'none',
                 padding: '0.5rem 0.9rem',
                 borderRadius: '4px',
-                backgroundColor: isActive(path) ? 'rgba(255,255,255,0.1)' : 'transparent',
+                backgroundColor: isActive(path) ? 'rgba(255,255,255,0.14)' : 'transparent',
+                boxShadow: isActive(path) ? (narrow ? 'inset 4px 0 0 #81c784' : 'inset 0 -3px 0 #81c784') : 'none',
               }}
             >
               {label}

@@ -216,17 +216,17 @@ export function describeMarket(everything: InstrumentAnalyticsDto[], moods: News
   const leaning = (action: string) => action === 'StrongBuy' || action === 'Buy' ? 'buy' : action === 'StrongSell' || action === 'Sell' ? 'sell' : 'hold'
   const buys = all.filter((a) => leaning(a.combinedSignal.action) === 'buy').length
   const sells = all.filter((a) => leaning(a.combinedSignal.action) === 'sell').length
-  sentences.push(`Combined signals (Buy or Sell only when technical and news agree): ${buys} of ${all.length} lean towards Buy, ${sells} towards Sell and ${all.length - buys - sells} are Hold (stay as you are).`)
+  sentences.push(`Combined signal (Buy or Sell only when technical and news agree): ${buys} Buy, ${sells} Sell, ${all.length - buys - sells} Hold (stay as you are).`)
 
   const trendsUp = all.filter((a) => a.longTermTrend.direction === 'Up').length
   const trendsDown = all.filter((a) => a.longTermTrend.direction === 'Down').length
   const recovering = all.filter((a) => a.longTermTrend.phase === 'Recovering').map((a) => a.symbol)
   const weakening = all.filter((a) => a.longTermTrend.phase === 'Weakening').map((a) => a.symbol)
   const phases = [
-    recovering.length ? `${recovering.join(', ')} ${recovering.length === 1 ? 'is' : 'are'} already recovering (price back above both averages)` : '',
-    weakening.length ? `${weakening.join(', ')} ${weakening.length === 1 ? 'is' : 'are'} already weakening (price below both averages)` : '',
+    recovering.length ? `${recovering.join(', ')} already recovering` : '',
+    weakening.length ? `${weakening.join(', ')} already weakening` : '',
   ].filter(Boolean).join('; ')
-  sentences.push(`The long-term trend is up for ${trendsUp} of ${all.length} instruments and down for ${trendsDown}. It reacts slowly, so it can lag recent moves${phases ? `: ${phases}` : ''}.`)
+  sentences.push(`Long-term trend: up for ${trendsUp}, down for ${trendsDown}${phases ? `; ${phases}` : ''}.`)
 
   const scored = moods.filter((m) => m.articles > 0)
   const positiveMood = scored.filter((m) => m.label === 'Positive').map((m) => m.symbol)
@@ -247,8 +247,9 @@ export function describeMarket(everything: InstrumentAnalyticsDto[], moods: News
     const key = [a.symbol, ...a.newsSignal.sharedWith].sort().join(', ')
     groups.set(key, key.split(', '))
   }
-  for (const group of groups.values())
-    sentences.push(`${group.join(', ')} read the same news, so their news signals are one reading, not ${group.length} separate ones.`)
+  // One line for all groups: it's a caveat, not news
+  if (groups.size > 0)
+    sentences.push(`Some instruments read the same news, so their news signals move together: ${[...groups.values()].map((g) => g.join(' & ')).join('; ')}.`)
 
   return sentences
 }

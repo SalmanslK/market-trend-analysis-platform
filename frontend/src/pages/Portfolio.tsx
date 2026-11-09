@@ -269,7 +269,7 @@ export default function Portfolio() {
                   <tbody>
                     {shownResults.map((r) => (
                       <tr key={r.name}>
-                        <td style={{ ...cellStyle, textAlign: 'left', color: colorOf(r.name), fontWeight: 'bold' }}>{r.name}</td>
+                        <td style={{ ...cellStyle, textAlign: 'left', fontWeight: 'bold' }}><span aria-hidden="true" style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: colorOf(r.name), marginRight: '6px' }} />{r.name}</td>
                         {years.map((y) => {
                           const value = r.yearlyReturns.find((x) => x.year === y)?.return
                           return <td key={y} style={{ ...cellStyle, color: changeColor(value) }}>{formatPercent(value, 1)}</td>

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { instrumentsApi } from '../services/api/instrumentsApi'
 import { pricesApi } from '../services/api/pricesApi'
 import { analyticsApi } from '../services/api/analyticsApi'
@@ -84,6 +84,17 @@ export default function InstrumentView() {
 
   return (
     <div style={{ padding: '20px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '14px' }}>
+        <Link to="/" style={{ color: COLORS.link }}>← Market Overview</Link>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: COLORS.muted }}>
+          Switch to
+          <InstrumentSelector
+            instruments={instruments}
+            selectedInstrument={symbol}
+            onInstrumentChange={(newSymbol) => navigate(`/instrument/${newSymbol}`)}
+          />
+        </label>
+      </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '12px', marginBottom: '6px' }}>
         <h1>{symbol}</h1>
         {instrumentName && <span style={{ color: COLORS.muted, fontSize: '18px' }}>{instrumentName}</span>}
@@ -119,22 +130,33 @@ export default function InstrumentView() {
         <PlainSummary
           headline={summary.headline}
           points={summary.points}
+          maxPoints={4}
           footer="This describes what prices and news have done so far. It isn't a prediction or financial advice."
         />
       )}
 
-      <div style={{ marginBottom: '20px', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
-        <InstrumentSelector
-          instruments={instruments}
-          selectedInstrument={symbol}
-          onInstrumentChange={(newSymbol) => navigate(`/instrument/${newSymbol}`)}
-        />
-        <IntervalSelector selectedInterval={interval} onIntervalChange={setInterval} />
-        <TimeframeSelector selectedTimeframe={timeframe} onTimeframeChange={setTimeframe} />
-        {loading && <span style={{ color: COLORS.muted }}>Loading...</span>}
-      </div>
+      {error && <div role="alert" style={{ color: COLORS.down, marginBottom: '15px' }}>{error}</div>}
 
-      {error && <div style={{ color: COLORS.down, marginBottom: '15px' }}>{error}</div>}
+      {/* The chart first: it is what most people come for. Its controls sit right above it */}
+      <section aria-label="Price chart" style={{ marginBottom: '12px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', marginBottom: '8px', fontSize: '14px', color: COLORS.muted }}>
+          <span>Chart:</span>
+          <IntervalSelector selectedInterval={interval} onIntervalChange={setInterval} />
+          <span>over</span>
+          <TimeframeSelector selectedTimeframe={timeframe} onTimeframeChange={setTimeframe} />
+          {loading && <span role="status">Loading...</span>}
+        </div>
+        {priceData.length > 0 ? (
+          <PriceChart
+            data={priceData}
+            instrument={symbol}
+            interval={intervalLabels[interval]}
+            timeframe={timeframeLabels[timeframe]}
+          />
+        ) : (
+          !loading && !error && <p style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px', color: COLORS.muted }}>No prices for this period. Try a longer period above.</p>
+        )}
+      </section>
 
       {analytics && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(420px, 100%), 1fr))', gap: '12px', marginBottom: '12px' }}>
@@ -143,23 +165,10 @@ export default function InstrumentView() {
         </div>
       )}
 
-      {analytics && <AllMetrics analytics={analytics} />}
-
-      {priceData.length > 0 ? (
-        <>
-          <PriceChart
-            data={priceData}
-            instrument={symbol}
-            interval={intervalLabels[interval]}
-            timeframe={timeframeLabels[timeframe]}
-          />
-          <IndicatorCharts data={priceData} />
-        </>
-      ) : (
-        !loading && !error && <div>No data available for this instrument and timeframe.</div>
-      )}
-
       {symbol && <InstrumentNews symbol={symbol} />}
+
+      {priceData.length > 0 && <IndicatorCharts data={priceData} />}
+      {analytics && <AllMetrics analytics={analytics} />}
     </div>
   )
 }

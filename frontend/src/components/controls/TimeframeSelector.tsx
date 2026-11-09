@@ -12,6 +12,7 @@ export default function TimeframeSelector({
 }: TimeframeSelectorProps) {
   return (
     <select
+      aria-label="Time period shown"
       value={selectedTimeframe}
       onChange={(e) => onTimeframeChange(Number(e.target.value) as Timeframe)}
       style={{ padding: '8px', fontSize: '16px' }}

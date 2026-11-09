@@ -10,15 +10,21 @@ import Holdings from './pages/Holdings'
 import Settings from './pages/Settings'
 import Navigation from './components/layout/Navigation'
 import SignalModeBar from './components/layout/SignalModeBar'
+import PageTitle from './components/layout/PageTitle'
+import NotFound from './pages/NotFound'
 
 function App() {
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="app">
-        <Navigation />
-        <SignalModeBar />
+        <PageTitle />
+        <a href="#main" className="skip-link">Skip to content</a>
+        <header>
+          <Navigation />
+          <SignalModeBar />
+        </header>
         {/* Same width as the navigation bar so page content lines up with it */}
-        <main style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <main id="main" tabIndex={-1} style={{ maxWidth: '1200px', margin: '0 auto', outline: 'none' }}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/instrument/:symbol" element={<InstrumentView />} />
@@ -29,6 +35,7 @@ function App() {
             <Route path="/holdings" element={<Holdings />} />
             <Route path="/guide" element={<Guide />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
       </div>

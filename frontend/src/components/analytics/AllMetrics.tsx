@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { InstrumentAnalyticsDto, Metric } from '../../services/types/marketData'
-import { useIsNarrow } from '../../services/useIsNarrow'
 import { COLORS, formatNumber, formatPercent } from '../../services/format'
 import InfoTip from '../help/InfoTip'
 
@@ -28,10 +27,9 @@ function tally(metrics: Metric[]): string {
 
 /** Every standard metric that can be calculated from closing prices, grouped, each with a plain explanation. */
 export default function AllMetrics({ analytics }: AllMetricsProps) {
-  // The full list is long, so on phones it starts folded with a one-line tally
-  const narrow = useIsNarrow()
+  // The full list is long and mostly for experts, so it starts folded with a one-line tally
   const [chosen, setChosen] = useState<boolean | null>(null)
-  const open = chosen ?? !narrow
+  const open = chosen ?? false
 
   return (
     <section style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px', marginBottom: '12px' }}>

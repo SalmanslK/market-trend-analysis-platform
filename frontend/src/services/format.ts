@@ -1,12 +1,16 @@
 import { SignalAction } from './types/marketData'
 
+/**
+ * The app's colours. Text colours meet the WCAG AA contrast ratio (4.5:1) on white, the page grey (#f5f5f5) and the
+ * light tints used for boxes, so muted text and links stay readable.
+ */
 export const COLORS = {
   up: '#2e7d32',
   down: '#c62828',
   neutral: '#616161',
-  muted: '#757575',
+  muted: '#5f6368',
   border: '#e0e0e0',
-  link: '#1976d2',
+  link: '#1565c0',
 }
 
 /** 166409.25 -> "166,409.25" */

@@ -29,8 +29,8 @@ describe('describeMarket', () => {
       instrument('GOLDPK'),
     ], [])
 
-    const trend = sentences.find((s) => s.startsWith('The long-term trend'))
-    expect(trend).toContain('KSE100 is already recovering')
+    const trend = sentences.find((s) => s.startsWith('Long-term trend'))
+    expect(trend).toContain('KSE100 already recovering')
     expect(trend).not.toContain('GOLDPK')
   })
 
@@ -43,12 +43,12 @@ describe('describeMarket', () => {
     )
 
     const notes = sentences.filter((s) => s.includes('read the same news'))
-    expect(notes).toEqual(['KMI30, KSE100, MIF read the same news, so their news signals are one reading, not 3 separate ones.'])
+    expect(notes).toEqual(['Some instruments read the same news, so their news signals move together: KMI30 & KSE100 & MIF.'])
   })
 
   it('explains that Hold means staying as you are', () => {
     const sentences = describeMarket([instrument('KSE100')], [])
-    expect(sentences.some((s) => s.includes('are Hold (stay as you are)'))).toBe(true)
+    expect(sentences.some((s) => s.includes('Hold (stay as you are)'))).toBe(true)
   })
 })
 

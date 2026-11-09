@@ -12,6 +12,7 @@ export default function IntervalSelector({
 }: IntervalSelectorProps) {
   return (
     <select
+      aria-label="Price interval: one point per day, week, month..."
       value={selectedInterval}
       onChange={(e) => onIntervalChange(Number(e.target.value) as Interval)}
       style={{ padding: '8px', fontSize: '16px' }}

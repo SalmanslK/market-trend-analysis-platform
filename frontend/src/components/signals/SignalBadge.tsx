@@ -35,7 +35,7 @@ export default function SignalBadge({ signal, large = false }: SignalBadgeProps)
       }}
     >
       {style.label}
-      <span style={{ fontWeight: 'normal', marginLeft: '6px', opacity: 0.8 }}>
+      <span style={{ fontWeight: 'normal', marginLeft: '6px' }}>
         {scaled > 0 ? '+' : ''}{scaled}
       </span>
     </span>

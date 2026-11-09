@@ -5,7 +5,7 @@ const styles: Record<SentimentLabel, { icon: string; background: string; color: 
   Positive: { icon: '▲', background: '#e8f5e9', color: '#1b5e20' },
   Neutral: { icon: '●', background: '#f5f5f5', color: '#616161' },
   Negative: { icon: '▼', background: '#ffebee', color: '#b71c1c' },
-  Background: { icon: '○', background: '#f5f5f5', color: '#9e9e9e' },
+  Background: { icon: '○', background: '#f5f5f5', color: '#616161' },
 }
 
 interface SentimentChipProps {
@@ -53,7 +53,7 @@ export default function SentimentChip({ label, score, confidence, positiveWords 
         <span style={{ fontWeight: 'normal' }}>{score > 0 ? '+' : ''}{score}</span>
       )}
       {label !== 'Background' && confidence != null && !compact && (
-        <span style={{ fontWeight: 'normal', opacity: 0.75 }}>· {confidence}% sure</span>
+        <span style={{ fontWeight: 'normal' }}>· {confidence}% sure</span>
       )}
     </span>
     </Tip>

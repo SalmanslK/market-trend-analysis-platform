@@ -51,7 +51,10 @@ public class NewsService : INewsService
         var now = DateTime.UtcNow;
         var articles = await _newsRepository.GetPublishedBetweenAsync(now.AddDays(-days), now.AddDays(1), cancellationToken);
 
+        // Other countries' local markets (Indian rupee quotes, Indian gold rates) don't count for any instrument,
+        // so they aren't listed either
         var filtered = articles
+            .Where(a => !NewsTopicClassifier.IsForeignLocalMarket(a.Title))
             .Where(a => symbol == null || LinkedSymbols(a).Contains(symbol, StringComparer.OrdinalIgnoreCase))
             .Where(a => topic == null || NewsTopicClassifier.ParseTopics(a.Topics).Contains(topic))
             .Take(limit)

@@ -13,6 +13,7 @@ export default function InstrumentSelector({
 }: InstrumentSelectorProps) {
   return (
     <select
+      aria-label="Instrument"
       value={selectedInstrument}
       onChange={(e) => onInstrumentChange(e.target.value)}
       style={{ padding: '8px', fontSize: '16px' }}

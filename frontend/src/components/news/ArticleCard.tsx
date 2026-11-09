@@ -51,7 +51,12 @@ export default function ArticleCard({ article, symbol }: ArticleCardProps) {
       <a href={article.url} target="_blank" rel="noopener noreferrer" style={{ color: '#212121', fontWeight: 'bold', textDecoration: 'none', lineHeight: 1.4 }}>
         {article.title} <span style={{ color: COLORS.muted, fontWeight: 'normal' }}>↗</span>
       </a>
-      {article.summary && <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#424242', lineHeight: 1.45 }}>{article.summary}</p>}
+      {/* Three lines are enough to decide whether to open the story */}
+      {article.summary && (
+        <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#424242', lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {article.summary}
+        </p>
+      )}
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px', fontSize: '12px' }}>
         {focus?.change != null && (

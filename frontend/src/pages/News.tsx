@@ -95,7 +95,8 @@ export default function News() {
         News mood by instrument (last 7 days)<InfoTip term="newsMood" />
       </h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '8px', marginBottom: '20px' }}>
-        {moods.map((m) => (
+        {/* Funds that never have news of their own (cash and income funds) only add empty cards */}
+        {moods.filter((m) => m.articles > 0 || m.backgroundArticles > 0).map((m) => (
           <button
             key={m.symbol}
             type="button"

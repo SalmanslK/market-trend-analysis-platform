@@ -20,6 +20,7 @@ public class PriceDataProcessingService : IPriceDataProcessingService
     private readonly ITimeframeFilterService _timeframeFilterService;
     private readonly IIndicatorCalculationService _indicatorCalculationService;
     private readonly ILogger<PriceDataProcessingService> _logger;
+    private readonly IFundPayoutRepository? _fundPayoutRepository;
 
     public PriceDataProcessingService(
         IPricePointRepository pricePointRepository,
@@ -27,8 +28,10 @@ public class PriceDataProcessingService : IPriceDataProcessingService
         IResamplingService resamplingService,
         ITimeframeFilterService timeframeFilterService,
         IIndicatorCalculationService indicatorCalculationService,
-        ILogger<PriceDataProcessingService> logger)
+        ILogger<PriceDataProcessingService> logger,
+        IFundPayoutRepository? fundPayoutRepository = null)
     {
+        _fundPayoutRepository = fundPayoutRepository;
         _pricePointRepository = pricePointRepository;
         _instrumentRepository = instrumentRepository;
         _resamplingService = resamplingService;
@@ -54,20 +57,16 @@ public class PriceDataProcessingService : IPriceDataProcessingService
             throw new ArgumentException($"Instrument with symbol '{instrumentSymbol}' not found.", nameof(instrumentSymbol));
         }
 
-        // 2. Load raw price data from database
-        var rawPricePoints = await _pricePointRepository.GetByInstrumentIdAsync(
-            instrument.Id, 
-            cancellationToken: cancellationToken);
+        // 2-4. Load and clean: dates and duplicates are enforced by the database, but the sources occasionally
+        //      contain one-day price spikes, which are dropped; fund NAVs are adjusted for payouts so a payout
+        //      doesn't show as a fall
+        var priceDataPoints = await PriceHistory.LoadDailyAsync(
+            _pricePointRepository, _fundPayoutRepository, instrument.Id, cancellationToken: cancellationToken);
 
-        if (!rawPricePoints.Any())
+        if (priceDataPoints.Count == 0)
         {
             return Enumerable.Empty<PriceDataDto>();
         }
-
-        // 3-4. Convert to value objects and clean: dates and duplicates are enforced by the database,
-        //      but the sources occasionally contain one-day price spikes, which are dropped here
-        var priceDataPoints = PriceDataCleaner.RemoveSpikes(
-            rawPricePoints.Select(p => new PriceDataPoint(p.DateTime, p.Price)));
 
         // 5. Resample by interval
         var resampledData = _resamplingService.ResamplePriceData(priceDataPoints, interval);

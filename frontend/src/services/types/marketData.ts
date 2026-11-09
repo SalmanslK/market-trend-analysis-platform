@@ -130,6 +130,14 @@ export interface InstrumentAnalyticsDto {
   newsSignal: ScaledSignal;
   combinedSignal: ScaledSignal;
   metrics: Metric[];
+  /** Fund cash payouts, newest first; prices and returns are adjusted for them */
+  payouts: Payout[];
+  payoutYield1Y?: number;
+}
+
+export interface Payout {
+  date: string;
+  amountPerUnit: number;
 }
 
 export type SentimentLabel = 'Positive' | 'Neutral' | 'Negative' | 'Background';

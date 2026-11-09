@@ -70,7 +70,8 @@ export default function Guide() {
         <ul style={{ paddingLeft: '20px' }}>
           <li>Signals, the trend and news mood describe what has happened; they cannot predict the future.</li>
           <li>Nothing here is financial advice. Think about your own goals, how long you plan to invest and how much loss you could accept.</li>
-          <li>Meezan fund prices drop when the fund pays a dividend. The app doesn't adjust for this, so fund returns around payout dates look worse than they really were.</li>
+          <li>Meezan fund prices drop when the fund pays a dividend (payout). The app counts payouts as reinvested, so fund returns and charts don't show a payout as a loss; the latest price is the real price. Some of MIF's payouts before 2024 aren't published by the data source, so its long-term figures still understate it.</li>
+          <li>KSE-100 and KMI-30 are price indices: they leave out the dividends paid by the companies in them, so holding them returned a bit more than shown.</li>
           <li>For USD/PKR, a rising number means the rupee is getting weaker.</li>
         </ul>
       </section>

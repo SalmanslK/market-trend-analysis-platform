@@ -196,8 +196,20 @@ Sources provide only one closing price per day, so ATR, ADX, Parabolic SAR, Ichi
 MFI (need volume) are not available, and Stochastic, Williams %R, CCI and Donchian use closes instead of highs and lows.
 
 One-day price spikes that immediately reverse (data errors in the sources) are filtered out when prices are read.
-Mutual fund NAVs drop when dividends are paid out and are not adjusted for this, so fund returns around payout dates
-understate performance.
+### Fund payouts (dividends)
+
+A fund's NAV drops by about the payout on the day it pays one. The Worker stores each Meezan fund's payouts from
+`https://beta-restapi.sarmaaya.pk/api/mutual-funds/payouts/{fundId}` (same fund id as its NAV URL) after each daily
+price update, in the `FundPayouts` table. Prices are adjusted when read (`PayoutAdjuster`), stored NAVs are untouched:
+
+- The source's payout date can be a few days before the NAV drop, so each payout is matched to the day within 5 days
+  whose fall is closest to the payout amount, preferring earlier days.
+- Prices before each payout are scaled by (1 - payout / NAV before it), like adjusted stock prices. The latest price
+  stays the real NAV, and returns, metrics, charts and backtests count payouts as reinvested.
+- The fund page lists the payouts and the last 12 months' payouts as a share of the price.
+- Gaps: the source lists MIF's payouts only from 2020 (and none for 2021-2023), while MIF's history goes back to 2005
+  with large drops each July that look like payouts. These are left unadjusted rather than guessed, so MIF's
+  long-term returns and worst fall understate it. KSE-100 and KMI-30 are price indices and exclude stock dividends.
 
 ## Track record (backtest)
 
@@ -217,7 +229,7 @@ dotnet run -- --backfill-news 2021-05-01
 - Testing starts once all five rules can be evaluated (200 periods), and needs at least 250 further days.
 - Verdict: **Helped** (at least the return of holding), **LowerRisk** (less return, but worst fall at least a third
   smaller and more return per unit of fall), otherwise **DidNotHelp**. Under 3 years is flagged as too short to judge.
-- Limits: prices exclude dividends, cash earns nothing in the main result (a 10% a year variant is also shown), and
+- Limits: fund prices count payouts but index prices exclude dividends, cash earns nothing in the main result (a 10% a year variant is also shown), and
   the history is mostly a rising market.
 
 Result on the data as of Nov 2026, at 0.5% per trade: no instrument beat holding, GOLDPK lowered risk at a lower
@@ -239,24 +251,24 @@ Results on the 6 instruments with at least 3 years of news (Nov 2026, 0.5% per t
 
 | Rule | Return per year | Worst fall | Sharpe | Trades per year |
 | --- | --- | --- | --- | --- |
-| Holding | +21.8% | -25.6% | 0.98 | 0 |
-| Golden cross | +18.4% | -22.7% | 0.95 | 1.6 |
-| Monthly trend check | +17.0% | -23.7% | 0.91 | 2.0 |
-| Both agree (the combined signal) | +14.6% | -19.1% | 0.90 | 6.4 |
-| Balanced average of technical and news | +11.1% | -32.9% | 0.66 | 12.4 |
-| Technical | +7.7% | -34.0% | 0.47 | 19.3 |
-| News | +4.5% | -25.7% | 0.34 | 19.9 |
-| Simple average of technical and news (old combined) | +2.9% | -37.2% | 0.19 | 23.2 |
+| Holding | +22.6% | -25.6% | 1.01 | 0 |
+| Golden cross | +19.9% | -22.6% | 1.03 | 1.5 |
+| Monthly trend check | +18.3% | -23.7% | 0.98 | 1.9 |
+| Both agree (the combined signal) | +15.4% | -18.8% | 0.95 | 6.3 |
+| Balanced average of technical and news | +11.8% | -32.9% | 0.70 | 12.2 |
+| Technical | +8.3% | -33.8% | 0.51 | 19.4 |
+| News | +5.1% | -25.7% | 0.39 | 19.9 |
+| Simple average of technical and news (old combined) | +3.6% | -37.0% | 0.24 | 23.1 |
 
-Holding did best on return. No rule beat it reliably, and choosing rules quarter by quarter did worse (+24.7% against +27.5%
-over the same period). Technical, news and the simple average trailed by more than luck explains. With cash at an assumed
-10% a year, golden cross roughly matches holding (+21.4% against +21.8%). Both agree had the smallest falls. It and the
+Holding did best on return. No rule beat it reliably, and choosing rules quarter by quarter did worse
+(+25.6% against +28.4% over the same period). Technical, news and the simple average trailed by more than luck explains. With cash at an assumed
+10% a year, golden cross roughly matches holding (+22.9% against +22.6%). Both agree had the smallest falls. It and the
 choice of golden cross were picked after earlier tests on this data. Older news is a sample of a few stories per week,
-sentiment is read from headline wording, dividends are excluded, and the history is mostly a rising market.
+sentiment is read from headline wording, index dividends are excluded, and the history is mostly a rising market.
+Fund figures count payouts (added Nov 2026; holding rose from +21.8% to +22.6%, partly from newer prices too).
 
 ## Nice to have
 
-- **Dividend-adjusted fund returns**: needs payout data for the Meezan funds
 - **Alerts**: notify when an instrument's signal changes
 
 - **Error handling**: global exception middleware and more detailed error responses

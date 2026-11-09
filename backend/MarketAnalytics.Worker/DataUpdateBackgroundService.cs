@@ -86,6 +86,21 @@ public class DataUpdateBackgroundService : BackgroundService
             }
         }
 
+        var payoutFetcher = scope.ServiceProvider.GetRequiredService<FundPayoutFetcher>();
+        foreach (var instrument in activeInstruments)
+        {
+            try
+            {
+                await UpdateFundPayoutsAsync(instrument, dbContext, payoutFetcher, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                // Prices stay usable without payouts; they are retried on the next update
+                _logger.LogError(ex, "Error updating payouts for {Symbol}", instrument.Symbol);
+                dbContext.ChangeTracker.Clear();
+            }
+        }
+
         _logger.LogInformation("Completed scheduled data update");
     }
 
@@ -174,6 +189,40 @@ public class DataUpdateBackgroundService : BackgroundService
 
         // Log update result
         await LogUpdateResultAsync(dbContext, instrument, latestNewDate, pricePoints.Count, UpdateStatus.Success, null, cancellationToken);
+    }
+
+    /// <summary>
+    /// Stores payouts not seen before for funds whose NAVs come from a nav-history URL. The source lists
+    /// the full payout history each time, so nothing is ever deleted.
+    /// </summary>
+    private async Task UpdateFundPayoutsAsync(
+        Instrument instrument,
+        ApplicationDbContext dbContext,
+        FundPayoutFetcher payoutFetcher,
+        CancellationToken cancellationToken)
+    {
+        var url = FundPayoutFetcher.PayoutUrlFor(instrument.DataSourceUrl);
+        if (url == null)
+            return;
+
+        var fetched = await payoutFetcher.FetchAsync(url, cancellationToken);
+        var known = (await dbContext.FundPayouts
+            .Where(p => p.InstrumentId == instrument.Id)
+            .Select(p => p.PayoutDate)
+            .ToListAsync(cancellationToken)).ToHashSet();
+
+        var added = fetched
+            .GroupBy(p => p.Date)
+            .Where(g => !known.Contains(g.Key))
+            .Select(g => new FundPayout { InstrumentId = instrument.Id, PayoutDate = g.Key, AmountPerUnit = g.First().AmountPerUnit })
+            .ToList();
+
+        if (added.Count == 0)
+            return;
+
+        await dbContext.FundPayouts.AddRangeAsync(added, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Stored {Count} new payouts for {Symbol}", added.Count, instrument.Symbol);
     }
 
     private async Task LogUpdateResultAsync(

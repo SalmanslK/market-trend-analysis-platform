@@ -296,7 +296,7 @@ export default function TrackRecord() {
           <li><strong>Fair test:</strong> each day uses only the prices known that day, trades happen at the next day's close, and every trade pays the cost above. All rules use standard settings and were not adjusted to fit this data.</li>
           <li><strong>The long-term trend rule was picked after seeing this test,</strong> so its figures may flatter it. The real test is how it does from here on.</li>
           <li><strong>Few trades means weak evidence.</strong> The slower rules made only a handful of trades, so one or two well-timed moves can decide the result.</li>
-          <li><strong>Dividends aren't included.</strong> Index and fund prices leave out dividends, so real returns from holding were higher, especially for funds like MIF, whose price drops at each payout.</li>
+          <li><strong>Dividends are only partly included.</strong> Fund prices count payouts as reinvested, but index prices leave out the dividends of the stocks in them, and some of MIF's older payouts aren't published, so real returns from holding were somewhat higher.</li>
           <li><strong>Cash earns nothing here,</strong> which is harsh on every rule when interest rates are high.</li>
           <li><strong>The history is mostly a rising market,</strong> which favours holding. A long falling market could look different, and past results don't guarantee future ones.</li>
         </ul>

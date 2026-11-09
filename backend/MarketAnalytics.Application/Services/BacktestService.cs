@@ -16,7 +16,8 @@ namespace MarketAnalytics.Application.Services;
 /// - Costs: every buy or sell pays <c>costPercent</c>.
 /// - No tuning: the rules use standard textbook settings and are not fitted to this data.
 ///
-/// Limits: prices exclude dividends (understating holding funds and stocks), and the simple strategy only
+/// Limits: fund prices count payouts, but index prices exclude the dividends of their stocks (understating
+/// holding the indices), and the simple strategy only
 /// goes between fully invested and cash. Past results don't guarantee future ones.
 /// </summary>
 public class BacktestService : IBacktestService
@@ -39,15 +40,18 @@ public class BacktestService : IBacktestService
     private readonly IIndicatorCalculationService _indicators;
     private readonly ILogger<BacktestService> _logger;
     private readonly INewsRepository? _newsRepository;
+    private readonly IFundPayoutRepository? _fundPayoutRepository;
 
     public BacktestService(
         IInstrumentRepository instrumentRepository,
         IPricePointRepository pricePointRepository,
         IIndicatorCalculationService indicators,
         ILogger<BacktestService> logger,
-        INewsRepository? newsRepository = null)
+        INewsRepository? newsRepository = null,
+        IFundPayoutRepository? fundPayoutRepository = null)
     {
         _newsRepository = newsRepository;
+        _fundPayoutRepository = fundPayoutRepository;
         _instrumentRepository = instrumentRepository;
         _pricePointRepository = pricePointRepository;
         _indicators = indicators;
@@ -94,8 +98,7 @@ public class BacktestService : IBacktestService
         List<(NewsArticle Article, SentimentResult Sentiment)> news,
         CancellationToken cancellationToken)
     {
-        var points = await _pricePointRepository.GetByInstrumentIdAsync(instrument.Id, cancellationToken: cancellationToken);
-        var prices = PriceDataCleaner.RemoveSpikes(points.Select(p => new PriceDataPoint(p.DateTime, p.Price)));
+        var prices = await PriceHistory.LoadDailyAsync(_pricePointRepository, _fundPayoutRepository, instrument.Id, cancellationToken: cancellationToken);
 
         var result = Run(prices, costPercent, NewsService.ScoreForSymbol(news, instrument.Symbol));
         result.Symbol = instrument.Symbol;

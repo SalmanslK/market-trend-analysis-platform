@@ -28,7 +28,7 @@ export default function AnswerCard({ question, answer, facts = [], meaning, chil
   return (
     <section aria-label="The short answer" style={{ ...ANSWER_SURFACE, padding: '20px 22px', marginBottom: '20px' }}>
       <div style={{ fontSize: '15px', fontWeight: 700, color: COLORS.muted }}>{question}</div>
-      <p style={{ fontSize: answer.length > 140 ? '18px' : '21px', fontWeight: 700, color: COLORS.ink, lineHeight: 1.4, margin: '6px 0 14px' }}>{answer}</p>
+      <p style={{ fontSize: typeof answer === 'string' && answer.length > 140 ? '18px' : '21px', fontWeight: 700, color: COLORS.ink, lineHeight: 1.4, margin: '6px 0 14px' }}>{answer}</p>
       {facts.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: '10px', marginBottom: meaning ? '14px' : 0 }}>
           {facts.map((fact) => (

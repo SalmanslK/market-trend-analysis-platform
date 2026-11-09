@@ -10,7 +10,7 @@ import {
   YAxis,
 } from 'recharts'
 import { BacktestResult, NewsRuleResult } from '../../services/types/marketData'
-import { COLORS, formatDate, formatPercent } from '../../services/format'
+import { COLORS, formatDate, formatPercent, SURFACE } from '../../services/format'
 import { compareWithHolding, describeNewsTests, MIN_RELIABLE_YEARS } from '../../services/plainLanguage'
 import InfoTip from '../help/InfoTip'
 import PlainSummary from '../help/PlainSummary'
@@ -55,7 +55,7 @@ export default function NewsSignalComparison({ results, detail, cost, onSelect }
   }))
 
   return (
-    <section style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px', marginBottom: '12px' }}>
+    <section style={{ padding: '20px', ...SURFACE, marginBottom: '12px' }}>
       <h2 style={{ fontSize: '1.2rem' }}>Technical, news or both?</h2>
       <p style={{ fontSize: '13px', color: '#546e7a', margin: '4px 0 10px', lineHeight: 1.45 }}>
         The three Buy/Sell signals<InfoTip term="combinedSignal" /> against simply holding, for each instrument over the same dates, starting when its news begins.

@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { portfolioApi } from '../services/api/portfolioApi'
 import { PortfolioComparison, PortfolioMix, PortfolioResult, RebalanceSchedule } from '../services/types/marketData'
-import { changeColor, COLORS, formatDate, formatPercent } from '../services/format'
+import { changeColor, COLORS, formatDate, formatPercent, SURFACE } from '../services/format'
 import { describePortfolios } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
 import PlainSummary from '../components/help/PlainSummary'
@@ -137,7 +137,7 @@ export default function Portfolio() {
         />
       )}
 
-      <section style={{ padding: '16px 20px', backgroundColor: 'white', borderRadius: '6px', margin: '16px 0' }}>
+      <section style={{ padding: '16px 20px', ...SURFACE, margin: '16px 0' }}>
         <h2 style={{ fontSize: '1.15rem', marginBottom: '8px' }}>Build your own mix</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '8px' }}>
           {instruments.map((i) => (
@@ -213,7 +213,7 @@ export default function Portfolio() {
 
       {comparison && comparison.results.length > 0 && (
         <>
-          <div style={{ overflowX: 'auto', backgroundColor: 'white', borderRadius: '6px' }}>
+          <div style={{ overflowX: 'auto', ...SURFACE }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead>
                 <tr>
@@ -235,7 +235,7 @@ export default function Portfolio() {
           </div>
 
           {chartData.length > 0 && (
-            <section style={{ padding: '16px 12px', backgroundColor: 'white', borderRadius: '6px', marginTop: '16px' }}>
+            <section style={{ padding: '16px 12px', ...SURFACE, marginTop: '16px' }}>
               <h2 style={{ fontSize: '1.15rem', margin: '0 8px 8px' }}>Growth of 100</h2>
               <div style={{ height: '360px' }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -255,7 +255,7 @@ export default function Portfolio() {
           )}
 
           {shownResults.length > 0 && (
-            <section style={{ padding: '16px 20px', backgroundColor: 'white', borderRadius: '6px', marginTop: '16px' }}>
+            <section style={{ padding: '16px 20px', ...SURFACE, marginTop: '16px' }}>
               <h2 style={{ fontSize: '1.15rem', marginBottom: '4px' }}>Year by year</h2>
               <p style={{ color: COLORS.muted, fontSize: '13px', marginBottom: '8px' }}>The first and last years are partial.</p>
               <div style={{ overflowX: 'auto' }}>

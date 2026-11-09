@@ -13,14 +13,14 @@ import {
   YAxis,
 } from 'recharts'
 import { PriceDataDto } from '../../services/types/marketData'
-import { COLORS } from '../../services/format'
+import { COLORS, SURFACE } from '../../services/format'
 import InfoTip from '../help/InfoTip'
 
 interface IndicatorChartsProps {
   data: PriceDataDto[]
 }
 
-const panelStyle = { width: '100%', height: '220px', padding: '15px 20px', backgroundColor: 'white', marginTop: '12px' }
+const panelStyle = { width: '100%', height: '220px', padding: '15px 20px', ...SURFACE, marginTop: '12px' }
 const tooltipFormatter = (value: unknown) => (typeof value === 'number' ? value.toFixed(2) : String(value))
 
 /** RSI and MACD panels shown under the price chart, sharing its dates. */

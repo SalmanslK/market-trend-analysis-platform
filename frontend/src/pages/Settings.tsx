@@ -7,7 +7,7 @@ import TimeframeSelector from '../components/controls/TimeframeSelector'
 import { instrumentTypeLabels, intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences, savePreferences } from '../services/preferences'
 import RefreshDataButton from '../components/layout/RefreshDataButton'
-import { COLORS } from '../services/format'
+import { COLORS, SURFACE } from '../services/format'
 
 // Suggested interval/timeframe combinations for common use cases
 const PRESETS: { label: string; interval: Interval; timeframe: Timeframe }[] = [
@@ -60,7 +60,7 @@ export default function Settings() {
   return (
     <div style={{ padding: '20px' }}>
       <h1>Settings</h1>
-      <section aria-label="Update data" style={{ margin: '12px 0 20px', padding: '16px 20px', backgroundColor: 'white', borderRadius: '6px' }}>
+      <section aria-label="Update data" style={{ margin: '12px 0 20px', padding: '16px 20px', ...SURFACE }}>
         <h2 style={{ fontSize: '1.15rem', marginBottom: '4px' }}>Update data</h2>
         <p style={{ color: COLORS.muted, fontSize: '14px', marginBottom: '10px' }}>
           Prices are checked every 6 hours and news every hour while the app is running. Check now if you want the latest before then.
@@ -68,7 +68,7 @@ export default function Settings() {
         <RefreshDataButton onRefreshed={() => setReloadKey((k) => k + 1)} />
       </section>
 
-      <section style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white' }}>
+      <section style={{ marginTop: '20px', padding: '20px', ...SURFACE }}>
         <h2>Default View</h2>
         <p style={{ margin: '8px 0 15px', color: '#555' }}>
           The interval and timeframe each page starts with. Saved in this browser.
@@ -137,7 +137,7 @@ export default function Settings() {
         </div>
       </section>
 
-      <section style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white' }}>
+      <section style={{ marginTop: '20px', padding: '20px', ...SURFACE }}>
         <h2>Data Sources</h2>
         <p style={{ margin: '8px 0 15px', color: '#555' }}>
           The background worker checks every instrument for new prices every 6 hours while the app is running. Last updated is

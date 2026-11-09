@@ -183,10 +183,8 @@ export function describeInstrument(a: InstrumentAnalyticsDto, mood?: NewsSentime
     const newsText = a.newsSignal.articles >= 3 ? labels[a.newsSignal.action] : `Hold (only ${a.newsSignal.articles} recent ${a.newsSignal.articles === 1 ? 'story' : 'stories'})`
     const combinedText = a.combinedSignal.action === 'Hold' ? 'Hold (stay as you are), because technical and news don\'t clearly agree' : labels[a.combinedSignal.action]
     points.unshift(`Combined signal: ${combinedText}. Technical says ${labels[a.signal.action]}, news says ${newsText}.`)
-  } else {
-    const technical = a.signal.action === 'Hold' ? 'Hold (stay as you are)' : labels[a.signal.action]
-    points.unshift(`Technical signal: ${technical}${a.signal.steady ? ', from the last 20 trading days' : ', from today\'s prices'}.`)
   }
+  // Without news, the technical signal is already shown with its meaning right above the summary
 
   return {
     headline: `${signalMeaning[a.signal.action].headline}. ${a.name} is at ${formatNumber(a.lastPrice)} (${priceMeaning(a)}).`,
@@ -437,4 +435,14 @@ export function describePortfolios(comparison: PortfolioComparison): string[] {
     sentences.push(`Only ${years.toFixed(1)} years can be compared, because one of the chosen instruments has a short history. One good or bad stretch can decide a result this short.`)
 
   return sentences
+}
+
+/** The long-term trend in one sentence, saying when the price has already turned against it. */
+export function trendInWords(trend: InstrumentAnalyticsDto['longTermTrend']): string {
+  const { direction, phase } = trend
+  if (direction === 'Down' && phase === 'Recovering') return 'The long-term trend is still down, but the price is already back above its averages.'
+  if (direction === 'Up' && phase === 'Weakening') return 'The long-term trend is still up, but the price has dipped below its averages.'
+  if (direction === 'Up') return 'The long-term trend is up.'
+  if (direction === 'Down') return 'The long-term trend is down.'
+  return 'Not enough history yet for a long-term trend.'
 }

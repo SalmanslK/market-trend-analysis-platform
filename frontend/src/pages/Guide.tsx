@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { glossary, GlossaryKey } from '../services/glossary'
-import { COLORS, signalStyles } from '../services/format'
+import { COLORS, signalStyles, SURFACE } from '../services/format'
 import { signalMeaning } from '../services/plainLanguage'
 import { useFeatures } from '../services/features'
 import { SignalAction } from '../services/types/marketData'
@@ -13,7 +13,7 @@ const sections: { title: string; terms: GlossaryKey[] }[] = [
   { title: 'News', terms: ['newsMood', 'confidence', 'background', 'bigMoves'] },
 ]
 
-const cardStyle = { padding: '20px', backgroundColor: 'white', borderRadius: '6px', marginBottom: '12px', lineHeight: 1.55 }
+const cardStyle = { padding: '20px', ...SURFACE, marginBottom: '12px', lineHeight: 1.55 }
 
 // Guide entries about news and sentiment, shown only when news is switched on
 const NEWS_TERMS: GlossaryKey[] = ['combinedSignal', 'newsSignal', 'newsMood', 'confidence', 'background', 'bigMoves']

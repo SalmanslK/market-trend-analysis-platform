@@ -17,7 +17,7 @@ import IntervalSelector from '../components/controls/IntervalSelector'
 import TimeframeSelector from '../components/controls/TimeframeSelector'
 import { intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences } from '../services/preferences'
-import { formatNumber } from '../services/format'
+import { formatNumber, SURFACE } from '../services/format'
 import PlainSummary from '../components/help/PlainSummary'
 
 // One distinct colour per instrument (13 today, with spares); with fewer colours than instruments two lines matched
@@ -200,7 +200,7 @@ export default function Comparison() {
         <div>No data available for the selected instruments and timeframe.</div>
       ) : (
         <>
-          <div style={{ width: '100%', height: '500px', padding: '20px', backgroundColor: 'white' }}>
+          <div style={{ width: '100%', height: '500px', padding: '20px', ...SURFACE }}>
             <h2 style={{ marginBottom: '10px' }}>
               % Change | {intervalLabels[interval]} ({timeframeLabels[timeframe]})
             </h2>

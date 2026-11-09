@@ -13,7 +13,7 @@ import {
 } from 'recharts'
 import { backtestApi } from '../services/api/backtestApi'
 import { BacktestResult, RuleResult, SignalAction, SignalOutcome } from '../services/types/marketData'
-import { changeColor, COLORS, formatDate, formatPercent, signalStyles } from '../services/format'
+import { changeColor, COLORS, formatDate, formatPercent, signalStyles, SURFACE } from '../services/format'
 import { compareWithHolding, describeBacktests, describeRuleRecord, describeTrendRules, MIN_RELIABLE_YEARS, ruleNames, verdictStyles } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
 import PlainSummary from '../components/help/PlainSummary'
@@ -27,7 +27,7 @@ const OUTCOME_HORIZON_DAYS = 30
 
 const cellStyle = { padding: '10px', borderBottom: `1px solid ${COLORS.border}`, textAlign: 'right' as const }
 const headerStyle = { ...cellStyle, backgroundColor: '#f5f5f5', whiteSpace: 'nowrap' as const }
-const cardStyle = { padding: '20px', backgroundColor: 'white', borderRadius: '6px', marginTop: '12px' }
+const cardStyle = { padding: '20px', ...SURFACE, marginTop: '12px' }
 const noteStyle = { fontSize: '13px', color: '#546e7a', lineHeight: 1.45 }
 
 const RULE_COLORS = { ahead: COLORS.up, tied: COLORS.neutral, behind: COLORS.down }
@@ -251,7 +251,7 @@ export default function TrackRecord() {
       <h2 style={{ fontSize: '1.2rem', margin: '20px 0 8px' }}>Technical signal and trend rules, over all price history</h2>
       {tested.length > 0 && <PlainSummary points={describeTrendRules(tested, shownCost)} />}
 
-      <div style={{ overflowX: 'auto', backgroundColor: 'white', borderRadius: '6px' }}>
+      <div style={{ overflowX: 'auto', ...SURFACE }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
           <thead>
             <tr>

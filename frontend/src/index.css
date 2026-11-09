@@ -10,7 +10,32 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f5f5;
+  /* A calm, slightly cool page colour so white cards stand out without borders */
+  background-color: #f4f6f8;
+  color: #1f2933;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* One heading scale for every page */
+h1 {
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #102a43;
+}
+
+h2 {
+  color: #102a43;
+  font-weight: 650;
+}
+
+h3 {
+  color: #243b53;
+}
+
+table {
+  font-variant-numeric: tabular-nums;
 }
 
 code {
@@ -53,4 +78,14 @@ button:not(:disabled) {
     scroll-behavior: auto !important;
     transition: none !important;
   }
+}
+
+/* Action tiles lift slightly when pointed at, so they read as buttons */
+.action-tile {
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.action-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 42, 67, 0.12) !important;
+  text-decoration: none;
 }

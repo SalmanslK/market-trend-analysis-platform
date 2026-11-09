@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { PriceDataDto } from '../../services/types/marketData'
+import { SURFACE } from '../../services/format'
 import InfoTip from '../help/InfoTip'
 
 interface PriceChartProps {
@@ -77,7 +78,7 @@ export default function PriceChart({ data, instrument, interval, timeframe }: Pr
   }
 
   return (
-    <div style={{ width: '100%', height: '600px', padding: '20px', backgroundColor: 'white' }}>
+    <div style={{ width: '100%', height: '600px', padding: '20px', ...SURFACE }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
         <div>
           <h2>{instrument} | {interval} Prices ({timeframe})</h2>

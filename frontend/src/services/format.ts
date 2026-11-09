@@ -13,6 +13,13 @@ export const COLORS = {
   link: '#1565c0',
 }
 
+/** The look of every card: white, rounded, with a soft shadow instead of a hard border */
+export const SURFACE = {
+  backgroundColor: 'white',
+  borderRadius: '12px',
+  boxShadow: '0 1px 2px rgba(16, 42, 67, 0.06), 0 1px 3px rgba(16, 42, 67, 0.08)',
+}
+
 /** 166409.25 -> "166,409.25" */
 export function formatNumber(value: number | undefined | null, decimals = 2): string {
   if (value == null || Number.isNaN(value)) return '-'

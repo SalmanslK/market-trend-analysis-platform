@@ -8,7 +8,7 @@ import { describeMarket } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
 import Tip from '../components/help/Tip'
 import PlainSummary from '../components/help/PlainSummary'
-import { changeColor, COLORS, formatDate, formatNumber, formatPercent, TREND_DISCLAIMER, daysSince, STALE_AFTER_DAYS } from '../services/format'
+import { changeColor, COLORS, formatDate, formatNumber, formatPercent, TREND_DISCLAIMER, daysSince, STALE_AFTER_DAYS, SURFACE } from '../services/format'
 import ScaledSignalBadge from '../components/signals/ScaledSignalBadge'
 import SignalBadge from '../components/signals/SignalBadge'
 import TrendBadge from '../components/trend/TrendBadge'
@@ -16,6 +16,9 @@ import RecentChanges from '../components/signals/RecentChanges'
 import { applySignalMode, useSignalMode } from '../services/signalMode'
 import RefreshDataButton from '../components/layout/RefreshDataButton'
 import { useFeatures } from '../services/features'
+import AtAGlance from '../components/home/AtAGlance'
+import NextSteps from '../components/home/NextSteps'
+import WelcomeBanner from '../components/home/WelcomeBanner'
 import RangeBar from '../components/analytics/RangeBar'
 
 type SortKey = 'symbol' | 'change1D' | 'change1M' | 'changeYtd' | 'change1Y' | 'rsi14' | 'signal' | 'combined' | 'trend' | 'news'
@@ -138,14 +141,17 @@ export default function Dashboard() {
 
   return (
     <div style={{ padding: '20px' }}>
-      <h1>Market Overview</h1>
-      <p style={{ color: COLORS.muted, margin: '6px 0 20px' }}>
-        {latestDate ? `Prices up to ${formatDate(latestDate)}. ` : ''}
-        Select an instrument for its chart{news ? ' and news' : ''}; tap a signal to see why it says so.
-      </p>
-      <div style={{ marginBottom: '16px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: '12px', marginBottom: '20px' }}>
+        <div>
+          <h1>Market Overview</h1>
+          <p style={{ color: COLORS.muted, marginTop: '4px' }}>
+            How Pakistan's markets are doing{latestDate ? `, with prices up to ${formatDate(latestDate)}` : ''}.
+          </p>
+        </div>
         <RefreshDataButton onRefreshed={() => setReloadKey((k) => k + 1)} />
       </div>
+
+      <WelcomeBanner />
 
       {latestDate && daysSince(latestDate) > STALE_AFTER_DAYS && (
         <div role="alert" style={{ padding: '12px 16px', marginBottom: '16px', backgroundColor: '#fff3e0', borderLeft: '4px solid #e65100', borderRadius: '6px', lineHeight: 1.45 }}>
@@ -154,10 +160,19 @@ export default function Dashboard() {
         </div>
       )}
 
+      {analytics.length > 0 && <AtAGlance analytics={analytics} />}
+
+      <NextSteps />
+
+      <h2 id="all-instruments" style={{ fontSize: '1.2rem', marginBottom: '4px' }}>All instruments</h2>
+      <p style={{ color: COLORS.muted, fontSize: '14px', marginBottom: '12px' }}>
+        Every market the app follows. Select a name for its chart and details; tap a signal to see why it says so.
+      </p>
+
       {analytics.length > 0 && (
         <PlainSummary
           points={describeMarket(analytics, news ? moods : [], news)}
-          maxPoints={4}
+          maxPoints={3}
           footer={<>New here? The <Link to="/guide" style={{ color: COLORS.link }}>Guide</Link> explains every number in plain words, or tap any ⓘ.</>}
         />
       )}
@@ -178,7 +193,7 @@ export default function Dashboard() {
             {moreColumns ? 'Fewer columns' : 'More columns (RSI)'}
           </button>
         </div>
-        <div style={{ overflowX: 'auto', backgroundColor: 'white', borderRadius: '6px' }}>
+        <div style={{ overflowX: 'auto', ...SURFACE }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
             <caption style={{ position: 'absolute', left: '-9999px' }}>All instruments with their recent changes and signals</caption>
             <thead>

@@ -223,13 +223,18 @@ news stays a description of what happened, and Buy/Sell decisions rest on the te
 
 The State Bank's policy rate was tested next (`scripts/research/policy-rate-research.cs`, rules committed before the rate
 history was fetched; rates in `scripts/research/data/sbp-policy-rate.csv` from the State Bank's published history).
-Question: do stocks do better in the 6 months after a rate cut than after a rise? On MIF 2005-2015: +4.3% after a cut
-against -0.9% after a rise, a difference of +5.1 points but t = 0.7 against a pass mark of 2. The period holds only
-about 6 rate cycles, so one or two of them (the 2008 crash came while rates were rising) decide the result. The "stocks after a cut, cash
-after a rise" rule looked far better (+9.6% a year against -0.6%), but that comparison is unreliable: MIF has no
-payouts recorded before 2020, so holding is understated, and it fails anyway because the first test did. 2016 onward
-stays unused for a future test. Data gap found: MIF's payouts before 2020 are missing, so its long-run price history is
-not a total return before then.
+Question: do stocks do better in the 6 months after a rate cut than after a rise? The first run found MIF's payouts
+before 2020 missing, so they were added (below) and the development period rerun. On MIF 2005-2015, payouts included:
++11.8% after a cut against +6.8% after a rise, a difference of +4.9 points but t = 0.8 against a pass mark of 2. The
+period holds only about 6 rate cycles, so one or two of them (the 2008 crash came while rates were rising) decide the
+result. The "stocks after a cut, cash after a rise" rule earned +16.1% a year against +18.3% for holding, so it fails
+too, though its worst fall was far smaller (-16% against -63%). 2016 onward stays unused for a future test.
+
+**MIF payouts 2005-2017** (migration `AddEarlyMifPayouts`): the payout source lists MIF only from 2020, so its history
+before then showed each payout as a fall. 2014-2017 use the amounts Al Meezan published; 2005-2013 aren't published
+anywhere reachable, so they are the one-day NAV drop on each July ex-date (several are exact round amounts, such as
+Rs 17.50 and Rs 10.00), which also carries that day's market move. No payout in FY2009, FY2018 or FY2019. Effect:
+MIF 2005-2019 went from -0.7% a year (price only) to +13.6% a year (with payouts); since 2005, from +4.3% to +15.5%.
 
 **Biggest moves**: for each of an instrument's largest daily moves in the last 30 days, the API returns the news
 published from the day before to the next trading day (so weekend reports of a Friday move are included).

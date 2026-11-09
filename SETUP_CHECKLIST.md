@@ -112,6 +112,12 @@ the database answers and the newest price date.
 payout and news update as the Worker (`MarketDataUpdater` and `NewsUpdater` in Infrastructure, shared by both) and says
 what it found. One refresh runs at a time; a second request gets "already running".
 
+**Independent checks** (`scripts/verify`, plain Python, no packages; the app must be running):
+`python scripts/verify/verify_technical.py` recomputes every instrument's averages, RSI, MACD, Bollinger %B, votes, steady
+score and trend from the price series without the app's code and lists any mismatch with the app (none in Nov 2026).
+`python scripts/verify/verify_news.py KSE100 GOLDPK` lists each instrument's direct stories of the last 7 days with their
+scores, the news mood and the week's price change, to read by hand.
+
 **Backups:** `start-app` backs up the database (prices, news, payouts) to the `backups` folder once a day and keeps the
 newest 14; run `scripts/backup-db.ps1` for one now. Restore with
 `pg_restore -h localhost -U postgres -d MarketAnalytics --clean backups/<file>.dump`.

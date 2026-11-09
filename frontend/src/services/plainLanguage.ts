@@ -161,10 +161,17 @@ export function describeInstrument(a: InstrumentAnalyticsDto, mood?: NewsSentime
   if (mood && mood.articles > 0 && mood.label !== 'Neutral' && a.signal.score !== 0) {
     const signalUp = a.signal.score > 0
     const newsUp = mood.label === 'Positive'
+    // When they disagree, say why: they look at different periods, so after a sharp turn the news moves first
+    const dailyAgrees = a.signal.steady && a.dailySignal && a.dailySignal.score !== 0 && (a.dailySignal.score > 0) === newsUp
     points.push(
       signalUp === newsUp
         ? `The signal and the news point the same way (${newsUp ? 'up' : 'down'}), which makes the picture clearer.`
-        : `The signal points ${signalUp ? 'up' : 'down'} but the news sounds ${newsUp ? 'positive' : 'negative'}. When they disagree, the picture is less certain: worth reading the news before deciding.`,
+        : `The technical signal points ${signalUp ? 'up' : 'down'} but the news sounds ${newsUp ? 'positive' : 'negative'}. They look at different periods: ` +
+          (a.signal.steady
+            ? 'the news covers the last 7 days, the steady technical signal the last 20 trading days, so after a sharp turn they disagree until the move lasts.'
+            : 'the news covers the last 7 days, the technical signal where today\'s price stands against its averages.') +
+          (dailyAgrees ? ' Today\'s votes on their own already agree with the news.' : '') +
+          ' Until they agree, the combined signal says Hold.',
     )
   }
 

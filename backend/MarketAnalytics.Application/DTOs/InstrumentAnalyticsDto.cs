@@ -79,8 +79,8 @@ public class InstrumentAnalyticsDto
     public decimal? PayoutYield1Y { get; set; }
 
     /// <summary>
-    /// The "stronger than cash" check (see StrongerThanCash). Null for cash and income funds, currencies, and
-    /// instruments with less than 12 months of history.
+    /// The "stronger than cash" check (see StrongerThanCash). Null for cash and income funds, currencies and
+    /// dollar-priced instruments, and when the instrument or the Meezan Cash Fund lacks 12 months of recent history.
     /// </summary>
     public CashTestDto? StrongerThanCash { get; set; }
 }

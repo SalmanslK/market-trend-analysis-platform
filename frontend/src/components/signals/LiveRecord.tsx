@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { signalRecordApi } from '../../services/api/signalRecordApi'
 import { SignalRecord } from '../../services/types/marketData'
 import { changeColor, COLORS, formatDate, formatPercent, SURFACE } from '../../services/format'
+import { useFeatures } from '../../services/features'
+import InfoTip from '../help/InfoTip'
 
 const cellStyle = { padding: '8px 10px', borderBottom: `1px solid ${COLORS.border}`, textAlign: 'right' as const }
 
@@ -13,6 +15,8 @@ const cellStyle = { padding: '8px 10px', borderBottom: `1px solid ${COLORS.borde
 export default function LiveRecord() {
   const [record, setRecord] = useState<SignalRecord | null>(null)
   const [error, setError] = useState(false)
+  // The combined signal includes news, so its rows are hidden when news is switched off
+  const { news } = useFeatures()
 
   useEffect(() => {
     let cancelled = false
@@ -25,15 +29,27 @@ export default function LiveRecord() {
     return () => { cancelled = true }
   }, [])
 
-  if (error || !record) return null
+  const heading = (
+    <h2 id="live-record" style={{ fontSize: '1.2rem', marginBottom: '6px' }}>Live record: the signals since we started saving them<InfoTip term="liveRecord" /></h2>
+  )
+  if (error) {
+    return (
+      <section aria-labelledby="live-record" style={{ ...SURFACE, padding: '20px', marginTop: '12px' }}>
+        {heading}
+        <p role="alert" style={{ color: COLORS.down }}>The live record couldn't be loaded. Reload the page; if it keeps failing, the API log says why.</p>
+      </section>
+    )
+  }
+  if (!record) return null
 
-  const groups = record.groups.filter((g) => g.count > 0)
+  const groups = record.groups.filter((g) => g.count > 0 && (news || g.signal !== 'Combined signal'))
   return (
     <section aria-labelledby="live-record" style={{ ...SURFACE, padding: '20px', marginTop: '12px' }}>
-      <h2 id="live-record" style={{ fontSize: '1.2rem', marginBottom: '6px' }}>Live record: the signals since we started saving them</h2>
+      {heading}
       <p style={{ fontSize: '14px', color: '#334e68', lineHeight: 1.5 }}>
-        Every day the app saves each instrument's signals as shown, before anyone knows what happens next. After {record.horizonDays} trading
-        days, each reading is scored by how prices moved. This is the honest test: unlike the replays above, it can't be fitted to the past.
+        Every day the app saves each instrument's signals as shown, before anyone knows what happens next. Each reading is then scored by
+        how prices moved over the {record.horizonDays} trading days after the next day's close. This is the honest test: unlike the replays
+        above, it can't be fitted to the past.
       </p>
       {record.readings === 0 ? (
         <p style={{ marginTop: '10px', color: COLORS.muted }}>Nothing saved yet. The first readings are saved at the next price update.</p>

@@ -15,6 +15,8 @@ export interface RefreshResult {
   instruments: { symbol: string; newPrices: number; latestDate?: string; newPayouts: number; error?: string }[]
   newStories: number
   newsError?: string
+  /** Set when today's signals could not be saved to the live record */
+  signalRecordError?: string
 }
 
 export const dataApi = {

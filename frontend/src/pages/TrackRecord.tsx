@@ -376,7 +376,7 @@ export default function TrackRecord() {
           <li><strong>The long-term trend rule was picked after seeing this test,</strong> so its figures may flatter it. The real test is how it does from here on.</li>
           <li><strong>Few trades means weak evidence.</strong> The slower rules made only a handful of trades, so one or two well-timed moves can decide the result.</li>
           <li><strong>Dividends are only partly included.</strong> Fund prices count payouts as reinvested, but index prices leave out the dividends of the stocks in them, so real returns from holding an index were somewhat higher. MIF's payouts from 2005 to 2013 aren't published, so they are estimated from its price drops on payout days.</li>
-          <li><strong>Cash earns nothing here,</strong> which is harsh on every rule when interest rates are high.</li>
+          <li><strong>Cash earns nothing in these replays</strong> (the stronger-than-cash test above did pay interest on cash), which is harsh on every rule when interest rates are high.</li>
           <li><strong>The history is mostly a rising market,</strong> which favours holding. A long falling market could look different, and past results don't guarantee future ones.</li>
         </ul>
         <p style={{ marginTop: '8px' }}>This is not financial advice. See the <Link to="/guide" style={{ color: COLORS.link }}>Guide</Link> for what each term means.</p>

@@ -18,7 +18,8 @@ public class SignalRecordDto
 
 public class SignalRecordGroupDto
 {
-    /// <summary>"Any day", "Technical signal (steady)", "Combined signal" or "Stronger than cash".</summary>
+    /// <summary>One of the group names in SignalRecordSummary: "Any day", "Technical signal (steady)" (readings where
+    /// the steady signal existed), "Combined signal" or "Stronger than cash".</summary>
     public string Signal { get; set; } = string.Empty;
     /// <summary>Buy, Hold, Sell, "Ahead of cash", "Behind cash" or "All readings".</summary>
     public string Reading { get; set; } = string.Empty;

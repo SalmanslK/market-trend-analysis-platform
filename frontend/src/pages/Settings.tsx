@@ -8,8 +8,8 @@ import { instrumentTypeLabels, intervalLabels, timeframeLabels } from '../servic
 import { loadPreferences, savePreferences } from '../services/preferences'
 import RefreshDataButton from '../components/layout/RefreshDataButton'
 import AnswerCard from '../components/help/AnswerCard'
-import { dataStatusAnswer } from '../services/answers'
-import { COLORS, SURFACE } from '../services/format'
+import { dataStatusAnswer, isPriceStale } from '../services/answers'
+import { COLORS, formatDate, STALE_AFTER_DAYS, SURFACE } from '../services/format'
 
 // Suggested interval/timeframe combinations for common use cases
 const PRESETS: { label: string; interval: Interval; timeframe: Timeframe }[] = [
@@ -20,9 +20,6 @@ const PRESETS: { label: string; interval: Interval; timeframe: Timeframe }[] = [
   { label: 'Gold or index tracking', interval: Interval.Weekly, timeframe: Timeframe.Year },
   { label: 'Mutual fund NAV trend', interval: Interval.Daily, timeframe: Timeframe.Month },
 ]
-
-// The worker checks every 6 hours; flag sources that haven't updated in over two days
-const STALE_AFTER_MS = 2 * 24 * 60 * 60 * 1000
 
 const cellStyle = { padding: '10px', border: '1px solid #ddd' }
 
@@ -51,11 +48,11 @@ export default function Settings() {
     setSaveMessage(saved ? 'Saved. Instrument and Comparison views will open with these defaults.' : 'Could not save: browser storage is unavailable.')
   }
 
-  const updateStatus = (lastUpdateDate?: string) => {
-    if (!lastUpdateDate) return { label: 'Never updated', color: '#d32f2f' }
-    const age = Date.now() - new Date(lastUpdateDate).getTime()
-    return age > STALE_AFTER_MS
-      ? { label: 'Stale', color: '#f57c00' }
+  // Judged by the newest price: a check can succeed without the source having published anything new
+  const updateStatus = (instrument: InstrumentDto) => {
+    if (!instrument.latestPriceDate) return { label: 'No prices', color: '#d32f2f' }
+    return isPriceStale(instrument)
+      ? { label: `No price for over ${STALE_AFTER_DAYS} days`, color: '#b45309' }
       : { label: 'Up to date', color: COLORS.up }
   }
 
@@ -64,7 +61,15 @@ export default function Settings() {
       <h1>Settings</h1>
       <p style={{ color: COLORS.muted, margin: '4px 0 16px' }}>Whether the data is up to date, and how charts open.</p>
 
-      {!loading && !error && (() => {
+      {error ? (
+        // Without the list there is no answer, but the refresh button is exactly what's needed
+        <section role="alert" style={{ padding: '16px 20px', ...SURFACE, borderLeft: `4px solid ${COLORS.down}` }}>
+          <p style={{ color: COLORS.down, fontWeight: 600 }}>{error} Check that the API is running, then try again.</p>
+          <div style={{ marginTop: '12px' }}>
+            <RefreshDataButton onRefreshed={() => { setError(null); setReloadKey((k) => k + 1) }} />
+          </div>
+        </section>
+      ) : !loading && (() => {
         const status = dataStatusAnswer(instruments)
         return (
           <AnswerCard question="Is the data up to date?" answer={status.answer} meaning={status.meaning}>
@@ -152,7 +157,6 @@ export default function Settings() {
         <details>
           <summary style={{ cursor: 'pointer', color: COLORS.link, fontSize: '14px', padding: '4px 0' }}>Show all {instruments.length} instruments</summary>
 
-        {error && <div style={{ color: '#d32f2f' }}>{error}</div>}
         {loading ? (
           <div>Loading...</div>
         ) : (
@@ -163,13 +167,14 @@ export default function Settings() {
                 <th style={cellStyle}>Instrument</th>
                 <th style={cellStyle}>Name</th>
                 <th style={cellStyle}>Type</th>
-                <th style={cellStyle}>Last Updated</th>
+                <th style={cellStyle}>Newest price</th>
+                <th style={cellStyle}>Last checked</th>
                 <th style={cellStyle}>Status</th>
               </tr>
             </thead>
             <tbody>
               {instruments.map((instrument) => {
-                const status = updateStatus(instrument.lastUpdateDate)
+                const status = updateStatus(instrument)
                 return (
                   <tr key={instrument.id}>
                     <td style={cellStyle}>
@@ -182,6 +187,7 @@ export default function Settings() {
                     </td>
                     <td style={cellStyle}>{instrument.name}</td>
                     <td style={cellStyle}>{instrumentTypeLabels[instrument.type]}</td>
+                    <td style={cellStyle}>{instrument.latestPriceDate ? formatDate(instrument.latestPriceDate) : '-'}</td>
                     <td style={cellStyle}>
                       {instrument.lastUpdateDate ? new Date(instrument.lastUpdateDate).toLocaleString() : '-'}
                     </td>

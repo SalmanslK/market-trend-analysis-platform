@@ -1,5 +1,6 @@
 import { BacktestResult, InstrumentDto, PortfolioComparison } from './types/marketData'
 import { MIN_RELIABLE_YEARS } from './plainLanguage'
+import { formatDate, STALE_AFTER_DAYS } from './format'
 
 /** A page's short answer: one or two sentences, the numbers behind it, and what it means for the reader. */
 export interface PageAnswer {
@@ -16,9 +17,10 @@ const average = (values: number[]) => values.reduce((sum, v) => sum + v, 0) / Ma
  * Averaged over instruments with enough history to judge.
  */
 export function trackRecordAnswer(results: BacktestResult[]): PageAnswer | null {
-  const reliable = results.filter((r) => r.hasEnoughData && r.years >= MIN_RELIABLE_YEARS)
-  if (reliable.length === 0) return null
   const rule = (r: BacktestResult, key: 'signal' | 'goldenCross') => r.rules.find((x) => x.key === key)?.performance
+  // Only results with both rules, so a missing rule can't be averaged in as a 0% return with no fall
+  const reliable = results.filter((r) => r.hasEnoughData && r.years >= MIN_RELIABLE_YEARS && rule(r, 'signal') && rule(r, 'goldenCross'))
+  if (reliable.length === 0) return null
   const hold = { annual: average(reliable.map((r) => r.buyAndHold.annualReturn)), fall: average(reliable.map((r) => r.buyAndHold.maxDrawdown)) }
   const signal = { annual: average(reliable.map((r) => rule(r, 'signal')?.annualReturn ?? 0)), fall: average(reliable.map((r) => rule(r, 'signal')?.maxDrawdown ?? 0)) }
   const trend = { annual: average(reliable.map((r) => rule(r, 'goldenCross')?.annualReturn ?? 0)), fall: average(reliable.map((r) => rule(r, 'goldenCross')?.maxDrawdown ?? 0)) }
@@ -56,11 +58,16 @@ export function portfolioAnswer(comparison: PortfolioComparison): PageAnswer | n
   const cash = find('All in cash (MCF)')
   if (!stocks || !mix) return null
   const lessReturn = stocks.annualReturn - mix.annualReturn
+  // Falls are negative numbers, so a higher one is smaller
+  const smallerFall = mix.maxDrawdown > stocks.maxDrawdown
+  const falls = `${mix.maxDrawdown.toFixed(0)}% against ${stocks.maxDrawdown.toFixed(0)}%`
 
   return {
     answer: lessReturn > 0
-      ? `Spreading money between stocks, gold and cash cut the worst fall from ${stocks.maxDrawdown.toFixed(0)}% to ${mix.maxDrawdown.toFixed(0)}%, for ${lessReturn.toFixed(1)} points a year less return.`
-      : `Spreading money between stocks, gold and cash earned as much as all stocks (${pct(mix.annualReturn)} a year) with a smaller worst fall (${mix.maxDrawdown.toFixed(0)}% against ${stocks.maxDrawdown.toFixed(0)}%).`,
+      ? smallerFall
+        ? `Spreading money between stocks, gold and cash cut the worst fall from ${stocks.maxDrawdown.toFixed(0)}% to ${mix.maxDrawdown.toFixed(0)}%, for ${lessReturn.toFixed(1)} points a year less return.`
+        : `Spreading money between stocks, gold and cash earned ${lessReturn.toFixed(1)} points a year less than all stocks, without a smaller worst fall (${falls}).`
+      : `Spreading money between stocks, gold and cash earned ${lessReturn < 0 ? 'more than' : 'as much as'} all stocks (${pct(mix.annualReturn)} a year against ${pct(stocks.annualReturn)})${smallerFall ? `, with a smaller worst fall (${falls})` : ''}.`,
     facts: [
       { label: 'All in stocks', value: `${pct(stocks.annualReturn)} a year`, note: `worst fall ${stocks.maxDrawdown.toFixed(0)}%` },
       { label: 'Stocks 60, gold 20, cash 20', value: `${pct(mix.annualReturn)} a year`, note: `worst fall ${mix.maxDrawdown.toFixed(0)}%`, emphasis: true },
@@ -70,23 +77,38 @@ export function portfolioAnswer(comparison: PortfolioComparison): PageAnswer | n
   }
 }
 
-/** Settings: is the data up to date? */
+/** Whether an instrument's newest price is too old: more than STALE_AFTER_DAYS, which allows for weekends and holidays. */
+export function isPriceStale(instrument: InstrumentDto, now = Date.now()): boolean {
+  return !instrument.latestPriceDate || now - new Date(instrument.latestPriceDate).getTime() > STALE_AFTER_DAYS * 86_400_000
+}
+
+/**
+ * Settings: is the data up to date? Judged by each instrument's newest price, not by when the app last checked:
+ * a check succeeds even when the source has published nothing new.
+ */
 export function dataStatusAnswer(instruments: InstrumentDto[], now = Date.now()): PageAnswer {
-  const day = 86_400_000
-  const behind = instruments.filter((i) => !i.lastUpdateDate || now - new Date(i.lastUpdateDate).getTime() > 2 * day)
+  if (instruments.length === 0) {
+    return {
+      answer: 'No instruments were found.',
+      facts: [],
+      meaning: 'The database may be empty or still loading. Press "Check for new data now" below; if nothing appears, restart the app (start-app.cmd).',
+    }
+  }
+  const behind = instruments.filter((i) => isPriceStale(i, now))
   const latest = instruments.map((i) => (i.lastUpdateDate ? new Date(i.lastUpdateDate).getTime() : 0)).reduce((a, b) => Math.max(a, b), 0)
   const hours = latest ? Math.max(0, Math.round((now - latest) / 3_600_000)) : null
   const last = hours == null ? 'never' : hours < 1 ? 'less than an hour ago' : hours === 1 ? '1 hour ago' : `${hours} hours ago`
+  const newest = (i: InstrumentDto) => (i.latestPriceDate ? `${i.symbol} (newest price ${formatDate(i.latestPriceDate)})` : `${i.symbol} (no prices)`)
 
   return behind.length === 0
     ? {
-      answer: `Yes: all ${instruments.length} instruments are up to date. The last check was ${last}.`,
+      answer: `Yes: all ${instruments.length} instruments have prices from the last few days. The last check was ${last}.`,
       facts: [],
       meaning: 'Nothing to do. Prices are checked every 6 hours while the app runs; use the button below if you want the latest right now.',
     }
     : {
-      answer: `${behind.length} of ${instruments.length} instruments haven't updated for over 2 days: ${behind.map((i) => i.symbol).join(', ')}.`,
+      answer: `${behind.length} of ${instruments.length} instruments have no price from the last ${STALE_AFTER_DAYS} days: ${behind.map(newest).join(', ')}. The last check was ${last}.`,
       facts: [],
-      meaning: 'Press "Check for new data now" below. If they stay behind, their source may be down or the app may need restarting (start-app.cmd).',
+      meaning: 'Press "Check for new data now" below. If they stay behind, their source may have stopped publishing or the app may need restarting (start-app.cmd).',
     }
 }

@@ -55,6 +55,7 @@ public class DataController : ControllerBase
                 newsError = ex.Message;
             }
 
+            string? signalRecordError = null;
             try
             {
                 await _signalRecorder.RecordAsync(cancellationToken);
@@ -62,6 +63,7 @@ public class DataController : ControllerBase
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 _logger.LogError(ex, "Recording signals failed");
+                signalRecordError = ex.Message;
             }
 
             return Ok(new RefreshResultDto
@@ -78,6 +80,7 @@ public class DataController : ControllerBase
                 }).ToList(),
                 NewStories = news?.Added ?? 0,
                 NewsError = newsError,
+                SignalRecordError = signalRecordError,
             });
         }
         finally
@@ -95,6 +98,8 @@ public class RefreshResultDto
     public int NewStories { get; set; }
     /// <summary>Set when the news sources could not be read; prices may still have been updated.</summary>
     public string? NewsError { get; set; }
+    /// <summary>Set when today's signals could not be saved to the live record; prices are still updated.</summary>
+    public string? SignalRecordError { get; set; }
 }
 
 public class InstrumentRefreshDto

@@ -1,4 +1,6 @@
 using MarketAnalytics.Application.DTOs;
+using MarketAnalytics.Domain.Entities;
+using MarketAnalytics.Domain.Enums;
 using MarketAnalytics.Domain.ValueObjects;
 
 namespace MarketAnalytics.Application.Services;
@@ -15,6 +17,19 @@ public static class StrongerThanCash
     public const int LookbackMonths = 12;
     public const string CashSymbol = "MCF";
 
+    // A price used by a check must be at most this old, so a feed that stopped can't quietly shorten the 12 months
+    public const int MaxPriceAgeDays = 7;
+
+    // Priced in dollars, so its return can't be compared with a rupee cash fund
+    private static readonly HashSet<string> NotInRupees = new(StringComparer.OrdinalIgnoreCase) { "GOLDINT" };
+
+    /// <summary>
+    /// Whether the check applies: rupee-priced instruments with signals. Not cash and income funds (they are the
+    /// cash), currencies, or instruments priced in dollars.
+    /// </summary>
+    public static bool AppliesTo(Instrument instrument) =>
+        !instrument.IsLowRisk && instrument.Type != InstrumentType.Forex && !NotInRupees.Contains(instrument.Symbol);
+
     /// <summary>One monthly check: the instrument's and cash's returns over the previous 12 months, as fractions.</summary>
     public record Check(DateTime Date, decimal Return, decimal CashReturn)
     {
@@ -23,7 +38,8 @@ public static class StrongerThanCash
 
     /// <summary>
     /// The check on the first trading day of every month that has 12 months of history for both series, oldest first.
-    /// Both lists must be sorted oldest first.
+    /// A month is skipped when a price it needs is more than <see cref="MaxPriceAgeDays"/> days older than the date it
+    /// stands for (a gap in the data). Both lists must be sorted oldest first.
     /// </summary>
     public static List<Check> MonthlyChecks(IReadOnlyList<PriceDataPoint> prices, IReadOnlyList<PriceDataPoint> cash)
     {
@@ -42,6 +58,8 @@ public static class StrongerThanCash
             var cashNow = IndexOnOrBefore(cash, date);
             var cashThen = IndexOnOrBefore(cash, back);
             if (then < 0 || cashThen < 0 || cashNow < 0 || prices[then].Price <= 0 || cash[cashThen].Price <= 0)
+                continue;
+            if (TooOld(prices[then], back) || TooOld(cash[cashThen], back) || TooOld(cash[cashNow], date))
                 continue;
 
             result.Add(new Check(
@@ -64,15 +82,20 @@ public static class StrongerThanCash
         while (start > 0 && checks[start - 1].AheadOfCash == latest.AheadOfCash)
             start--;
 
+        // The answer follows the rounded figures shown with it, so the two can't contradict each other
+        var ret = Math.Round(latest.Return * 100, 2);
+        var cashRet = Math.Round(latest.CashReturn * 100, 2);
         return new CashTestDto
         {
-            AheadOfCash = latest.AheadOfCash,
-            Return12M = Math.Round(latest.Return * 100, 2),
-            CashReturn12M = Math.Round(latest.CashReturn * 100, 2),
+            AheadOfCash = ret > cashRet,
+            Return12M = ret,
+            CashReturn12M = cashRet,
             CheckedOn = latest.Date,
             Since = start == 0 ? null : checks[start].Date,
         };
     }
+
+    private static bool TooOld(PriceDataPoint price, DateTime date) => (date - price.DateTime.Date).TotalDays > MaxPriceAgeDays;
 
     private static int IndexOnOrBefore(IReadOnlyList<PriceDataPoint> prices, DateTime date)
     {

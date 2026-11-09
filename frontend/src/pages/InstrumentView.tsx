@@ -134,7 +134,8 @@ export default function InstrumentView() {
                     {news ? 'Combined signal' : `Technical signal${analytics.signal.steady ? ', last 20 days' : ', today'}`}
                   </div>
                   {news ? <ScaledSignalBadge signal={analytics.combinedSignal} large /> : <SignalBadge signal={analytics.signal} large />}
-                  <p style={{ fontSize: '14px', marginTop: '6px', color: '#334e68' }}>{signalMeaning[analytics.signal.action].headline}.</p>
+                  {/* The meaning of the badge shown above it: the combined signal when news is on */}
+                  <p style={{ fontSize: '14px', marginTop: '6px', color: '#334e68' }}>{signalMeaning[(news ? analytics.combinedSignal : analytics.signal).action].headline}.</p>
                 </div>
                 <div style={{ padding: '12px 14px', borderRadius: '10px', backgroundColor: '#f0f4f8' }}>
                   <div style={{ fontSize: '12px', color: COLORS.muted, fontWeight: 600, textTransform: 'uppercase', marginBottom: '6px' }}>Long-term trend</div>

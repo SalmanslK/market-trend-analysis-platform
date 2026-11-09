@@ -22,7 +22,8 @@ function describeRefresh(r: RefreshResult, news: boolean): string {
     !news ? '' : r.newsError ? 'news sources could not be read' : `${r.newStories} new news ${r.newStories === 1 ? 'story' : 'stories'}`,
   ].filter(Boolean)
   const problems = failed.length ? ` Could not update ${failed.map((i) => i.symbol).join(', ')}; the next check will try again.` : ''
-  return `${parts.join('; ')}.${problems}`
+  const record = r.signalRecordError ? " Today's signals could not be saved to the live record; the next check will try again." : ''
+  return `${parts.join('; ')}.${problems}${record}`
 }
 
 /**

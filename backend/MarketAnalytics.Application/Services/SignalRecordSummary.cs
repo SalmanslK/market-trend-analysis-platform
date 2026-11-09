@@ -13,6 +13,12 @@ public static class SignalRecordSummary
 {
     public const int HorizonDays = 20;
 
+    // Group names, shown by the website (LiveRecord.tsx matches AnyDay and Combined by name)
+    public const string AnyDay = "Any day";
+    public const string Steady = "Technical signal (steady)";
+    public const string Combined = "Combined signal";
+    public const string VersusCash = "Stronger than cash";
+
     public static SignalRecordDto Summarize(IReadOnlyCollection<SignalSnapshot> snapshots, IReadOnlyDictionary<int, List<PriceDataPoint>> pricesByInstrument)
     {
         var scored = new List<(SignalSnapshot Snapshot, decimal Move)>();
@@ -26,13 +32,14 @@ public static class SignalRecordSummary
             scored.Add((snapshot, prices[index + 1 + HorizonDays].Price / prices[index + 1].Price - 1));
         }
 
-        var groups = new List<SignalRecordGroupDto> { Group("Any day", "All readings", scored) };
+        var groups = new List<SignalRecordGroupDto> { Group(AnyDay, "All readings", scored) };
+        // Only readings where the steady signal existed, so its forward test isn't mixed with the daily signal
         foreach (var side in new[] { "Buy", "Hold", "Sell" })
-            groups.Add(Group("Technical signal (steady)", side, scored.Where(s => Side(s.Snapshot.SteadyAction ?? s.Snapshot.DailyAction) == side)));
+            groups.Add(Group(Steady, side, scored.Where(s => Side(s.Snapshot.SteadyAction) == side)));
         foreach (var side in new[] { "Buy", "Hold", "Sell" })
-            groups.Add(Group("Combined signal", side, scored.Where(s => Side(s.Snapshot.CombinedAction) == side)));
-        groups.Add(Group("Stronger than cash", "Ahead of cash", scored.Where(s => s.Snapshot.AheadOfCash == true)));
-        groups.Add(Group("Stronger than cash", "Behind cash", scored.Where(s => s.Snapshot.AheadOfCash == false)));
+            groups.Add(Group(Combined, side, scored.Where(s => Side(s.Snapshot.CombinedAction) == side)));
+        groups.Add(Group(VersusCash, "Ahead of cash", scored.Where(s => s.Snapshot.AheadOfCash == true)));
+        groups.Add(Group(VersusCash, "Behind cash", scored.Where(s => s.Snapshot.AheadOfCash == false)));
 
         return new SignalRecordDto
         {
@@ -44,12 +51,13 @@ public static class SignalRecordSummary
         };
     }
 
-    /// <summary>Buy for StrongBuy and Buy, Sell for StrongSell and Sell, otherwise Hold.</summary>
-    public static string Side(string? action) => action switch
+    /// <summary>Buy for StrongBuy and Buy, Hold for Hold, Sell for StrongSell and Sell; null for anything else.</summary>
+    public static string? Side(string? action) => action switch
     {
         "StrongBuy" or "Buy" => "Buy",
+        "Hold" => "Hold",
         "StrongSell" or "Sell" => "Sell",
-        _ => "Hold",
+        _ => null,
     };
 
     private static SignalRecordGroupDto Group(string signal, string reading, IEnumerable<(SignalSnapshot Snapshot, decimal Move)> items)

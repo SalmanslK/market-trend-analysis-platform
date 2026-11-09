@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { InstrumentAnalyticsDto } from '../../services/types/marketData'
-import { trendInWords } from '../../services/plainLanguage'
+import { GOLD_SYMBOLS, trendInWords } from '../../services/plainLanguage'
 import { COLORS, signalStyles, SURFACE } from '../../services/format'
 
 interface AtAGlanceProps {
@@ -30,7 +30,8 @@ const pct = (value?: number) => (value == null ? '-' : `${value >= 0 ? '+' : ''}
 const versusCash = (a: InstrumentAnalyticsDto) => {
   const test = a.strongerThanCash
   if (!test) return ''
-  return ` Over 12 months it is ${test.aheadOfCash ? 'ahead of' : 'behind'} cash (${pct(test.return12M)} against ${pct(test.cashReturn12M)}).`
+  const untested = GOLD_SYMBOLS.includes(a.symbol) ? ' (a check tested on stocks, not gold)' : ''
+  return ` Over 12 months it is ${test.aheadOfCash ? 'ahead of' : 'behind'} cash (${pct(test.return12M)} against ${pct(test.cashReturn12M)})${untested}.`
 }
 
 
@@ -61,7 +62,7 @@ export default function AtAGlance({ analytics }: AtAGlanceProps) {
     const s = status(stocks)
     cards.push({
       key: 'stocks', title: 'Pakistan stocks', ...s,
-      sentence: `The KSE-100 is ${pct(stocks.change1M)} this month. ${trendInWords(stocks.longTermTrend)}${versusCash(stocks)}`,
+      sentence: `The KSE-100 is ${pct(stocks.change1M)} over the past month. ${trendInWords(stocks.longTermTrend)}${versusCash(stocks)}`,
       signal: signalStyles[stocks.signal.action].label,
       link: '/instrument/KSE100', linkText: 'Open the KSE-100',
     })
@@ -70,7 +71,7 @@ export default function AtAGlance({ analytics }: AtAGlanceProps) {
     const s = status(gold)
     cards.push({
       key: 'gold', title: 'Gold in Pakistan', ...s,
-      sentence: `Gold per tola is ${pct(gold.change1M)} this month. ${trendInWords(gold.longTermTrend)}${versusCash(gold)}`,
+      sentence: `Gold per tola is ${pct(gold.change1M)} over the past month. ${trendInWords(gold.longTermTrend)}${versusCash(gold)}`,
       signal: signalStyles[gold.signal.action].label,
       link: '/instrument/GOLDPK', linkText: 'Open gold',
     })
@@ -83,7 +84,7 @@ export default function AtAGlance({ analytics }: AtAGlanceProps) {
       key: 'rupee', title: 'The rupee',
       word: weaker ? 'Weakening' : firmer ? 'Firmer' : 'Steady',
       tone: weaker ? 'bad' : firmer ? 'good' : 'calm',
-      sentence: `A dollar costs Rs ${dollar.lastPrice.toFixed(2)}, ${pct(dollar.change1M)} this month. ${weaker ? 'Imports and dollar savings cost more.' : firmer ? 'The rupee has gained a little against the dollar.' : 'The rate has hardly moved.'}`,
+      sentence: `A dollar costs Rs ${dollar.lastPrice.toFixed(2)}, ${pct(dollar.change1M)} over the past month. ${weaker ? 'Imports and dollar savings cost more.' : firmer ? 'The rupee has gained a little against the dollar.' : 'The rate has hardly moved.'}`,
       link: '/instrument/USDPKR', linkText: 'Open USD/PKR',
     })
   }

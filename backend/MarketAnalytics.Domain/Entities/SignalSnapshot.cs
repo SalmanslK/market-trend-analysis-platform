@@ -11,7 +11,7 @@ public class SignalSnapshot
 
     public int InstrumentId { get; set; }
 
-    /// <summary>The date of the latest price the signals were computed from.</summary>
+    /// <summary>The date of the latest price the signals were computed from: a UTC date with no time part.</summary>
     public DateTime Date { get; set; }
 
     /// <summary>That price (payout-adjusted at the time it was recorded; outcomes use the current adjusted series).</summary>
@@ -21,11 +21,11 @@ public class SignalSnapshot
     public string DailyAction { get; set; } = string.Empty;
     public int DailyScore { get; set; }
 
-    /// <summary>Steady technical signal (20-day average), -100 to +100; null with too little history.</summary>
+    /// <summary>Steady technical signal (20-day average): its action, and its score from -100 to +100; null with too little history.</summary>
     public string? SteadyAction { get; set; }
     public int? SteadyScore { get; set; }
 
-    /// <summary>News signal, -100 to +100, and the stories behind it.</summary>
+    /// <summary>News signal: its action, its score from -100 to +100, and the stories behind it.</summary>
     public string NewsAction { get; set; } = string.Empty;
     public int NewsScore { get; set; }
     public int NewsArticles { get; set; }

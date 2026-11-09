@@ -1,6 +1,13 @@
+using MarketAnalytics.Application.DTOs;
+using MarketAnalytics.Application.Interfaces.Services;
 using MarketAnalytics.Application.Services;
 using MarketAnalytics.Domain.Entities;
+using MarketAnalytics.Domain.Enums;
 using MarketAnalytics.Domain.ValueObjects;
+using MarketAnalytics.Infrastructure.Data;
+using MarketAnalytics.Infrastructure.Updates;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace MarketAnalytics.Tests;
 
@@ -86,10 +93,143 @@ public class ForwardRecordTests
     [InlineData("StrongBuy", "Buy")]
     [InlineData("Buy", "Buy")]
     [InlineData("Hold", "Hold")]
-    [InlineData(null, "Hold")]
     [InlineData("StrongSell", "Sell")]
-    public void Summary_GroupsStrongAndPlainSignalsTogether(string? action, string side)
+    [InlineData(null, null)]
+    [InlineData("", null)]
+    [InlineData("Unknown", null)]
+    public void Summary_GroupsStrongAndPlainSignalsTogetherAndSkipsUnknownOnes(string? action, string? side)
     {
         Assert.Equal(side, SignalRecordSummary.Side(action));
+    }
+
+    [Fact]
+    public void Summary_ScoresAReadingOnlyOnceAll20DaysFromTheNextCloseAreKnown()
+    {
+        // 40 prices: a reading at index 18 has prices up to index 39 (next close 19, plus 20); one at 19 doesn't
+        var prices = Growing(40, 0.01m);
+        var snapshots = new[]
+        {
+            new SignalSnapshot { InstrumentId = 1, Date = Start.AddDays(18), SteadyAction = "Buy", CombinedAction = "Hold" },
+            new SignalSnapshot { InstrumentId = 1, Date = Start.AddDays(19), SteadyAction = "Buy", CombinedAction = "Hold" },
+        };
+
+        var summary = SignalRecordSummary.Summarize(snapshots, new Dictionary<int, List<PriceDataPoint>> { [1] = prices });
+
+        Assert.Equal(1, summary.Scored);
+    }
+
+    [Fact]
+    public void Summary_CountsOnlyRealSteadyReadingsAndKnownCashAnswers()
+    {
+        var prices = Growing(40, 0.01m);
+        var snapshots = new[]
+        {
+            // No steady signal (too little history) and no cash answer: counted in neither group
+            new SignalSnapshot { InstrumentId = 1, Date = Start.AddDays(2), DailyAction = "Sell", SteadyAction = null, CombinedAction = "Hold", AheadOfCash = null },
+            // A date with no price (e.g. a holiday) can't be scored
+            new SignalSnapshot { InstrumentId = 1, Date = Start.AddDays(100), SteadyAction = "Buy", CombinedAction = "Hold" },
+            // An instrument with no prices can't be scored
+            new SignalSnapshot { InstrumentId = 2, Date = Start.AddDays(2), SteadyAction = "Buy", CombinedAction = "Hold" },
+        };
+
+        var summary = SignalRecordSummary.Summarize(snapshots, new Dictionary<int, List<PriceDataPoint>> { [1] = prices });
+
+        Assert.Equal(3, summary.Readings);
+        Assert.Equal(1, summary.Scored);
+        Assert.All(summary.Groups.Where(g => g.Signal == SignalRecordSummary.Steady), g => Assert.Equal(0, g.Count));
+        Assert.All(summary.Groups.Where(g => g.Signal == SignalRecordSummary.VersusCash), g => Assert.Equal(0, g.Count));
+        Assert.Equal(1, summary.Groups.Single(g => g.Signal == SignalRecordSummary.Combined && g.Reading == "Hold").Count);
+    }
+
+    [Fact]
+    public void StrongerThanCash_SkipsMonthsWhenTheCashPriceStoppedUpdating()
+    {
+        // Cash prices stop after 400 days; later checks would compare against an old cash price, so there are none
+        var checks = StrongerThanCash.MonthlyChecks(Growing(700, 0.001m), Growing(400, 0.0003m));
+
+        Assert.NotEmpty(checks);
+        Assert.All(checks, c => Assert.True(c.Date <= Start.AddDays(400 + StrongerThanCash.MaxPriceAgeDays)));
+    }
+
+    [Fact]
+    public void StrongerThanCash_ATieCountsAsBehindCashAndAnAnswerThatNeverChangedHasNoSince()
+    {
+        var same = Growing(500, 0.001m);
+
+        var result = StrongerThanCash.Evaluate(same, same);
+
+        Assert.NotNull(result);
+        Assert.False(result!.AheadOfCash);
+        Assert.Null(result.Since);
+    }
+
+    [Theory]
+    [InlineData("KSE100", InstrumentType.StockIndex, null, true)]
+    [InlineData("GOLDPK", InstrumentType.Commodity, null, true)]
+    [InlineData("GOLDINT", InstrumentType.Commodity, null, false)]
+    [InlineData("USDPKR", InstrumentType.Forex, null, false)]
+    [InlineData("MCF", InstrumentType.MutualFund, "Cash fund", false)]
+    public void StrongerThanCash_AppliesOnlyToRupeePricedInstrumentsWithSignals(string symbol, InstrumentType type, string? lowRiskKind, bool applies)
+    {
+        Assert.Equal(applies, StrongerThanCash.AppliesTo(new Instrument { Symbol = symbol, Type = type, LowRiskKind = lowRiskKind }));
+    }
+
+    private static ApplicationDbContext InMemoryDb() =>
+        new(new DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+
+    private static SignalRecorder Recorder(ApplicationDbContext db, params InstrumentAnalyticsDto[] analytics) =>
+        new(db, new FakeAnalytics(analytics), null!, null!, NullLogger<SignalRecorder>.Instance);
+
+    private static InstrumentAnalyticsDto Reading(string symbol, DateTime date, string action, bool isCash = false) => new()
+    {
+        Symbol = symbol,
+        LastDate = date,
+        LastPrice = 100,
+        IsCash = isCash,
+        Signal = new TechnicalSignalDto { Action = action },
+        CombinedSignal = new ScaledSignalDto { Action = action },
+    };
+
+    [Fact]
+    public async Task Recorder_UpdatesTheLatestReadingButNeverWritesAnOlderDate()
+    {
+        using var db = InMemoryDb();
+        db.Instruments.AddRange(new Instrument { Id = 1, Symbol = "KSE100" }, new Instrument { Id = 2, Symbol = "MCF" });
+        await db.SaveChangesAsync();
+        var day = new DateTime(2026, 11, 6, 0, 0, 0, DateTimeKind.Utc);
+
+        // Saves a reading for the latest date, but not for cash funds
+        Assert.Equal(1, await Recorder(db, Reading("KSE100", day, "Buy"), Reading("MCF", day, "Hold", isCash: true)).RecordAsync());
+        // The same date again updates that reading instead of adding one
+        Assert.Equal(1, await Recorder(db, Reading("KSE100", day, "Sell")).RecordAsync());
+        // A date older than the saved one (e.g. the latest price was removed) is neither added nor changed
+        Assert.Equal(0, await Recorder(db, Reading("KSE100", day.AddDays(-1), "Hold")).RecordAsync());
+
+        var saved = Assert.Single(db.SignalSnapshots);
+        Assert.Equal(day, saved.Date);
+        Assert.Equal("Sell", saved.DailyAction);
+    }
+
+    [Fact]
+    public async Task Recorder_LeavesAnOlderReadingAloneWhenTheLatestPriceDateMovesBack()
+    {
+        using var db = InMemoryDb();
+        db.Instruments.Add(new Instrument { Id = 1, Symbol = "KSE100" });
+        await db.SaveChangesAsync();
+        var day = new DateTime(2026, 11, 6, 0, 0, 0, DateTimeKind.Utc);
+        await Recorder(db, Reading("KSE100", day.AddDays(-1), "Buy")).RecordAsync();
+        await Recorder(db, Reading("KSE100", day, "Buy")).RecordAsync();
+
+        // Back to the earlier date, which already has a reading: it must stay as it was
+        await Recorder(db, Reading("KSE100", day.AddDays(-1), "Sell")).RecordAsync();
+
+        Assert.Equal("Buy", db.SignalSnapshots.Single(s => s.Date == day.AddDays(-1)).DailyAction);
+    }
+
+    private sealed class FakeAnalytics(IEnumerable<InstrumentAnalyticsDto> analytics) : IMarketAnalyticsService
+    {
+        public Task<IEnumerable<InstrumentAnalyticsDto>> GetAllAnalyticsAsync(CancellationToken cancellationToken = default) => Task.FromResult(analytics);
+        public Task<InstrumentAnalyticsDto?> GetInstrumentAnalyticsAsync(string symbol, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public InstrumentAnalyticsDto ComputeAnalytics(IReadOnlyList<PriceDataPoint> dailyPrices, IReadOnlyList<PriceDataPoint>? benchmarkPrices = null) => throw new NotSupportedException();
     }
 }

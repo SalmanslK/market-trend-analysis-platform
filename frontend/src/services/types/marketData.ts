@@ -41,7 +41,10 @@ export interface InstrumentDto {
   name: string;
   type: InstrumentType;
   isActive: boolean;
+  /** When the worker last checked the source successfully (a check can find nothing new) */
   lastUpdateDate?: string;
+  /** The date of the newest stored price: what says whether the data is current */
+  latestPriceDate?: string;
 }
 
 export interface SummaryDto {
@@ -149,7 +152,7 @@ export interface InstrumentAnalyticsDto {
   /** Fund cash payouts, newest first; prices and returns are adjusted for them */
   payouts: Payout[];
   payoutYield1Y?: number;
-  /** The "stronger than cash" check; null for cash and income funds, currencies and short histories */
+  /** The "stronger than cash" check; null for cash and income funds, currencies, dollar-priced gold and short histories */
   strongerThanCash?: CashTest | null;
 }
 
@@ -176,7 +179,8 @@ export interface SignalRecord {
 }
 
 export interface SignalRecordGroup {
-  signal: string;
+  /** Group names from SignalRecordSummary.cs */
+  signal: 'Any day' | 'Technical signal (steady)' | 'Combined signal' | 'Stronger than cash';
   reading: string;
   count: number;
   /** Average move afterwards, percent */

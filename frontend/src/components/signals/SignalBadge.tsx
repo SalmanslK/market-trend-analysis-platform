@@ -8,6 +8,8 @@ interface SignalBadgeProps {
 
 export default function SignalBadge({ signal, large = false }: SignalBadgeProps) {
   const style = signalStyles[signal.action]
+  // On the same -100 to +100 scale as the news and combined signals
+  const scaled = signal.maxScore > 0 ? Math.round((signal.score / signal.maxScore) * 100) : 0
   // Hovering shows the reasons, so the table stays compact
   const tooltip = signal.reasons
     .map((r) => `${r.impact > 0 ? '▲' : r.impact < 0 ? '▼' : '●'} ${r.indicator}: ${r.detail}`)
@@ -30,7 +32,7 @@ export default function SignalBadge({ signal, large = false }: SignalBadgeProps)
     >
       {style.label}
       <span style={{ fontWeight: 'normal', marginLeft: '6px', opacity: 0.8 }}>
-        {signal.score > 0 ? '+' : ''}{signal.score}/{signal.maxScore}
+        {scaled > 0 ? '+' : ''}{scaled}
       </span>
     </span>
   )

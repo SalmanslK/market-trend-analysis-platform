@@ -9,6 +9,11 @@ namespace MarketAnalytics.Infrastructure.Data.Configurations;
 /// </summary>
 public class NewsArticleConfiguration : IEntityTypeConfiguration<NewsArticle>
 {
+    // Google News redirect links can be very long
+    public const int MaxUrlLength = 2000;
+    public const int MaxTitleLength = 500;
+    public const int MaxSourceLength = 100;
+
     public void Configure(EntityTypeBuilder<NewsArticle> builder)
     {
         builder.ToTable("NewsArticles");
@@ -17,18 +22,18 @@ public class NewsArticleConfiguration : IEntityTypeConfiguration<NewsArticle>
 
         builder.Property(n => n.Source)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(MaxSourceLength);
 
         builder.Property(n => n.Title)
             .IsRequired()
-            .HasMaxLength(500);
+            .HasMaxLength(MaxTitleLength);
 
         builder.Property(n => n.Summary)
             .HasMaxLength(1000);
 
         builder.Property(n => n.Url)
             .IsRequired()
-            .HasMaxLength(1000);
+            .HasMaxLength(MaxUrlLength);
 
         builder.Property(n => n.Topics)
             .IsRequired()

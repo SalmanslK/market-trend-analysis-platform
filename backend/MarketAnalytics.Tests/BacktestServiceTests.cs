@@ -163,6 +163,141 @@ public class BacktestServiceTests
         Assert.True(result.Rules[2].Performance.Trades < result.Rules[0].Performance.Trades);
     }
 
+    private static List<ScoredNews> SteadyNews(int days, int score, int perDay = 1) =>
+        Enumerable.Range(0, days).SelectMany(i => Enumerable.Repeat(new ScoredNews(Start.AddDays(i), score, 0.9, NewsSentimentAnalyzer.LabelFor(score)), perDay)).ToList();
+
+    [Fact]
+    public void SignalRules_ScoreNewsAndCombined_AsSpecified()
+    {
+        // News needs at least 3 articles
+        Assert.Equal(0, SignalRules.NewsScore(80, 2));
+        Assert.Equal(80, SignalRules.NewsScore(80, 3));
+
+        // When both clearly point the same way, combined is their average
+        Assert.Equal((40.0 + 80) / 2, SignalRules.CombinedScore(2, 5, 80, 3));
+        Assert.Equal((-40.0 - 80) / 2, SignalRules.CombinedScore(-2, 5, -80, 3));
+        // Not enough news: Hold
+        Assert.Equal(0, SignalRules.CombinedScore(2, 5, 80, 2));
+        // They disagree: Hold, however strong either one is
+        Assert.Equal(0, SignalRules.CombinedScore(-3, 5, 90, 10));
+        Assert.Equal(0, SignalRules.CombinedScore(5, 5, -21, 10));
+        // One has no clear view: Hold
+        Assert.Equal(0, SignalRules.CombinedScore(0, 5, 90, 10));
+        Assert.Equal(0, SignalRules.CombinedScore(5, 5, 19, 10));
+
+        Assert.Equal("StrongBuy", SignalRules.ActionForScaledScore(60));
+        Assert.Equal("Buy", SignalRules.ActionForScaledScore(20));
+        Assert.Equal("Hold", SignalRules.ActionForScaledScore(19.9));
+        Assert.Equal("Sell", SignalRules.ActionForScaledScore(-20));
+        Assert.Equal("StrongSell", SignalRules.ActionForScaledScore(-60));
+    }
+
+    [Fact]
+    public void TechnicalScaledScore_GivesTheSameActionAsItsVotes()
+    {
+        foreach (var score in Enumerable.Range(-5, 11))
+            Assert.Equal(SignalRules.ActionFor(score), SignalRules.ActionForScaledScore(SignalRules.TechnicalScaledScore(score, 5)));
+    }
+
+    [Fact]
+    public void CombinedSignal_KeepsItsPosition_WhileTechnicalAndNewsDisagree()
+    {
+        // Agree up, then disagree, then agree down: bought after day 0, held through the disagreement, sold after day 4
+        var scores = new[] { (2, 80), (-2, 80), (2, -80), (-2, 80), (-2, -80), (-2, -80) }
+            .Select(d => SignalRules.PositionForScaledScore(SignalRules.CombinedScore(d.Item1, 5, d.Item2, 5))).ToList();
+        var closes = new double[] { 100, 100, 110, 120, 130, 140 };
+
+        Assert.Equal(new[] { 1, 0, 0, 0, -1, -1 }, scores);
+        var run = BacktestService.Simulate(Dates(6), closes, scores, cost: 0, cashInterest: 0);
+        Assert.Equal(1.4, run.Equity[^1], 10);
+        Assert.Equal(2, run.Trades);
+    }
+
+    [Fact]
+    public void DailyMood_OnlyUsesTheLast7Days_AndNothingLater()
+    {
+        var news = new List<ScoredNews>
+        {
+            new(Start, -100, 1, "Negative"),
+            new(Start.AddDays(6), 100, 1, "Positive"),
+            new(Start.AddDays(7), 100, 1, "Positive"),
+            new(Start.AddDays(20), -100, 1, "Negative"),
+        };
+        var dates = new[] { Start, Start.AddDays(6), Start.AddDays(7), Start.AddDays(14), Start.AddDays(19) };
+
+        var moods = NewsService.DailyMood(dates, news, 7);
+
+        Assert.Equal(new[] { 1, 2, 2, 0, 0 }, moods.Select(m => m.Articles));
+        Assert.Equal(-100, moods[0].Score);
+        Assert.Equal(0, moods[1].Score);
+        Assert.Equal(100, moods[2].Score); // the day-0 article has left the window
+    }
+
+    [Fact]
+    public void NewsTest_Reacting_OnlyAfterTheNewsIsPublished()
+    {
+        // Prices jump on day 500; news only turns positive that same day, so no signal may profit from the jump
+        var dates = Dates(1000).ToList();
+        var closes = Enumerable.Range(0, 1000).Select(i => i < 500 ? 100.0 : 200.0).ToList();
+        var technical = Enumerable.Repeat(0, 1000).ToList();
+        var news = SteadyNews(500, -80, 3).Concat(Enumerable.Range(500, 500).SelectMany(i => Enumerable.Repeat(new ScoredNews(Start.AddDays(i), 80, 0.9, "Positive"), 3))).ToList();
+
+        var test = BacktestService.RunNewsTest(dates, closes, technical, news, cost: 0);
+
+        var rule = test.Rules.Single(r => r.Key == "news");
+        Assert.True(test.HasEnoughNews);
+        Assert.True(Math.Abs(rule.Performance.TotalReturn) < 0.001m, $"{rule.Performance.TotalReturn}");
+        Assert.Equal(100m, test.Holding.TotalReturn);
+    }
+
+    [Fact]
+    public void NewsTest_NeedsEnoughNewsHistory()
+    {
+        var dates = Dates(1000).ToList();
+        var closes = Enumerable.Range(0, 1000).Select(i => 100.0 + i).ToList();
+        var technical = Enumerable.Repeat(1, 1000).ToList();
+        // News only in the last 100 days
+        var news = Enumerable.Range(900, 100).SelectMany(i => Enumerable.Repeat(new ScoredNews(Start.AddDays(i), 80, 0.9, "Positive"), 3)).ToList();
+
+        var test = BacktestService.RunNewsTest(dates, closes, technical, news, cost: 0);
+
+        Assert.False(test.HasEnoughNews);
+        Assert.Empty(test.Rules);
+        Assert.Equal(300, test.Articles);
+    }
+
+    [Fact]
+    public void NewsTest_ComparesAllRulesOnTheSameDates()
+    {
+        var dates = Dates(800).ToList();
+        var closes = Enumerable.Range(0, 800).Select(i => 100.0 + 30 * Math.Sin(i / 25.0)).ToList();
+        var technical = closes.Select((_, i) => i % 40 < 20 ? 2 : -2).ToList();
+        var news = Enumerable.Range(300, 500).SelectMany(i => Enumerable.Repeat(new ScoredNews(Start.AddDays(i), i % 60 < 30 ? 70 : -70, 0.9, i % 60 < 30 ? "Positive" : "Negative"), 3)).ToList();
+
+        var test = BacktestService.RunNewsTest(dates, closes, technical, news, cost: 0.005);
+
+        Assert.True(test.HasEnoughNews);
+        Assert.Equal(new[] { "technical", "news", "combined" }, test.Rules.Select(r => r.Key));
+        Assert.Equal(Start.AddDays(300), test.StartDate);
+        Assert.Equal(500, test.TradingDays);
+        Assert.InRange(test.CoveragePercent, 99m, 100m);
+        Assert.Equal(100m, test.EquityCurve[0].Holding);
+    }
+
+    [Fact]
+    public void LiveSignals_UseTheSameRules_AsTheBacktest()
+    {
+        var analytics = _analytics.ComputeAnalytics(Wavy(400));
+        var mood = new MarketAnalytics.Application.DTOs.NewsSentimentSummaryDto { Score = 70, Articles = 5, Confidence = 60 };
+
+        MarketAnalyticsService.ApplyNewsSignals(analytics, mood);
+
+        Assert.Equal("StrongBuy", analytics.NewsSignal.Action);
+        var expected = SignalRules.CombinedScore(analytics.Signal.Score, analytics.Signal.MaxScore, 70, 5);
+        Assert.Equal(SignalRules.ActionForScaledScore(expected), analytics.CombinedSignal.Action);
+        Assert.Equal((int)Math.Round(expected), analytics.CombinedSignal.Score);
+    }
+
     [Fact]
     public void Run_NeedsEnoughHistory()
     {

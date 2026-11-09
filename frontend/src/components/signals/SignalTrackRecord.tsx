@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { backtestApi } from '../../services/api/backtestApi'
 import { BacktestResult } from '../../services/types/marketData'
-import { describeRuleRecord } from '../../services/plainLanguage'
+import { describeNewsRuleRecord, describeRuleRecord } from '../../services/plainLanguage'
 import InfoTip from '../help/InfoTip'
 
 interface SignalTrackRecordProps {
@@ -26,7 +26,13 @@ export default function SignalTrackRecord({ symbol }: SignalTrackRecordProps) {
 
   return (
     <div style={{ margin: '12px 0', padding: '10px 12px', backgroundColor: '#f5f5f5', borderRadius: '6px', fontSize: '13px', lineHeight: 1.45 }}>
-      <strong>In the past, following the signal:<InfoTip term="backtest" /></strong> {describeRuleRecord(result, 'signal')}
+      <strong>In the past, following the technical signal:<InfoTip term="backtest" /></strong> {describeRuleRecord(result, 'signal')}
+      {result.newsTest.hasEnoughNews && (
+        <>
+          <div style={{ marginTop: '6px' }}><strong>The news signal:</strong> {describeNewsRuleRecord(result, 'news')}</div>
+          <div style={{ marginTop: '6px' }}><strong>The combined signal:</strong> {describeNewsRuleRecord(result, 'combined')}</div>
+        </>
+      )}
       <div style={{ marginTop: '6px' }}>
         <strong>Following the long-term trend:</strong> {describeRuleRecord(result, 'goldenCross')}{' '}
         <Link to={`/track-record?symbol=${symbol}`} style={{ color: 'inherit', textDecoration: 'underline' }}>See the details</Link>

@@ -92,6 +92,14 @@ export interface Metric {
   description: string;
 }
 
+export interface ScaledSignal {
+  action: SignalAction;
+  /** -100 to +100 */
+  score: number;
+  articles: number;
+  newsConfidence: number;
+}
+
 export interface InstrumentAnalyticsDto {
   symbol: string;
   name: string;
@@ -119,6 +127,8 @@ export interface InstrumentAnalyticsDto {
   percentB?: number;
   longTermTrend: LongTermTrend;
   signal: TechnicalSignal;
+  newsSignal: ScaledSignal;
+  combinedSignal: ScaledSignal;
   metrics: Metric[];
 }
 
@@ -226,6 +236,28 @@ export interface RuleResult {
   secondHalfAnnual: number;
 }
 
+export interface NewsRuleResult {
+  key: 'technical' | 'news' | 'combined';
+  performance: Performance;
+  verdict: BacktestVerdict;
+  buyMinusSell30D?: number;
+  buyDays: number;
+  sellDays: number;
+}
+
+export interface NewsBacktest {
+  hasEnoughNews: boolean;
+  startDate?: string;
+  endDate?: string;
+  years: number;
+  tradingDays: number;
+  articles: number;
+  coveragePercent: number;
+  holding: Performance;
+  rules: NewsRuleResult[];
+  equityCurve: { date: string; holding: number; technical: number; news: number; combined: number }[];
+}
+
 export interface BacktestResult {
   symbol: string;
   name: string;
@@ -248,5 +280,6 @@ export interface BacktestResult {
   holdingFirstHalfAnnual: number;
   holdingSecondHalfAnnual: number;
   rules: RuleResult[];
+  newsTest: NewsBacktest;
   equityCurve: { date: string; buyAndHold: number; strategy: number; goldenCross: number; monthlyTrend: number }[];
 }

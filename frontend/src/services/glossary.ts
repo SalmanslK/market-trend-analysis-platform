@@ -26,15 +26,25 @@ export const glossary = {
     what: 'Up means prices over the last 50 days have averaged higher than over the last 200 days. Down means they have averaged lower. This is called the golden cross rule.',
     howToRead: 'It tells you the direction so far, not what happens next, and it reacts slowly: it can stay Up for weeks after prices start falling. It looks only at past prices, so it knows nothing about company results, news, dividends or your own goals.',
   },
+  newsSignal: {
+    title: 'News signal',
+    what: 'Buy or Sell from the tone of the last 7 days of news about this instrument, from -100 to +100. +20 or more is Buy, +60 or more Strong Buy, -20 or less Sell, -60 or less Strong Sell. With fewer than 3 stories it stays on Hold.',
+    howToRead: 'Sentiment is read automatically from headline wording, so complicated headlines can be misread. Many headlines report moves that have already happened, so news can lag the price.',
+  },
+  combinedSignal: {
+    title: 'Combined signal',
+    what: 'Buy or Sell only when the technical and news signals clearly point the same way (each at least +20, or each at most -20). Its score is their average. Otherwise it says Hold.',
+    howToRead: 'It trades less than either signal alone and had smaller falls in testing, but it earned less than simply holding. On Hold, the idea is to stay as you are: it isn\'t a reason to buy or to sell. The Track Record page has the results.',
+  },
   signal: {
-    title: 'Buy/Sell signal',
+    title: 'Technical signal',
     what: 'A summary of five common chart indicators. Each one votes +1 (points up), -1 (points down) or 0 (no view). The total gives Strong Buy, Buy, Hold, Sell or Strong Sell.',
     howToRead: 'It is a quick read of what the indicators show right now. It looks only at past prices, so it knows nothing about company results, news, dividends or your own goals. The Track Record page shows how it did in the past.',
   },
   score: {
     title: 'Signal score',
-    what: 'The total of the indicator votes, e.g. "-1/5" means five indicators were checked and one more pointed down than up.',
-    howToRead: '+3 or more is Strong Buy, +1 to +2 Buy, 0 Hold, -1 to -2 Sell, -3 or less Strong Sell. The closer to zero, the more mixed the picture.',
+    what: 'All three signals use the same scale, from -100 to +100. For the technical signal it is the indicator votes as a share of those checked: 2 more votes up than down, out of 5, is +40.',
+    howToRead: '+60 or more is Strong Buy, +20 or more Buy, -20 or less Sell, -60 or less Strong Sell, and anything between is Hold. The closer to zero, the more mixed the picture.',
   },
   trend: {
     title: 'Price vs its averages',

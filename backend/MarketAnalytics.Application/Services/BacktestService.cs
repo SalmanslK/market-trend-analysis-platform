@@ -27,6 +27,8 @@ public class BacktestService : IBacktestService
     // A year of trading days beyond the 200-period warm-up, or there is too little to judge
     private const int MinTradingDays = 250;
     private const int MaxCurvePoints = 300;
+    // Days in the backtest always have all five technical rules available
+    private const int MaxTechnicalScore = 5;
     // A drawdown must shrink by at least this share to count as meaningfully lower risk
     private const double MeaningfulDrawdownReduction = 1.0 / 3;
     private static readonly int[] Horizons = { 7, 30, 90 };
@@ -36,13 +38,16 @@ public class BacktestService : IBacktestService
     private readonly IPricePointRepository _pricePointRepository;
     private readonly IIndicatorCalculationService _indicators;
     private readonly ILogger<BacktestService> _logger;
+    private readonly INewsRepository? _newsRepository;
 
     public BacktestService(
         IInstrumentRepository instrumentRepository,
         IPricePointRepository pricePointRepository,
         IIndicatorCalculationService indicators,
-        ILogger<BacktestService> logger)
+        ILogger<BacktestService> logger,
+        INewsRepository? newsRepository = null)
     {
+        _newsRepository = newsRepository;
         _instrumentRepository = instrumentRepository;
         _pricePointRepository = pricePointRepository;
         _indicators = indicators;
@@ -52,11 +57,12 @@ public class BacktestService : IBacktestService
     public async Task<IEnumerable<BacktestResultDto>> GetAllAsync(decimal costPercent, CancellationToken cancellationToken = default)
     {
         var results = new List<BacktestResultDto>();
+        var news = await LoadNewsAsync(cancellationToken);
         foreach (var instrument in await _instrumentRepository.GetActiveInstrumentsAsync(cancellationToken))
         {
             try
             {
-                results.Add(await BuildAsync(instrument, costPercent, cancellationToken));
+                results.Add(await BuildAsync(instrument, costPercent, news, cancellationToken));
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -70,15 +76,28 @@ public class BacktestService : IBacktestService
     public async Task<BacktestResultDto?> GetAsync(string symbol, decimal costPercent, CancellationToken cancellationToken = default)
     {
         var instrument = await _instrumentRepository.GetBySymbolAsync(symbol, cancellationToken);
-        return instrument == null ? null : await BuildAsync(instrument, costPercent, cancellationToken);
+        return instrument == null ? null : await BuildAsync(instrument, costPercent, await LoadNewsAsync(cancellationToken), cancellationToken);
     }
 
-    private async Task<BacktestResultDto> BuildAsync(Instrument instrument, decimal costPercent, CancellationToken cancellationToken)
+    private async Task<List<(NewsArticle Article, SentimentResult Sentiment)>> LoadNewsAsync(CancellationToken cancellationToken)
+    {
+        if (_newsRepository == null)
+            return new();
+
+        var articles = await _newsRepository.GetPublishedBetweenAsync(DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc), DateTime.UtcNow.AddDays(1), cancellationToken);
+        return articles.Select(a => (a, NewsSentimentAnalyzer.Analyze(a.Title, a.Summary))).ToList();
+    }
+
+    private async Task<BacktestResultDto> BuildAsync(
+        Instrument instrument,
+        decimal costPercent,
+        List<(NewsArticle Article, SentimentResult Sentiment)> news,
+        CancellationToken cancellationToken)
     {
         var points = await _pricePointRepository.GetByInstrumentIdAsync(instrument.Id, cancellationToken: cancellationToken);
         var prices = PriceDataCleaner.RemoveSpikes(points.Select(p => new PriceDataPoint(p.DateTime, p.Price)));
 
-        var result = Run(prices, costPercent);
+        var result = Run(prices, costPercent, NewsService.ScoreForSymbol(news, instrument.Symbol));
         result.Symbol = instrument.Symbol;
         result.Name = instrument.Name;
         result.Type = instrument.Type;
@@ -122,7 +141,7 @@ public class BacktestService : IBacktestService
     /// <summary>
     /// Runs the full backtest on daily prices (exposed for testing).
     /// </summary>
-    public BacktestResultDto Run(IReadOnlyList<PriceDataPoint> prices, decimal costPercent = DefaultCostPercent)
+    public BacktestResultDto Run(IReadOnlyList<PriceDataPoint> prices, decimal costPercent = DefaultCostPercent, IReadOnlyList<ScoredNews>? news = null)
     {
         var result = new BacktestResultDto { CostPercent = costPercent, CashInterestPercent = AssumedCashInterestPercent };
 
@@ -194,7 +213,81 @@ public class BacktestService : IBacktestService
 
         result.Rules = new List<RuleResultDto> { Rule("signal", strategy), Rule("goldenCross", goldenCross), Rule("monthlyTrend", monthlyTrend) };
         result.EquityCurve = ThinCurve(dates, buyAndHold, strategy.Equity, goldenCross.Equity, monthlyTrend.Equity);
+        result.NewsTest = RunNewsTest(dates, closes, scores, news ?? Array.Empty<ScoredNews>(), cost);
         return result;
+    }
+
+    /// <summary>
+    /// Compares the technical, news and combined signals with holding on the same dates, from the first day with
+    /// enough news. Each day's news reading only uses articles up to that day, and is acted on at the next close.
+    /// </summary>
+    public static NewsBacktestDto RunNewsTest(List<DateTime> dates, List<double> closes, List<int> technicalScores, IReadOnlyList<ScoredNews> news, double cost)
+    {
+        var test = new NewsBacktestDto { Articles = news.Count };
+        var moods = NewsService.DailyMood(dates, news, SignalRules.NewsWindowDays);
+
+        var start = moods.FindIndex(m => m.Articles >= SignalRules.MinNewsArticles);
+        if (start < 0 || dates.Count - start < MinTradingDays)
+            return test;
+
+        var testDates = dates.Skip(start).ToList();
+        var testCloses = closes.Skip(start).ToList();
+        var testTechnical = technicalScores.Skip(start).ToList();
+        var testMoods = moods.Skip(start).ToList();
+        var years = (testDates[^1] - testDates[0]).TotalDays / 365.25;
+
+        var technicalScaled = testTechnical.Select(t => t * 100.0 / MaxTechnicalScore).ToList();
+        var newsScaled = testMoods.Select(m => SignalRules.NewsScore(m.Score, m.Articles)).ToList();
+        var combinedScaled = testTechnical.Select((t, i) => SignalRules.CombinedScore(t, MaxTechnicalScore, testMoods[i].Score, testMoods[i].Articles)).ToList();
+
+        var holding = new double[testCloses.Count];
+        holding[0] = 1;
+        holding[1] = 1 - cost;
+        for (int i = 2; i < testCloses.Count; i++)
+            holding[i] = holding[i - 1] * testCloses[i] / testCloses[i - 1];
+
+        test.HasEnoughNews = true;
+        test.StartDate = testDates[0];
+        test.EndDate = testDates[^1];
+        test.Years = (decimal)years;
+        test.TradingDays = testDates.Count;
+        test.CoveragePercent = (decimal)testMoods.Count(m => m.Articles >= SignalRules.MinNewsArticles) / testMoods.Count * 100;
+        test.Holding = Performance(holding, years, trades: 1, timeInvested: 100);
+
+        var equity = new Dictionary<string, double[]>();
+        foreach (var (key, scaled) in new[] { ("technical", technicalScaled), ("news", newsScaled), ("combined", combinedScaled) })
+        {
+            var positions = scaled.Select(SignalRules.PositionForScaledScore).ToList();
+            var run = Simulate(testDates, testCloses, positions, cost, cashInterest: 0);
+            var performance = Performance(run.Equity, years, run.Trades, run.TimeInvested);
+            equity[key] = run.Equity;
+            test.Rules.Add(new NewsRuleResultDto
+            {
+                Key = key,
+                Performance = performance,
+                Verdict = VerdictFor(performance, test.Holding),
+                BuyMinusSell30D = BuyMinusSell(testDates, testCloses, positions, 0, testDates.Count),
+                BuyDays = positions.Count(p => p > 0),
+                SellDays = positions.Count(p => p < 0),
+            });
+        }
+
+        var step = Math.Max(1, testDates.Count / MaxCurvePoints);
+        for (int i = 0; i < testDates.Count; i++)
+        {
+            if (i % step == 0 || i == testDates.Count - 1)
+            {
+                test.EquityCurve.Add(new NewsEquityPointDto
+                {
+                    Date = testDates[i],
+                    Holding = (decimal)(holding[i] * 100),
+                    Technical = (decimal)(equity["technical"][i] * 100),
+                    News = (decimal)(equity["news"][i] * 100),
+                    Combined = (decimal)(equity["combined"][i] * 100),
+                });
+            }
+        }
+        return test;
     }
 
     /// <summary>

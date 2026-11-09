@@ -30,13 +30,16 @@ public class MarketAnalyticsService : IMarketAnalyticsService
     private readonly IPricePointRepository _pricePointRepository;
     private readonly IIndicatorCalculationService _indicators;
     private readonly ILogger<MarketAnalyticsService> _logger;
+    private readonly INewsService? _newsService;
 
     public MarketAnalyticsService(
         IInstrumentRepository instrumentRepository,
         IPricePointRepository pricePointRepository,
         IIndicatorCalculationService indicators,
-        ILogger<MarketAnalyticsService> logger)
+        ILogger<MarketAnalyticsService> logger,
+        INewsService? newsService = null)
     {
+        _newsService = newsService;
         _instrumentRepository = instrumentRepository;
         _pricePointRepository = pricePointRepository;
         _indicators = indicators;
@@ -46,18 +49,19 @@ public class MarketAnalyticsService : IMarketAnalyticsService
     public async Task<InstrumentAnalyticsDto?> GetInstrumentAnalyticsAsync(string symbol, CancellationToken cancellationToken = default)
     {
         var instrument = await _instrumentRepository.GetBySymbolAsync(symbol, cancellationToken);
-        return instrument == null ? null : await BuildAsync(instrument, cancellationToken);
+        return instrument == null ? null : await BuildAsync(instrument, await LoadMoodsAsync(cancellationToken), cancellationToken);
     }
 
     public async Task<IEnumerable<InstrumentAnalyticsDto>> GetAllAnalyticsAsync(CancellationToken cancellationToken = default)
     {
         var result = new List<InstrumentAnalyticsDto>();
+        var moods = await LoadMoodsAsync(cancellationToken);
 
         foreach (var instrument in await _instrumentRepository.GetActiveInstrumentsAsync(cancellationToken))
         {
             try
             {
-                var analytics = await BuildAsync(instrument, cancellationToken);
+                var analytics = await BuildAsync(instrument, moods, cancellationToken);
                 if (analytics != null)
                     result.Add(analytics);
             }
@@ -71,7 +75,27 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         return result;
     }
 
-    private async Task<InstrumentAnalyticsDto?> BuildAsync(Instrument instrument, CancellationToken cancellationToken)
+    private async Task<List<NewsSentimentSummaryDto>> LoadMoodsAsync(CancellationToken cancellationToken) =>
+        _newsService == null
+            ? new List<NewsSentimentSummaryDto>()
+            : (await _newsService.GetSentimentSummaryAsync(SignalRules.NewsWindowDays, cancellationToken)).ToList();
+
+    /// <summary>
+    /// Adds the news and combined signals, using the same rules as the backtest.
+    /// </summary>
+    public static void ApplyNewsSignals(InstrumentAnalyticsDto analytics, NewsSentimentSummaryDto? mood)
+    {
+        var moodScore = mood?.Score ?? 0;
+        var articles = mood?.Articles ?? 0;
+        var confidence = mood?.Confidence ?? 0;
+        var news = SignalRules.NewsScore(moodScore, articles);
+        var combined = SignalRules.CombinedScore(analytics.Signal.Score, analytics.Signal.MaxScore, moodScore, articles);
+
+        analytics.NewsSignal = new ScaledSignalDto { Action = SignalRules.ActionForScaledScore(news), Score = (int)Math.Round(news), Articles = articles, NewsConfidence = confidence };
+        analytics.CombinedSignal = new ScaledSignalDto { Action = SignalRules.ActionForScaledScore(combined), Score = (int)Math.Round(combined), Articles = articles, NewsConfidence = confidence };
+    }
+
+    private async Task<InstrumentAnalyticsDto?> BuildAsync(Instrument instrument, List<NewsSentimentSummaryDto> moods, CancellationToken cancellationToken)
     {
         var pricePoints = await _pricePointRepository.GetByInstrumentIdAsync(instrument.Id, cancellationToken: cancellationToken);
         var dailyPrices = PriceDataCleaner.RemoveSpikes(pricePoints.Select(p => new PriceDataPoint(p.DateTime, p.Price)));
@@ -83,6 +107,7 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         analytics.Symbol = instrument.Symbol;
         analytics.Name = instrument.Name;
         analytics.Type = instrument.Type;
+        ApplyNewsSignals(analytics, moods.FirstOrDefault(m => m.Symbol == instrument.Symbol));
         return analytics;
     }
 

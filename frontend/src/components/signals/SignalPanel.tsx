@@ -3,6 +3,7 @@ import { COLORS, formatDate, TREND_DISCLAIMER } from '../../services/format'
 import { describeTrend, directionNote, signalMeaning } from '../../services/plainLanguage'
 import InfoTip from '../help/InfoTip'
 import TrendBadge from '../trend/TrendBadge'
+import ScaledSignalBadge from './ScaledSignalBadge'
 import SignalBadge from './SignalBadge'
 import SignalTrackRecord from './SignalTrackRecord'
 
@@ -23,15 +24,31 @@ export default function SignalPanel({ analytics }: SignalPanelProps) {
 
   return (
     <section style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px' }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-        <h2 style={{ fontSize: '1.2rem' }}>Buy/Sell signal<InfoTip term="signal" /></h2>
-        <SignalBadge signal={signal} large />
+      <h2 style={{ fontSize: '1.2rem', marginBottom: '10px' }}>Buy/Sell signals</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px', marginBottom: '14px' }}>
+        <div style={{ padding: '10px 12px', border: `2px solid ${COLORS.border}`, borderRadius: '6px' }}>
+          <div style={{ fontSize: '12px', color: COLORS.muted, marginBottom: '6px' }}>Combined<InfoTip term="combinedSignal" /></div>
+          <ScaledSignalBadge signal={analytics.combinedSignal} large />
+        </div>
+        <div style={{ padding: '10px 12px', border: `1px solid ${COLORS.border}`, borderRadius: '6px' }}>
+          <div style={{ fontSize: '12px', color: COLORS.muted, marginBottom: '6px' }}>Technical<InfoTip term="signal" /></div>
+          <SignalBadge signal={signal} large />
+        </div>
+        <div style={{ padding: '10px 12px', border: `1px solid ${COLORS.border}`, borderRadius: '6px' }}>
+          <div style={{ fontSize: '12px', color: COLORS.muted, marginBottom: '6px' }}>News, last 7 days<InfoTip term="newsSignal" /></div>
+          <ScaledSignalBadge signal={analytics.newsSignal} large />
+          <div style={{ fontSize: '12px', color: COLORS.muted, marginTop: '6px' }}>
+            {analytics.newsSignal.articles} {analytics.newsSignal.articles === 1 ? 'story' : 'stories'}, {analytics.newsSignal.newsConfidence}% sure
+          </div>
+        </div>
       </div>
+
+      <h3 style={{ fontSize: '1rem', marginBottom: '6px' }}>Why the technical signal says this</h3>
       <p style={{ marginBottom: '6px', lineHeight: 1.45 }}>
         <strong>{signalMeaning[signal.action].headline}.</strong> {signalMeaning[signal.action].detail}
       </p>
       <p style={{ color: COLORS.muted, fontSize: '13px', marginBottom: '12px' }}>
-        Each indicator below votes ▲ up (+1), ▼ down (-1) or ● no view (0).<InfoTip term="score" /> Based on daily prices up to {formatDate(analytics.lastDate)}.
+        Each indicator below votes ▲ up, ▼ down or ● no view, giving {signal.score > 0 ? '+' : ''}{signal.score} of {signal.maxScore} votes.<InfoTip term="score" /> Based on daily prices up to {formatDate(analytics.lastDate)}.
       </p>
 
       <ul style={{ listStyle: 'none' }}>

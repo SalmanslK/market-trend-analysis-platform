@@ -27,11 +27,19 @@ public static class NewsTopicClassifier
 
     private static readonly string[] PakistanStocks = { "KSE100", "KMI30" };
     private static readonly string[] MeezanFunds = { "KMIF", "MIF", "MGF", "MBF" };
+    // Funds that hold shares; MGF is the Meezan Gold Fund, so it follows gold news instead
+    private static readonly string[] MeezanStockFunds = { "KMIF", "MIF", "MBF" };
 
     // Feeds also carry international stories ("European stocks fall"), so Pakistan-specific topics
     // only match when the article mentions Pakistan
     private static readonly Regex PakistanContext = new(
         @"\b(Pakistan|Pakistani|PSX|KSE|KMI|SBP|State Bank|Karachi|Islamabad|Lahore|rupee|PKR|Rs\.?\s?\d)", Options);
+
+    // "Rupee" and "Rs" are also Indian and Sri Lankan, so a story about those markets needs a clear Pakistan mention
+    private static readonly Regex ForeignMarket = new(
+        @"\b(Sri Lankan?|Colombo|India|Indian|Nifty|Sensex|Bangladesh|Dhaka|Nepal)\b", Options);
+    private static readonly Regex ClearlyPakistan = new(
+        @"\b(Pakistan|Pakistani|PSX|KSE|KMI|SBP|Karachi|Islamabad|Lahore)\b", Options);
 
     public static IReadOnlyList<NewsTopic> Topics { get; } = new[]
     {
@@ -39,8 +47,8 @@ public static class NewsTopicClassifier
             "pakistan-stocks",
             "Pakistan stocks",
             "Share prices on the Pakistan Stock Exchange drive the KSE-100 and KMI-30 indices and the Meezan stock funds.",
-            PakistanStocks.Concat(MeezanFunds).ToArray(),
-            PakistanStocks.Concat(MeezanFunds).ToArray(),
+            PakistanStocks.Concat(MeezanStockFunds).ToArray(),
+            PakistanStocks.Concat(MeezanStockFunds).ToArray(),
             new Regex(@"\b(PSX|KSE[- ]?100|KSE|KMI[- ]?30|stock exchange|stock market|stocks|equities|equity market|bourse|share prices|benchmark index|bulls|bears)\b", Options),
             RequiresPakistanContext: true),
 
@@ -57,7 +65,7 @@ public static class NewsTopicClassifier
             "interest-rates",
             "Interest rates & inflation",
             "Higher interest rates make bank deposits more attractive than shares, which often weighs on stocks; lower rates tend to help them.",
-            PakistanStocks.Concat(MeezanFunds).Append("USDPKR").ToArray(),
+            PakistanStocks.Concat(MeezanStockFunds).Append("USDPKR").ToArray(),
             Array.Empty<string>(),
             new Regex(@"\b(policy rate|interest rates?|monetary policy|inflation|CPI|T-?bills?|treasury bills?|rate cut|rate hike)\b", Options),
             RequiresPakistanContext: true),
@@ -66,7 +74,7 @@ public static class NewsTopicClassifier
             "rupee-dollar",
             "Rupee & dollar",
             "The rupee's value against the dollar sets USD/PKR and changes the rupee price of gold in Pakistan.",
-            new[] { "USDPKR", "GOLDPK" },
+            new[] { "USDPKR", "GOLDPK", "MGF" },
             new[] { "USDPKR" },
             new Regex(@"\b(rupee|PKR|exchange rate|dollar|greenback|forex|foreign exchange|remittances?|foreign reserves|FX reserves|current account)\b", Options),
             RequiresPakistanContext: true),
@@ -84,8 +92,8 @@ public static class NewsTopicClassifier
             "gold",
             "Gold",
             "Gold is priced globally in US dollars; the Pakistani gold price follows it, adjusted for the rupee.",
-            new[] { "GOLDINT", "GOLDPK" },
-            new[] { "GOLDINT", "GOLDPK" },
+            new[] { "GOLDINT", "GOLDPK", "MGF" },
+            new[] { "GOLDINT", "GOLDPK", "MGF" },
             new Regex(@"\b(gold|bullion|XAU|precious metals?)\b", Options),
             RequiresPakistanContext: false),
 
@@ -107,7 +115,8 @@ public static class NewsTopicClassifier
     public static List<string> Classify(string title, string summary)
     {
         var text = $"{title} {summary}";
-        var hasPakistanContext = PakistanContext.IsMatch(text);
+        var hasPakistanContext = PakistanContext.IsMatch(text)
+            && (!ForeignMarket.IsMatch(title) || ClearlyPakistan.IsMatch(title));
 
         return Topics
             .Where(t => (!t.RequiresPakistanContext || hasPakistanContext) && t.Keywords.IsMatch(text))

@@ -207,6 +207,12 @@ The per-instrument news mood is the confidence-weighted average over 7 days. Wei
 a year; 7 days equal: +7.8%; 14 days equal: +12.7%), and no weighting made the news mood predict the next 5 days
 (correlation 0.00 to 0.05). News mostly reports moves already made, so the 7-day window is kept.
 
+Retested in Nov 2026 with the improved sentiment (`scripts/research/news-forward-research.cs`; forward moves from the next
+close, overlap-adjusted significance): the 7-day mood matches the past week's move clearly (KSE-100 r = +0.58, gold +0.35)
+but not the next day (-0.05 to +0.04) or next 5 days (-0.05 to +0.05) on any instrument. For stocks and the gold fund there
+is a weak, not significant link with the next 20 days (+0.12 to +0.15; +0.08 to +0.12 once the past week's price move is
+taken out): after news Buy days KSE-100 rose +4.2% over 20 days against +2.0% after Sell days. Too weak to trade on.
+
 **Biggest moves**: for each of an instrument's largest daily moves in the last 30 days, the API returns the news
 published from the day before to the next trading day (so weekend reports of a Friday move are included).
 

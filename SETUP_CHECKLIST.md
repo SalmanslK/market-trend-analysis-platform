@@ -213,6 +213,14 @@ but not the next day (-0.05 to +0.04) or next 5 days (-0.05 to +0.05) on any ins
 is a weak, not significant link with the next 20 days (+0.12 to +0.15; +0.08 to +0.12 once the past week's price move is
 taken out): after news Buy days KSE-100 rose +4.2% over 20 days against +2.0% after Sell days. Too weak to trade on.
 
+Six other ways of reading the news were then tested (`scripts/research/news-strategies-research.cs`), with the ideas and
+pass rules written down and committed before any result was seen, and the last 30% of the news period held back:
+event news only (price reports left out), surprise against the 60-day average, news disagreeing with the price, contrarian,
+story volume, and a 30-day window. On the first 70%, none passed: the strongest was |t| = 1.0 against a pass mark of 2
+(e.g. 30-day mood vs stocks' next 20 days r = +0.17, t = +0.6). So nothing went on to the held-back period, which stays
+unused for a future test. Conclusion: with this news (about 5,900 stories since 2021), no reading of it predicts prices;
+news stays a description of what happened, and Buy/Sell decisions rest on the technical signals.
+
 **Biggest moves**: for each of an instrument's largest daily moves in the last 30 days, the API returns the news
 published from the day before to the next trading day (so weekend reports of a Friday move are included).
 

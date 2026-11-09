@@ -109,6 +109,10 @@ namespace MarketAnalytics.Infrastructure.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("LowRiskKind")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -240,6 +244,58 @@ namespace MarketAnalytics.Infrastructure.Migrations
                             Symbol = "GOLDPK",
                             Type = 3,
                             UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 10,
+                            CreatedAt = new DateTime(2026, 11, 8, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/mutual-funds/nav-history/a0674272-8a64-4fb8-b708-4e60a1e7f135?days=365",
+                            IsActive = true,
+                            LowRiskKind = "Cash fund",
+                            Name = "Meezan Cash Fund",
+                            Symbol = "MCF",
+                            Type = 1,
+                            UpdatedAt = new DateTime(2026, 11, 8, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 11,
+                            CreatedAt = new DateTime(2026, 11, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/mutual-funds/nav-history/5385b72f-44fe-4f98-bee3-0f275a05b148?days=365",
+                            IsActive = true,
+                            LowRiskKind = "Cash fund",
+                            Name = "Meezan Rozana Amdani Fund",
+                            Symbol = "MRAF",
+                            Type = 1,
+                            UpdatedAt = new DateTime(2026, 11, 9, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 12,
+                            CreatedAt = new DateTime(2026, 11, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/mutual-funds/nav-history/b4323cd2-b729-4122-9678-7150f95c868a?days=365",
+                            IsActive = true,
+                            LowRiskKind = "Income fund",
+                            Name = "Meezan Islamic Income Fund",
+                            Symbol = "MIIF",
+                            Type = 1,
+                            UpdatedAt = new DateTime(2026, 11, 9, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 13,
+                            CreatedAt = new DateTime(2026, 11, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/mutual-funds/nav-history/4021c591-4da4-48f5-ba76-5b7b6059298c?days=365",
+                            IsActive = true,
+                            LowRiskKind = "Income fund",
+                            Name = "Meezan Daily Income Fund - Meezan Munafa Plan I",
+                            Symbol = "MMP-I",
+                            Type = 1,
+                            UpdatedAt = new DateTime(2026, 11, 9, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 

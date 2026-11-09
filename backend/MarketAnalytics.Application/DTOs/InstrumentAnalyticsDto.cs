@@ -11,6 +11,10 @@ public class InstrumentAnalyticsDto
     public string Symbol { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public InstrumentType Type { get; set; }
+    /// <summary>A cash (money market) or income fund: its price only creeps up, so Buy/Sell signals don't apply to it.</summary>
+    public bool IsCash { get; set; }
+    /// <summary>"Cash fund" or "Income fund" when IsCash.</summary>
+    public string? LowRiskKind { get; set; }
     public DateTime LastDate { get; set; }
     public decimal LastPrice { get; set; }
     public int DataPoints { get; set; }
@@ -55,6 +59,16 @@ public class InstrumentAnalyticsDto
     /// <summary>Buy or Sell only when the technical and news signals clearly agree, otherwise Hold.</summary>
     public ScaledSignalDto CombinedSignal { get; set; } = new();
 
+    /// <summary>
+    /// The steady technical signal: the daily 5-vote score averaged over the last 20 trading days, -100 to +100.
+    /// It changes far less often than the daily signal and did better in testing; the pages show it by default.
+    /// Null when the history is too short for all five rules (200+ prices); the pages then show the daily signal.
+    /// </summary>
+    public ScaledSignalDto? SteadySignal { get; set; }
+
+    /// <summary>The combined signal using the steady technical signal instead of the daily one; null with SteadySignal.</summary>
+    public ScaledSignalDto? SteadyCombinedSignal { get; set; }
+
     /// <summary>All the standard metrics that can be calculated from closing prices.</summary>
     public List<MetricDto> Metrics { get; set; } = new();
 
@@ -77,6 +91,8 @@ public class ScaledSignalDto
     public int Articles { get; set; }
     /// <summary>How clearly the news agrees, 0-100.</summary>
     public int NewsConfidence { get; set; }
+    /// <summary>Other instruments whose news reading is identical, because they are linked to the same stories.</summary>
+    public List<string> SharedWith { get; set; } = new();
 }
 
 /// <summary>
@@ -114,6 +130,11 @@ public class LongTermTrendDto
     public string Direction { get; set; } = "Unknown";
     /// <summary>The day the trend last changed to this direction; null if it hasn't changed in the stored history.</summary>
     public DateTime? Since { get; set; }
+    /// <summary>
+    /// Recovering when the trend is Down but the price is back above both averages; Weakening when it is Up but the
+    /// price has fallen below both. Null otherwise. The direction itself only changes when the averages cross.
+    /// </summary>
+    public string? Phase { get; set; }
 }
 
 /// <summary>

@@ -53,7 +53,8 @@ From the `backend` folder:
 dotnet ef database update --project MarketAnalytics.Infrastructure --startup-project MarketAnalytics.Api
 ```
 
-This creates the tables and seeds the 9 instruments.
+This creates the tables and seeds the instruments. After that, the API applies any new migrations itself when it
+starts, so pulling new code needs no manual database step.
 
 ## 4. Load market data (Worker)
 
@@ -62,7 +63,8 @@ cd backend/MarketAnalytics.Worker
 dotnet run
 ```
 
-The Worker fetches data for every instrument on startup, then again every 24 hours while it keeps running.
+The Worker fetches data for every instrument on startup, then checks again every 6 hours while it keeps running (each
+check only fetches what is new; indices publish after the close and fund NAVs in the evening or next morning).
 The first run loads about a year of history: from sarmaaya.pk for KSE100, KMI30, KMIF, MIF, MBF, MGF, USDPKR
 and GOLDPK, and from the free, keyless [fawazahmed0 currency-api](https://github.com/fawazahmed0/exchange-api)
 daily snapshots for **GOLDINT (XAU/USD)**. (Investing.com, the original GOLDINT source, blocks automated
@@ -103,6 +105,27 @@ and website in the background, and opens http://localhost:3000. It keeps running
 anything already running is left alone. **`stop-app.cmd`** stops it all. Logs are in the `logs` folder.
 
 It doesn't start automatically after a reboot, and .NET updates may close the API and Worker; run `start-app.cmd` again.
+If prices are more than 4 days old, the Overview and instrument pages show a warning. `GET /api/health` reports whether
+the database answers and the newest price date.
+
+**News and sentiment switch:** `Features:News` in `backend/MarketAnalytics.Api/appsettings.json` is `false` by default, so
+the app is based on technical analysis only: no News page, no news or combined signals, no news in summaries, alerts,
+holdings or the track record (the combined signal is replaced by the technical one). The Worker keeps collecting news so
+the history is ready. Set it to `true` (or the environment variable `Features__News=true`) and restart to turn news on.
+
+**Check for new data now:** a button on the Overview and Settings pages (`POST /api/data/refresh`) runs the same price,
+payout and news update as the Worker (`MarketDataUpdater` and `NewsUpdater` in Infrastructure, shared by both) and says
+what it found. One refresh runs at a time; a second request gets "already running".
+
+**Independent checks** (`scripts/verify`, plain Python, no packages; the app must be running):
+`python scripts/verify/verify_technical.py` recomputes every instrument's averages, RSI, MACD, Bollinger %B, votes, steady
+score and trend from the price series without the app's code and lists any mismatch with the app (none in Nov 2026).
+`python scripts/verify/verify_news.py KSE100 GOLDPK` lists each instrument's direct stories of the last 7 days with their
+scores, the news mood and the week's price change, to read by hand.
+
+**Backups:** `start-app` backs up the database (prices, news, payouts) to the `backups` folder once a day and keeps the
+newest 14; run `scripts/backup-db.ps1` for one now. Restore with
+`pg_restore -h localhost -U postgres -d MarketAnalytics --clean backups/<file>.dump`.
 
 ## Tests
 
@@ -114,10 +137,14 @@ dotnet test
 Covers the indicator maths (Bollinger, EMA, RSI, MACD, SMA, weekly resampling) and the analytics service
 (returns, drawdown, volatility, spike filter, signal scoring).
 
+Website: `cd frontend`, then `npm run lint`, `npm test` (Vitest) and `npm run build`. GitHub Actions
+(`.github/workflows/ci.yml`) runs the backend tests and these three on every push to `main` and every pull request.
+
 ## Pages
 
 - **Dashboard (Market Overview)**: a plain-language market summary; price, 1D/1M/YTD/1Y change, RSI, 52-week range,
-  Buy/Sell signal, long-term trend and 7-day news mood for every instrument; sortable columns
+  Buy/Sell signal, long-term trend and 7-day news mood for every instrument; sortable columns; and what changed in the
+  last 30 days, with optional browser notifications
 - **News**: all collected news with sentiment, filterable by instrument, topic and mood
 - **Guide**: plain-language explanation of every number, chart and signal (also available as ⓘ tooltips)
 - **Instrument view**: price chart with SMA-20, Bollinger Bands and interval-specific moving averages
@@ -128,6 +155,11 @@ Covers the indicator maths (Bollinger, EMA, RSI, MACD, SMA, weekly resampling) a
   latest news.
 - **Comparison**: % change of several instruments on one chart, plus a performance table
 - **Track Record**: how acting on the Buy/Sell signal and the long-term trend would have done against simply holding
+- **My Holdings**: what you own (units, optional price paid and date, saved only in the browser) with its value, gain,
+  payouts received since buying, combined signal and trend, the stocks/gold/cash split, and a link that tests that split on
+  the Portfolio page
+- **Portfolio**: how mixes of stocks, gold and cash would have done, with your own mix (remembered in the browser)
+  against preset mixes: return, worst fall, volatility, Sharpe, a growth chart and year-by-year returns
 - **Settings**: default interval/timeframe (saved in the browser), suggested presets, and data source
   update status
 
@@ -150,13 +182,30 @@ archive builds up from the first run (which backfills about 30 days).
 about it (gold news for gold, rupee news for USD/PKR). Wider topics (interest rates, IMF, oil) are shown as
 *background* and are not counted in that instrument's news mood.
 
-**Sentiment** (`NewsSentimentAnalyzer`) is read from the wording: a financial word list (gains, surges, record
-high vs sheds, slump, panic selling), reversal phrases ("snaps four-day rally" is negative), title words counting
-double. Score -100 to +100; confidence grows with the number of matching words and how much they agree. The
-matched words are returned so readers can see why. For USD/PKR the score is flipped when the rupee is the subject
-("Rupee gains" means USD/PKR falls). The per-instrument news mood is the confidence-weighted average over 7 days.
-A word list can misread headlines such as "PSX ends rally on oil surge"; an LLM would be more accurate but needs a
-paid API key.
+**Sentiment** (`NewsSentimentAnalyzer`, rule-based, no AI) is read from the wording, from each instrument's point of view:
+
+- A financial word list (gains, surges, reclaims, record high vs sheds, dives, rout, all-time low) and phrases read before
+  single words ("snaps four-day rally", "pares gains" and "bulls head for the exit" are negative; "easing fears" and "ends
+  losing streak" are positive; "up by Rs1,500" counts).
+- Headlines are split into clauses and each clause's subject is found. Words count through how that subject affects the
+  instrument: a stronger dollar is bad for gold and means USD/PKR rises, cheaper oil is good for Pakistani stocks and the
+  rupee, the rupee gaining means USD/PKR falls, and silver or US tech stocks say nothing about gold.
+- A headline whose own subject is unchanged, steady or stable is neutral.
+- Strong words (surges, plunges) count 1.5x, mild ones (edges up, slight) half; the title counts double and its first
+  clause double again; background clauses ("amid volatility") count half. One plain title word scores 80, mixed wording
+  less. Confidence grows with the number of matching words and how much they agree. The matched words are shown.
+- Stories about other countries' local markets (Indian rupee quotes such as "falls 9 paise to 94.50", Indian, Bangladeshi
+  or Vietnamese gold rates) don't count unless the title clearly mentions Pakistan, and USD/PKR only counts currency stories.
+
+Checked by hand in Nov 2026 against headlines labelled up, down or neutral (the old word list in brackets): on a sample
+the rules were tuned on, 93% read correctly (79%); on a fresh sample, 80% before further fixes (75%); and on a third
+sample never looked at before, 96% of 45 (76%). The old rules counted every foreign story, and 35% of the stories linked
+to USD/PKR were about the Indian rupee; the filter now leaves out all but 1 of 13 in the last sample.
+
+The per-instrument news mood is the confidence-weighted average over 7 days. Weighting recent news more was tested
+(`scripts/research/news-and-ma-research.cs`): the faster the fade, the worse the news signal did (half-life 1 day: -2.7%
+a year; 7 days equal: +7.8%; 14 days equal: +12.7%), and no weighting made the news mood predict the next 5 days
+(correlation 0.00 to 0.05). News mostly reports moves already made, so the 7-day window is kept.
 
 **Biggest moves**: for each of an instrument's largest daily moves in the last 30 days, the API returns the news
 published from the day before to the next trading day (so weekend reports of a Friday move are included).
@@ -183,8 +232,22 @@ Score >= 3 Strong Buy, 1 to 2 Buy, 0 Hold, -1 to -2 Sell, <= -3 Strong Sell. Rul
 most -20), scored as their average; otherwise Hold, which keeps any existing position. Rules live in `SignalRules`, shared
 by the live signals and the backtest. All three signals display on the same -100 to +100 scale.
 
+**Steady technical signal** (the default): the daily vote score averaged over the last 20 trading days
+(`SignalRules.SteadyScores`), -100 to +100 with the same Buy/Sell thresholds. The daily score flips often and trading
+costs eat its gains; in testing the 20-day average earned about +17% a year with 2 trades against +7% with 19 trades
+(holding about +20%). A switch at the top of the Overview, instrument, Track Record and My Holdings pages chooses steady or
+daily (remembered in the browser); the combined signal (`steadyCombinedSignal`), alerts (`/api/alerts?technical=`) and
+track record (`steadySignal`, `steadyTechnical`, `steadyCombined` rules) follow it. The instrument page still lists
+today's five votes.
+
 **Long-term trend**, shown beside them: Up while the 50-period average is above the 200-period average (golden cross),
-otherwise Down, with the date it last changed.
+otherwise Down, with the date it last changed. The averages cross weeks after a turn, so it also shows a phase:
+**recovering** when the trend is Down but the price is back above both averages, **weakening** when it is Up but the
+price is below both.
+
+**Shared news:** instruments linked to the same stories (all Pakistani stock news counts for KSE-100 and KMI-30, the
+Meezan stock funds share their searches, and both gold prices share gold news) get identical news signals. The API lists
+them in `newsSignal.sharedWith`, and the pages say they are one reading, not separate ones.
 
 **All metrics** (`TechnicalMetrics`), on each instrument's page: SMA and EMA (10, 20, 50, 100, 200); RSI, Stochastic RSI,
 Stochastic %K/%D, Williams %R, CCI, MACD, PPO, rate of change, momentum, TRIX; Bollinger bands, %B and bandwidth, Donchian
@@ -254,24 +317,79 @@ Results on the 6 instruments with at least 3 years of news (Nov 2026, 0.5% per t
 | Holding | +22.6% | -25.6% | 1.01 | 0 |
 | Golden cross | +19.9% | -22.6% | 1.03 | 1.5 |
 | Monthly trend check | +18.3% | -23.7% | 0.98 | 1.9 |
-| Both agree (the combined signal) | +15.4% | -18.8% | 0.95 | 6.3 |
-| Balanced average of technical and news | +11.8% | -32.9% | 0.70 | 12.2 |
+| Both agree (the combined signal) | +16.2% | -17.7% | 0.99 | 6.2 |
+| Balanced average of technical and news | +10.5% | -33.7% | 0.64 | 12.6 |
 | Technical | +8.3% | -33.8% | 0.51 | 19.4 |
-| News | +5.1% | -25.7% | 0.39 | 19.9 |
-| Simple average of technical and news (old combined) | +3.6% | -37.0% | 0.24 | 23.1 |
+| News | +7.8% | -21.7% | 0.55 | 18.1 |
+| Simple average of technical and news (old combined) | +7.4% | -33.1% | 0.47 | 18.4 |
 
 Holding did best on return. No rule beat it reliably, and choosing rules quarter by quarter did worse
 (+25.6% against +28.4% over the same period). Technical, news and the simple average trailed by more than luck explains. With cash at an assumed
 10% a year, golden cross roughly matches holding (+22.9% against +22.6%). Both agree had the smallest falls. It and the
 choice of golden cross were picked after earlier tests on this data. Older news is a sample of a few stories per week,
 sentiment is read from headline wording, index dividends are excluded, and the history is mostly a rising market.
-Fund figures count payouts (added Nov 2026; holding rose from +21.8% to +22.6%, partly from newer prices too).
+Fund figures count payouts (added Nov 2026; holding rose from +21.8% to +22.6%, partly from newer prices too). News and
+combined figures use the corrected sentiment (Nov 2026; before it: news +5.1%, both agree +15.4%).
+
+**Moving averages** (`scripts/research/news-and-ma-research.cs`, full history, 0.5% per trade, holding +19.5% a year):
+the 5-vote technical signal earned +6.8% with 18.6 trades a year. Averaging its score over the last 20 days earned +16.7%
+with 1.8 trades; the golden cross +17.2% and price above both its 50- and 200-day averages +17.4%, each with a smaller
+worst fall than holding (-29% against -34%) but behind it in both halves of the history. Faster averages (price vs 50-day,
+EMA 12/26) did little better than the plain signal. In the combined signal, a technical score averaged over 5 to 20
+days earned +18.8% to +19.2% against +16.2% (holding +22.6%), with 1.4 to 3.1 trades a year instead of 6.2.
+
+## Alerts (what changed)
+
+`AlertService` (`GET /api/alerts?days=30`) recomputes each day's technical, news and combined signal and trend direction
+from that day's close (`SignalHistory`, the same code as the backtests) and lists the days one changed side (Buy, Hold,
+Sell; Buy to Strong Buy doesn't count). Important changes are the combined signal turning Buy or Sell and the trend
+turning; Hold means stay as you are, so a move to Hold isn't one. The Overview lists important changes (all on request)
+and can notify in the browser while the app is open, checking every 30 minutes. Nothing is stored, so the list always
+matches the current rules and data.
+
+## Portfolio mix
+
+`PortfolioService` (`GET /api/portfolio` for the presets, `POST /api/portfolio` with up to 12 mixes) replays mixes of
+instruments over payout-adjusted prices. **Meezan Cash Fund (MCF)** was added as the cash instrument (its payouts are
+listed from 2018, its prices go back to 2009); it is marked as cash, so it shows no Buy/Sell signals and is left out of the
+signal backtests and the market summary counts.
+
+Low-risk funds are marked on the instrument itself (`Instruments.LowRiskKind`: "Cash fund" or "Income fund"), so
+adding one is a database entry. Three more low-risk Meezan funds are tracked the same way (no signals, no trading cost in mixes): **MRAF** (Meezan Rozana
+Amdani Fund, a cash fund whose price stays at Rs 50 and which pays its return out daily, 2,500+ payouts since 2019, so its
+return comes entirely from the payout adjustment), **MIIF** (Meezan Islamic Income Fund; prices from 2007, payouts listed
+from 2018, so earlier falls are unadjusted payouts) and **MMP-I** (Meezan Daily Income Fund, Meezan Munafa Plan I, from
+Aug 2023). Payouts are matched to price days by binary search, since daily payouts made a full scan slow.
+
+- All mixes in one comparison use the same dates, from when every chosen instrument has prices.
+- Rebalancing at the first close of each year, half-year or quarter, or never. The optional trend filter keeps each risky
+  part in cash while its own golden cross is down, acting at the close after the trend turns.
+- Each buy or sell pays the chosen cost, except moves into and out of the cash fund. Money not in the mix earns what MCF
+  earned.
+- The 9 preset mixes were fixed before seeing their results.
+
+Result (Aug 2020 to Nov 2026, 0.5% per trade, cash fund +12.4% a year):
+
+| Mix | Return per year | Worst fall | Sharpe |
+| --- | --- | --- | --- |
+| All in stocks (MIF) | +22.4% | -23.5% | 0.47 |
+| Stocks 50, gold 50 | +21.1% | -19.2% | 0.60 |
+| Stocks 60, gold 20, cash 20 | +20.3% | -13.1% | 0.60 |
+| Stocks 40, gold 30, cash 30 | +18.9% | -11.2% | 0.63 |
+| Stocks 20, gold 20, cash 60 | +16.2% | -4.8% | 0.64 |
+| All in gold (MGF) | +18.6% | -25.9% | 0.31 |
+| All in cash (MCF) | +12.4% | 0% | - |
+| All in stocks, trend filter | +20.3% | -27.2% | 0.43 |
+| Stocks 60, gold 20, cash 20, trend filter | +18.2% | -16.5% | 0.51 |
+
+Mixing gave up a little return for much smaller falls: 60/20/20 kept 20.3% of the 22.4% a year and cut the worst fall
+from -24% to -13%, a better trade-off than any Buy/Sell rule. The trend filter hurt here. Only about 6 years can be
+compared (the gold fund starts in Aug 2020), mostly a rising market.
 
 ## Nice to have
 
-- **Alerts**: notify when an instrument's signal changes
+- **Alerts outside the browser**: email or phone notifications (needs a mail or push service)
 
-- **Error handling**: global exception middleware and more detailed error responses
 - **Validation**: FluentValidation for API request models
-- **Testing**: unit tests for indicator/resampling services, API integration tests, frontend component tests
+- **Testing**: API integration tests, frontend component tests
 - **Logging**: structured logging (Serilog)

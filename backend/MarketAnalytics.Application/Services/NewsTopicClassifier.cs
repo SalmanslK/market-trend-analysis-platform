@@ -39,7 +39,20 @@ public static class NewsTopicClassifier
     private static readonly Regex ForeignMarket = new(
         @"\b(Sri Lankan?|Colombo|India|Indian|Nifty|Sensex|Bangladesh|Dhaka|Nepal)\b", Options);
     private static readonly Regex ClearlyPakistan = new(
-        @"\b(Pakistan|Pakistani|PSX|KSE|KMI|SBP|Karachi|Islamabad|Lahore)\b", Options);
+        // Not "tola": Nepal and India price gold per tola too
+        @"\b(Pakistan|Pakistani|PSX|KSE|KMI|SBP|Karachi|Islamabad|Lahore|PKR)\b", Options);
+
+    // Other countries' local markets: the Indian rupee ("falls 9 paise to 94.50"), Indian, Bangladeshi or Vietnamese gold rates
+    private static readonly Regex ForeignLocalMarket = new(
+        @"\b(paise|RBI|India|Indian|Sensex|Nifty|crore|lakh|Diwali|Dhanteras|diya|Mumbai|Delhi|Chennai|Kolkata|Bengaluru|Bangalore|" +
+        @"Sri Lank\w*|LKR|Nepal\w*|Bangladesh\w*|taka|bhari|bhori|Vietnam\w*|Malaysia\w*|ringgit|Philippine\w*|10 grams?|10 gm)\b|₹|\bTk\.?\s?\d|\b(?:to|at|of) [7-9]\d\.\d\d\b",
+        Options);
+
+    /// <summary>
+    /// True for a story about another country's local market that doesn't clearly mention Pakistan. Search engines
+    /// match "rupee" and "gold rate" for India, Sri Lanka and Bangladesh too.
+    /// </summary>
+    public static bool IsForeignLocalMarket(string title) => ForeignLocalMarket.IsMatch(title) && !ClearlyPakistan.IsMatch(title);
 
     public static IReadOnlyList<NewsTopic> Topics { get; } = new[]
     {

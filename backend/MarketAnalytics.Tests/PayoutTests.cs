@@ -113,3 +113,24 @@ public class PayoutTests
         Assert.Equal(13.13m, payout.AmountPerUnit);
     }
 }
+
+public class DailyPayoutTests
+{
+    [Fact]
+    public void Adjust_TurnsDailyPayoutsOnAFixedPriceIntoGrowth()
+    {
+        // Like Meezan Rozana Amdani: the price stays at 50 and each day pays 0.01 per unit
+        var start = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var prices = Enumerable.Range(0, 30).Select(i => new PriceDataPoint(start.AddDays(i), 50m)).ToList();
+        var payouts = Enumerable.Range(1, 29).Select(i => new FundPayout { PayoutDate = start.AddDays(i), AmountPerUnit = 0.01m });
+
+        var adjusted = PayoutAdjuster.Adjust(prices, payouts);
+
+        // Latest price is the real one, and each payout counts as reinvested, about (1 + 0.01 / 50)^29. The standard
+        // adjustment assumes reinvesting at 49.99, a hair above reinvesting at 50: under 0.01 points a year at 10%
+        Assert.Equal(50m, adjusted[^1].Price);
+        var growth = (double)(adjusted[^1].Price / adjusted[0].Price);
+        Assert.InRange(growth, Math.Pow(1 + 0.01 / 50, 29) - 1e-5, Math.Pow(1 + 0.01 / 50, 29) + 1e-5);
+        Assert.Equal(29, PayoutAdjuster.MatchExDates(prices, payouts).Select(m => m.Index).Distinct().Count());
+    }
+}

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect, useState, useMemo } from 'react'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { instrumentsApi } from '../services/api/instrumentsApi'
 import { pricesApi } from '../services/api/pricesApi'
 import { analyticsApi } from '../services/api/analyticsApi'
@@ -11,6 +11,7 @@ import InstrumentSelector from '../components/controls/InstrumentSelector'
 import IntervalSelector from '../components/controls/IntervalSelector'
 import TimeframeSelector from '../components/controls/TimeframeSelector'
 import TrendBadge from '../components/trend/TrendBadge'
+import InfoTip from '../components/help/InfoTip'
 import ScaledSignalBadge from '../components/signals/ScaledSignalBadge'
 import SignalPanel from '../components/signals/SignalPanel'
 import AllMetrics from '../components/analytics/AllMetrics'
@@ -20,7 +21,10 @@ import InstrumentNews from '../components/news/InstrumentNews'
 import { describeInstrument } from '../services/plainLanguage'
 import { intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences } from '../services/preferences'
-import { changeColor, COLORS, formatDate, formatNumber, formatPercent } from '../services/format'
+import { applySignalMode, useSignalMode } from '../services/signalMode'
+import { useFeatures } from '../services/features'
+import SignalBadge from '../components/signals/SignalBadge'
+import { changeColor, COLORS, formatDate, formatNumber, formatPercent, daysSince, STALE_AFTER_DAYS } from '../services/format'
 
 export default function InstrumentView() {
   // The URL is the source of truth for the selected instrument, so links between instruments work
@@ -29,7 +33,10 @@ export default function InstrumentView() {
 
   const [instruments, setInstruments] = useState<InstrumentDto[]>([])
   const [priceData, setPriceData] = useState<PriceDataDto[]>([])
-  const [analytics, setAnalytics] = useState<InstrumentAnalyticsDto | null>(null)
+  const [loaded, setAnalytics] = useState<InstrumentAnalyticsDto | null>(null)
+  const mode = useSignalMode()
+  const { news } = useFeatures()
+  const analytics = useMemo(() => (loaded ? applySignalMode(loaded, mode, news) : null), [loaded, mode, news])
   const [mood, setMood] = useState<NewsSentimentSummary>()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -76,10 +83,21 @@ export default function InstrumentView() {
   }, [symbol, interval, timeframe])
 
   const instrumentName = instruments.find((i) => i.symbol === symbol)?.name
-  const summary = analytics ? describeInstrument(analytics, mood) : null
+  const summary = analytics ? describeInstrument(analytics, news ? mood : undefined, news) : null
 
   return (
     <div style={{ padding: '20px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '14px' }}>
+        <Link to="/" style={{ color: COLORS.link }}>← Market Overview</Link>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: COLORS.muted }}>
+          Switch to
+          <InstrumentSelector
+            instruments={instruments}
+            selectedInstrument={symbol}
+            onInstrumentChange={(newSymbol) => navigate(`/instrument/${newSymbol}`)}
+          />
+        </label>
+      </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '12px', marginBottom: '6px' }}>
         <h1>{symbol}</h1>
         {instrumentName && <span style={{ color: COLORS.muted, fontSize: '18px' }}>{instrumentName}</span>}
@@ -91,13 +109,23 @@ export default function InstrumentView() {
           <span style={{ fontSize: '18px', color: changeColor(analytics.change1D) }}>
             {formatPercent(analytics.change1D)} <span style={{ fontSize: '13px', color: COLORS.muted }}>1D</span>
           </span>
-          <span style={{ color: COLORS.muted }}>as of {formatDate(analytics.lastDate)}</span>
+          {daysSince(analytics.lastDate) > STALE_AFTER_DAYS ? (
+            <span style={{ color: '#e65100', fontWeight: 'bold' }}>⚠ as of {formatDate(analytics.lastDate)}, {daysSince(analytics.lastDate)} days ago</span>
+          ) : (
+            <span style={{ color: COLORS.muted }}>as of {formatDate(analytics.lastDate)}</span>
+          )}
+          {analytics.isCash ? (
+            <span style={{ color: COLORS.muted, fontSize: '14px' }}>
+              {analytics.lowRiskKind ?? 'Cash fund'}: Buy/Sell signals don't apply<InfoTip term="cashFund" />
+            </span>
+          ) : (<>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: COLORS.muted, fontSize: '14px' }}>
-            Combined signal <ScaledSignalBadge signal={analytics.combinedSignal} large />
+            {news ? <>Combined signal <ScaledSignalBadge signal={analytics.combinedSignal} large /></> : <>Technical signal <SignalBadge signal={analytics.signal} large /></>}
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: COLORS.muted, fontSize: '14px' }}>
             Long-term trend <TrendBadge trend={analytics.longTermTrend} />
           </span>
+          </>)}
         </div>
       )}
 
@@ -105,47 +133,45 @@ export default function InstrumentView() {
         <PlainSummary
           headline={summary.headline}
           points={summary.points}
-          footer="This describes what prices and news have done so far. It isn't a prediction or financial advice."
+          maxPoints={4}
+          footer={`This describes what prices${news ? ' and news have' : ' have'} done so far. It isn't a prediction or financial advice.`}
         />
       )}
 
-      <div style={{ marginBottom: '20px', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
-        <InstrumentSelector
-          instruments={instruments}
-          selectedInstrument={symbol}
-          onInstrumentChange={(newSymbol) => navigate(`/instrument/${newSymbol}`)}
-        />
-        <IntervalSelector selectedInterval={interval} onIntervalChange={setInterval} />
-        <TimeframeSelector selectedTimeframe={timeframe} onTimeframeChange={setTimeframe} />
-        {loading && <span style={{ color: COLORS.muted }}>Loading...</span>}
-      </div>
+      {error && <div role="alert" style={{ color: COLORS.down, marginBottom: '15px' }}>{error}</div>}
 
-      {error && <div style={{ color: COLORS.down, marginBottom: '15px' }}>{error}</div>}
-
-      {analytics && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(420px, 100%), 1fr))', gap: '12px', marginBottom: '12px' }}>
-          <SignalPanel analytics={analytics} />
-          <KeyStats analytics={analytics} />
+      {/* The chart first: it is what most people come for. Its controls sit right above it */}
+      <section aria-label="Price chart" style={{ marginBottom: '12px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', marginBottom: '8px', fontSize: '14px', color: COLORS.muted }}>
+          <span>Chart:</span>
+          <IntervalSelector selectedInterval={interval} onIntervalChange={setInterval} />
+          <span>over</span>
+          <TimeframeSelector selectedTimeframe={timeframe} onTimeframeChange={setTimeframe} />
+          {loading && <span role="status">Loading...</span>}
         </div>
-      )}
-
-      {analytics && <AllMetrics analytics={analytics} />}
-
-      {priceData.length > 0 ? (
-        <>
+        {priceData.length > 0 ? (
           <PriceChart
             data={priceData}
             instrument={symbol}
             interval={intervalLabels[interval]}
             timeframe={timeframeLabels[timeframe]}
           />
-          <IndicatorCharts data={priceData} />
-        </>
-      ) : (
-        !loading && !error && <div>No data available for this instrument and timeframe.</div>
+        ) : (
+          !loading && !error && <p style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px', color: COLORS.muted }}>No prices for this period. Try a longer period above.</p>
+        )}
+      </section>
+
+      {analytics && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(420px, 100%), 1fr))', gap: '12px', marginBottom: '12px' }}>
+          {!analytics.isCash && <SignalPanel analytics={analytics} />}
+          <KeyStats analytics={analytics} />
+        </div>
       )}
 
-      {symbol && <InstrumentNews symbol={symbol} />}
+      {news && symbol && <InstrumentNews symbol={symbol} />}
+
+      {priceData.length > 0 && <IndicatorCharts data={priceData} />}
+      {analytics && <AllMetrics analytics={analytics} />}
     </div>
   )
 }

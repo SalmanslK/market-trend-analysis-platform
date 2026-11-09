@@ -126,6 +126,60 @@ public static class InstrumentSeedData
                 IsActive = true,
                 CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                 UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            },
+            // Islamic money market fund: what cash earns, for backtests and the portfolio mix
+            new Instrument
+            {
+                Id = 10,
+                Symbol = "MCF",
+                Name = "Meezan Cash Fund",
+                Type = InstrumentType.MutualFund,
+                DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/mutual-funds/nav-history/a0674272-8a64-4fb8-b708-4e60a1e7f135?days=365",
+                DataSourceType = DataSourceType.JsonApi,
+                IsActive = true,
+                LowRiskKind = "Cash fund",
+                CreatedAt = new DateTime(2026, 11, 8, 0, 0, 0, DateTimeKind.Utc),
+                UpdatedAt = new DateTime(2026, 11, 8, 0, 0, 0, DateTimeKind.Utc)
+            },
+            // More low-risk Meezan funds: Rozana Amdani keeps its price at Rs50 and pays its return out daily
+            new Instrument
+            {
+                Id = 11,
+                Symbol = "MRAF",
+                Name = "Meezan Rozana Amdani Fund",
+                Type = InstrumentType.MutualFund,
+                DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/mutual-funds/nav-history/5385b72f-44fe-4f98-bee3-0f275a05b148?days=365",
+                DataSourceType = DataSourceType.JsonApi,
+                IsActive = true,
+                LowRiskKind = "Cash fund",
+                CreatedAt = new DateTime(2026, 11, 9, 0, 0, 0, DateTimeKind.Utc),
+                UpdatedAt = new DateTime(2026, 11, 9, 0, 0, 0, DateTimeKind.Utc)
+            },
+            new Instrument
+            {
+                Id = 12,
+                Symbol = "MIIF",
+                Name = "Meezan Islamic Income Fund",
+                Type = InstrumentType.MutualFund,
+                DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/mutual-funds/nav-history/b4323cd2-b729-4122-9678-7150f95c868a?days=365",
+                DataSourceType = DataSourceType.JsonApi,
+                IsActive = true,
+                LowRiskKind = "Income fund",
+                CreatedAt = new DateTime(2026, 11, 9, 0, 0, 0, DateTimeKind.Utc),
+                UpdatedAt = new DateTime(2026, 11, 9, 0, 0, 0, DateTimeKind.Utc)
+            },
+            new Instrument
+            {
+                Id = 13,
+                Symbol = "MMP-I",
+                Name = "Meezan Daily Income Fund - Meezan Munafa Plan I",
+                Type = InstrumentType.MutualFund,
+                DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/mutual-funds/nav-history/4021c591-4da4-48f5-ba76-5b7b6059298c?days=365",
+                DataSourceType = DataSourceType.JsonApi,
+                IsActive = true,
+                LowRiskKind = "Income fund",
+                CreatedAt = new DateTime(2026, 11, 9, 0, 0, 0, DateTimeKind.Utc),
+                UpdatedAt = new DateTime(2026, 11, 9, 0, 0, 0, DateTimeKind.Utc)
             }
         };
     }

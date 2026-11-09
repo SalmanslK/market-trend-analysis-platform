@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { NewsArticle } from '../../services/types/marketData'
 import { changeColor, COLORS, formatPercent } from '../../services/format'
+import Tip from '../help/Tip'
 import SentimentChip from './SentimentChip'
 
 interface ArticleCardProps {
@@ -9,7 +10,7 @@ interface ArticleCardProps {
   symbol?: string
 }
 
-export function timeAgo(value: string): string {
+function timeAgo(value: string): string {
   const minutes = Math.round((Date.now() - new Date(value).getTime()) / 60000)
   if (minutes < 60) return `${Math.max(minutes, 1)} min ago`
   const hours = Math.round(minutes / 60)
@@ -50,7 +51,12 @@ export default function ArticleCard({ article, symbol }: ArticleCardProps) {
       <a href={article.url} target="_blank" rel="noopener noreferrer" style={{ color: '#212121', fontWeight: 'bold', textDecoration: 'none', lineHeight: 1.4 }}>
         {article.title} <span style={{ color: COLORS.muted, fontWeight: 'normal' }}>↗</span>
       </a>
-      {article.summary && <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#424242', lineHeight: 1.45 }}>{article.summary}</p>}
+      {/* Three lines are enough to decide whether to open the story */}
+      {article.summary && (
+        <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#424242', lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {article.summary}
+        </p>
+      )}
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px', fontSize: '12px' }}>
         {focus?.change != null && (
@@ -59,13 +65,11 @@ export default function ArticleCard({ article, symbol }: ArticleCardProps) {
           </span>
         )}
         {article.topics.map((topic) => (
-          <span
-            key={topic.key}
-            title={topic.whyItMatters}
-            style={{ padding: '1px 8px', borderRadius: '10px', backgroundColor: '#eceff1', color: '#455a64', cursor: 'help' }}
-          >
-            {topic.label}
-          </span>
+          <Tip key={topic.key} text={topic.whyItMatters}>
+            <span style={{ padding: '1px 8px', borderRadius: '10px', backgroundColor: '#eceff1', color: '#455a64', cursor: 'help' }}>
+              {topic.label}
+            </span>
+          </Tip>
         ))}
         {others.map((i) => (
           <Link

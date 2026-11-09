@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using MarketAnalytics.Application.DTOs;
 using MarketAnalytics.Application.Interfaces.IRepositories;
 using MarketAnalytics.Application.Interfaces.Services;
@@ -50,7 +51,10 @@ public class NewsService : INewsService
         var now = DateTime.UtcNow;
         var articles = await _newsRepository.GetPublishedBetweenAsync(now.AddDays(-days), now.AddDays(1), cancellationToken);
 
+        // Other countries' local markets (Indian rupee quotes, Indian gold rates) don't count for any instrument,
+        // so they aren't listed either
         var filtered = articles
+            .Where(a => !NewsTopicClassifier.IsForeignLocalMarket(a.Title))
             .Where(a => symbol == null || LinkedSymbols(a).Contains(symbol, StringComparer.OrdinalIgnoreCase))
             .Where(a => topic == null || NewsTopicClassifier.ParseTopics(a.Topics).Contains(topic))
             .Take(limit)
@@ -152,9 +156,8 @@ public class NewsService : INewsService
                 .Where(a => IsDirect(a, instrument.Symbol))
                 .Select(a =>
                 {
-                    var sentiment = NewsSentimentAnalyzer.Analyze(a.Title, a.Summary);
-                    var score = sentiment.Score * NewsSentimentAnalyzer.DirectionFor(instrument.Symbol, a.Title);
-                    return (Score: score, Weight: sentiment.Confidence / 100.0, Label: NewsSentimentAnalyzer.LabelFor(score));
+                    var sentiment = NewsSentimentAnalyzer.AnalyzeFor(instrument.Symbol, a.Title, a.Summary);
+                    return (Score: sentiment.Score, Weight: sentiment.Confidence / 100.0, Label: sentiment.Label);
                 })
                 .ToList();
 
@@ -199,13 +202,14 @@ public class NewsService : INewsService
     /// <summary>
     /// An instrument's direct news with its sentiment from the instrument's point of view, by Pakistan-time date.
     /// </summary>
-    public static List<ScoredNews> ScoreForSymbol(IEnumerable<(NewsArticle Article, SentimentResult Sentiment)> articles, string symbol) =>
+    public static List<ScoredNews> ScoreForSymbol(IEnumerable<NewsArticle> articles, string symbol) =>
         articles
-            .Where(a => IsDirect(a.Article, symbol))
+            .Where(a => IsDirect(a, symbol))
             .Select(a =>
             {
-                var score = a.Sentiment.Score * NewsSentimentAnalyzer.DirectionFor(symbol, a.Article.Title);
-                return new ScoredNews((a.Article.PublishedAt + PakistanOffset).Date, score, a.Sentiment.Confidence / 100.0, NewsSentimentAnalyzer.LabelFor(score));
+                // Read from this instrument's point of view: a stronger dollar is bad news for gold but good for USD/PKR
+                var sentiment = NewsSentimentAnalyzer.AnalyzeFor(symbol, a.Title, a.Summary);
+                return new ScoredNews((a.PublishedAt + PakistanOffset).Date, sentiment.Score, sentiment.Confidence / 100.0, sentiment.Label);
             })
             .OrderBy(n => n.Date)
             .ToList();
@@ -265,7 +269,7 @@ public class NewsService : INewsService
                 {
                     var change = ChangeOnTradingDay(symbol, publishedDate, prices);
                     change.IsDirect = IsDirect(article, symbol);
-                    change.SentimentScore = change.IsDirect ? sentiment.Score * NewsSentimentAnalyzer.DirectionFor(symbol, article.Title) : 0;
+                    change.SentimentScore = change.IsDirect ? NewsSentimentAnalyzer.AnalyzeFor(symbol, article.Title, article.Summary).Score : 0;
                     change.SentimentLabel = change.IsDirect ? NewsSentimentAnalyzer.LabelFor(change.SentimentScore) : "Background";
                     return change;
                 })
@@ -296,12 +300,22 @@ public class NewsService : INewsService
             .Concat(NewsTopicClassifier.ParseTopics(article.Topics).SelectMany(k => NewsTopicClassifier.GetTopic(k)!.Symbols))
             .Distinct(StringComparer.OrdinalIgnoreCase);
 
+    // A currency story names a currency or the exchange rate; "revenue of PKR144.9bn" isn't one
+    private static readonly Regex CurrencyStory = new(
+        // "USD/PKR closes at 281.40" counts; an amount such as "PKR 144.9bn" or "USD 5 million" doesn't
+        @"\b(rupee|dollar|greenback|interbank|open market|exchange rate|forex|currency|reserves|remittances?|current account)\b|\b(PKR|USD)\b(?!\s?[\d.,])",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
     /// <summary>
     /// Directly about the instrument: found by its own news search, or on a topic that is directly about it.
+    /// Other countries' local markets (the Indian rupee, Indian gold rates) and, for USD/PKR, stories that aren't
+    /// about currency are left out: search engines match them loosely.
     /// </summary>
     public static bool IsDirect(NewsArticle article, string symbol) =>
-        SplitSymbols(article.Symbols).Contains(symbol, StringComparer.OrdinalIgnoreCase)
-        || NewsTopicClassifier.IsDirectTopic(article.Topics, symbol);
+        (SplitSymbols(article.Symbols).Contains(symbol, StringComparer.OrdinalIgnoreCase)
+            || NewsTopicClassifier.IsDirectTopic(article.Topics, symbol))
+        && !NewsTopicClassifier.IsForeignLocalMarket(article.Title)
+        && (!symbol.Equals("USDPKR", StringComparison.OrdinalIgnoreCase) || CurrencyStory.IsMatch(article.Title));
 
     private static string[] SplitSymbols(string symbols) =>
         symbols.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

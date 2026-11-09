@@ -25,7 +25,7 @@ string[] ruleNames = { "Technical", "News", "Combined (old)", "Balanced", "Both 
 
 var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseNpgsql(Environment.GetEnvironmentVariable("MA_CONN")).Options;
 using var db = new ApplicationDbContext(options);
-var articles = (await db.NewsArticles.AsNoTracking().ToListAsync()).Select(a => (a, NewsSentimentAnalyzer.Analyze(a.Title, a.Summary))).ToList();
+var articles = await db.NewsArticles.AsNoTracking().ToListAsync();
 var indicators = new IndicatorCalculationService();
 var backtest = new BacktestService(null!, null!, indicators, NullLogger<BacktestService>.Instance);
 

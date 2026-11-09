@@ -6,6 +6,8 @@ import IntervalSelector from '../components/controls/IntervalSelector'
 import TimeframeSelector from '../components/controls/TimeframeSelector'
 import { instrumentTypeLabels, intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences, savePreferences } from '../services/preferences'
+import RefreshDataButton from '../components/layout/RefreshDataButton'
+import { COLORS } from '../services/format'
 
 // Suggested interval/timeframe combinations for common use cases
 const PRESETS: { label: string; interval: Interval; timeframe: Timeframe }[] = [
@@ -17,7 +19,7 @@ const PRESETS: { label: string; interval: Interval; timeframe: Timeframe }[] = [
   { label: 'Mutual fund NAV trend', interval: Interval.Daily, timeframe: Timeframe.Month },
 ]
 
-// The worker refreshes daily; flag sources that haven't updated in over two days
+// The worker checks every 6 hours; flag sources that haven't updated in over two days
 const STALE_AFTER_MS = 2 * 24 * 60 * 60 * 1000
 
 const cellStyle = { padding: '10px', border: '1px solid #ddd' }
@@ -29,6 +31,8 @@ export default function Settings() {
   const [instruments, setInstruments] = useState<InstrumentDto[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // Bumped after a manual refresh so the status table shows the new times
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     instrumentsApi.getAll()
@@ -38,7 +42,7 @@ export default function Settings() {
         setError('Could not load data sources.')
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, [reloadKey])
 
   const handleSave = () => {
     const saved = savePreferences({ interval, timeframe })
@@ -50,12 +54,19 @@ export default function Settings() {
     const age = Date.now() - new Date(lastUpdateDate).getTime()
     return age > STALE_AFTER_MS
       ? { label: 'Stale', color: '#f57c00' }
-      : { label: 'Up to date', color: '#388e3c' }
+      : { label: 'Up to date', color: COLORS.up }
   }
 
   return (
     <div style={{ padding: '20px' }}>
       <h1>Settings</h1>
+      <section aria-label="Update data" style={{ margin: '12px 0 20px', padding: '16px 20px', backgroundColor: 'white', borderRadius: '6px' }}>
+        <h2 style={{ fontSize: '1.15rem', marginBottom: '4px' }}>Update data</h2>
+        <p style={{ color: COLORS.muted, fontSize: '14px', marginBottom: '10px' }}>
+          Prices are checked every 6 hours and news every hour while the app is running. Check now if you want the latest before then.
+        </p>
+        <RefreshDataButton onRefreshed={() => setReloadKey((k) => k + 1)} />
+      </section>
 
       <section style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white' }}>
         <h2>Default View</h2>
@@ -129,8 +140,8 @@ export default function Settings() {
       <section style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white' }}>
         <h2>Data Sources</h2>
         <p style={{ margin: '8px 0 15px', color: '#555' }}>
-          The background worker refreshes every instrument once a day. Last updated is the time of the
-          most recent successful refresh.
+          The background worker checks every instrument for new prices every 6 hours while the app is running. Last updated is
+          the time of the most recent successful check.
         </p>
 
         {error && <div style={{ color: '#d32f2f' }}>{error}</div>}
@@ -155,7 +166,7 @@ export default function Settings() {
                     <td style={cellStyle}>
                       <Link
                         to={`/instrument/${instrument.symbol}`}
-                        style={{ color: '#1976d2', textDecoration: 'none' }}
+                        style={{ color: COLORS.link, textDecoration: 'none' }}
                       >
                         {instrument.symbol}
                       </Link>

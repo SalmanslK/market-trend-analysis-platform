@@ -43,6 +43,8 @@ export default function InstrumentNews({ symbol }: InstrumentNewsProps) {
 
   const isDirect = (a: NewsArticle) => a.instruments.some((i) => i.symbol === symbol && i.isDirect)
   const visible = articles.filter((a) => showBackground || isDirect(a)).slice(0, 15)
+  // Five stories first keeps the page short, especially on a phone
+  const [showAllNews, setShowAllNews] = useState(false)
   const backgroundCount = articles.filter((a) => !isDirect(a)).length
 
   if (error) return <section style={sectionStyle}><span style={{ color: COLORS.down }}>{error}</span></section>
@@ -111,7 +113,18 @@ export default function InstrumentNews({ symbol }: InstrumentNewsProps) {
         {visible.length === 0 ? (
           <p style={{ color: COLORS.muted, marginTop: '8px' }}>No news in the last 30 days.</p>
         ) : (
-          visible.map((a) => <ArticleCard key={a.id} article={a} symbol={symbol} />)
+          <>
+            {(showAllNews ? visible : visible.slice(0, 5)).map((a) => <ArticleCard key={a.id} article={a} symbol={symbol} />)}
+            {visible.length > 5 && (
+              <button
+                type="button"
+                onClick={() => setShowAllNews(!showAllNews)}
+                style={{ display: 'block', width: '100%', marginTop: '8px', padding: '8px', border: `1px solid ${COLORS.border}`, borderRadius: '6px', backgroundColor: 'white', color: COLORS.link, cursor: 'pointer', fontSize: '14px' }}
+              >
+                {showAllNews ? 'Show fewer' : `Show ${visible.length - 5} more`}
+              </button>
+            )}
+          </>
         )}
       </section>
     </>

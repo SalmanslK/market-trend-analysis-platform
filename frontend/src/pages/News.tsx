@@ -6,6 +6,8 @@ import { COLORS } from '../services/format'
 import ArticleCard from '../components/news/ArticleCard'
 import SentimentChip from '../components/news/SentimentChip'
 import InfoTip from '../components/help/InfoTip'
+
+const PAGE_SIZE = 30
 import PlainSummary from '../components/help/PlainSummary'
 
 const selectStyle = { padding: '8px', fontSize: '15px' }
@@ -23,6 +25,8 @@ export default function News() {
   const [loading, setLoading] = useState(true)
   const [showBackground, setShowBackground] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Stories are shown a page at a time; hundreds of cards make the page very long, especially on a phone
+  const [shown, setShown] = useState(PAGE_SIZE)
 
   useEffect(() => {
     newsApi.getTopics().then(setTopics).catch((err) => console.error('Error loading topics:', err))
@@ -62,6 +66,7 @@ export default function News() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [articles, mood, symbol, showBackground],
   )
+  useEffect(() => setShown(PAGE_SIZE), [articles, mood, symbol, showBackground])
   const backgroundCount = symbol ? articles.filter((a) => articleMood(a) === 'Background').length : 0
 
   const counts = {
@@ -80,8 +85,8 @@ export default function News() {
       <PlainSummary
         title="How to use this page"
         points={[
-          'Each story is marked ▲ Positive, ● Neutral or ▼ Negative from its wording, with a score from -100 to +100 and how sure the reading is. Hover the label to see which words decided it.',
-          'Grey tags show the topic (hover for why it matters); blue tags are the instruments it affects, with their price change that day.',
+          'Each story is marked ▲ Positive, ● Neutral or ▼ Negative from its wording, with a score from -100 to +100 and how sure the reading is. Hover or tap the label to see which words decided it.',
+          'Grey tags show the topic (hover or tap for why it matters); blue tags are the instruments it affects, with their price change that day.',
           'Pick an instrument to see only its news, judged from its point of view. Open a story to read it in full on the publisher\'s site.',
         ]}
       />
@@ -90,7 +95,8 @@ export default function News() {
         News mood by instrument (last 7 days)<InfoTip term="newsMood" />
       </h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '8px', marginBottom: '20px' }}>
-        {moods.map((m) => (
+        {/* Funds that never have news of their own (cash and income funds) only add empty cards */}
+        {moods.filter((m) => m.articles > 0 || m.backgroundArticles > 0).map((m) => (
           <button
             key={m.symbol}
             type="button"
@@ -147,7 +153,16 @@ export default function News() {
 
       <div style={{ padding: '0 20px 8px', backgroundColor: 'white', borderRadius: '6px' }}>
         {!loading && visible.length === 0 && <p style={{ padding: '16px 0', color: COLORS.muted }}>No stories match these filters.</p>}
-        {visible.map((a) => <ArticleCard key={a.id} article={a} symbol={symbol || undefined} />)}
+        {visible.slice(0, shown).map((a) => <ArticleCard key={a.id} article={a} symbol={symbol || undefined} />)}
+        {visible.length > shown && (
+          <button
+            type="button"
+            onClick={() => setShown(shown + PAGE_SIZE)}
+            style={{ display: 'block', width: '100%', margin: '12px 0 8px', padding: '10px', border: `1px solid ${COLORS.border}`, borderRadius: '6px', backgroundColor: 'white', color: COLORS.link, cursor: 'pointer', fontSize: '14px' }}
+          >
+            Show more ({visible.length - shown} more)
+          </button>
+        )}
       </div>
 
       <p style={{ color: COLORS.muted, fontSize: '12px', marginTop: '12px' }}>

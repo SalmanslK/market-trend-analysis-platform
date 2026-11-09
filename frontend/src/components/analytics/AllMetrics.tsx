@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { InstrumentAnalyticsDto, Metric } from '../../services/types/marketData'
 import { COLORS, formatNumber, formatPercent } from '../../services/format'
 import InfoTip from '../help/InfoTip'
@@ -26,12 +27,27 @@ function tally(metrics: Metric[]): string {
 
 /** Every standard metric that can be calculated from closing prices, grouped, each with a plain explanation. */
 export default function AllMetrics({ analytics }: AllMetricsProps) {
+  // The full list is long and mostly for experts, so it starts folded with a one-line tally
+  const [chosen, setChosen] = useState<boolean | null>(null)
+  const open = chosen ?? false
+
   return (
     <section style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px', marginBottom: '12px' }}>
-      <h2 style={{ fontSize: '1.2rem' }}>All metrics</h2>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+        <h2 style={{ fontSize: '1.2rem' }}>All metrics</h2>
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setChosen(!open)}
+          style={{ border: `1px solid ${COLORS.border}`, background: 'white', borderRadius: '6px', padding: '4px 10px', color: COLORS.link, cursor: 'pointer', fontSize: '13px' }}
+        >
+          {open ? 'Hide' : `Show all ${analytics.metrics.length}`}
+        </button>
+      </div>
       <p style={{ color: COLORS.muted, fontSize: '13px', margin: '4px 0 12px' }}>
-        The standard measures used by traders and investors worldwide, on daily closing prices. Hover or tap any ⓘ for what it means.
+        The standard measures used by traders and investors worldwide, on daily closing prices.{open ? ' Tap or hover any ⓘ for what it means.' : ` ${tally(analytics.metrics)}.`}
       </p>
+      {open && (<>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(480px, 100%), 1fr))', gap: '16px' }}>
         {GROUPS.map((group) => {
@@ -63,6 +79,7 @@ export default function AllMetrics({ analytics }: AllMetricsProps) {
         Metrics marked "closes" normally use highs and lows, so they can differ slightly from other websites.
         Sharpe, Sortino and alpha assume cash earns 10% a year. Fund returns count payouts as reinvested; index returns leave out the dividends of the stocks in them.
       </p>
+      </>)}
     </section>
   )
 }

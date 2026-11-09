@@ -1,3 +1,4 @@
+using MarketAnalytics.Application.DTOs;
 using MarketAnalytics.Application.Services;
 using MarketAnalytics.Domain.ValueObjects;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -138,5 +139,59 @@ public class MarketAnalyticsServiceTests
         Assert.DoesNotContain(a.Signal.Reasons, r => r.Indicator == "Price vs 200-day average");
         Assert.Contains(a.Signal.Reasons, r => r.Indicator == "Price vs 50-day average");
         Assert.Equal(4, a.Signal.MaxScore);
+    }
+
+    [Theory]
+    [InlineData("Down", 110, 100, 105, "Recovering")]
+    [InlineData("Down", 102, 100, 105, null)]
+    [InlineData("Up", 90, 100, 95, "Weakening")]
+    [InlineData("Up", 98, 100, 95, null)]
+    [InlineData("Up", 110, 100, 95, null)]
+    public void TrendPhase_FlagsAPriceThatHasTurnedBeforeTheAveragesCross(string direction, int price, int sma50, int sma200, string? expected)
+    {
+        Assert.Equal(expected, SignalRules.TrendPhase(direction, price, sma50, sma200));
+    }
+
+    [Fact]
+    public void SharedNews_ListsInstrumentsWithTheSameReading()
+    {
+        NewsSentimentSummaryDto Mood(string symbol, int articles, int score) =>
+            new() { Symbol = symbol, Articles = articles, Score = score, Confidence = 79 };
+        var moods = new[] { Mood("KSE100", 55, 60), Mood("MIF", 55, 60), Mood("KMI30", 55, 60), Mood("GOLDPK", 198, 23) };
+
+        Assert.Equal(new[] { "KMI30", "MIF" }, MarketAnalyticsService.SharedNews(moods[0], moods));
+        Assert.Empty(MarketAnalyticsService.SharedNews(moods[3], moods));
+        Assert.Empty(MarketAnalyticsService.SharedNews(Mood("USDPKR", 0, 0), moods.Append(Mood("X", 0, 0))));
+    }
+}
+
+public class SteadySignalAnalyticsTests
+{
+    private static readonly DateTime Start = new(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    private readonly MarketAnalyticsService _service = new(null!, null!, new IndicatorCalculationService(), Microsoft.Extensions.Logging.Abstractions.NullLogger<MarketAnalyticsService>.Instance);
+
+    [Fact]
+    public void SteadySignal_IsMissingWhenHistoryIsTooShort()
+    {
+        var prices = Enumerable.Range(0, 150).Select(i => new MarketAnalytics.Domain.ValueObjects.PriceDataPoint(Start.AddDays(i), 100m + i)).ToList();
+
+        var a = _service.ComputeAnalytics(prices);
+        MarketAnalyticsService.ApplyNewsSignals(a, null);
+
+        Assert.Null(a.SteadySignal);
+        Assert.Null(a.SteadyCombinedSignal);
+    }
+
+    [Fact]
+    public void SteadySignal_IsSetWithEnoughHistory()
+    {
+        var prices = Enumerable.Range(0, 400).Select(i => new MarketAnalytics.Domain.ValueObjects.PriceDataPoint(Start.AddDays(i), 100m + i % 50 + i / 10m)).ToList();
+
+        var a = _service.ComputeAnalytics(prices);
+        MarketAnalyticsService.ApplyNewsSignals(a, null);
+
+        Assert.NotNull(a.SteadySignal);
+        Assert.InRange(a.SteadySignal!.Score, -100, 100);
+        Assert.Equal("Hold", a.SteadyCombinedSignal!.Action);   // no news, so the combined signal holds
     }
 }

@@ -29,7 +29,7 @@ public class BacktestService : IBacktestService
     private const int MinTradingDays = 250;
     private const int MaxCurvePoints = 300;
     // Days in the backtest always have all five technical rules available
-    private const int MaxTechnicalScore = 5;
+    public const int MaxTechnicalScore = 5;
     // A drawdown must shrink by at least this share to count as meaningfully lower risk
     private const double MeaningfulDrawdownReduction = 1.0 / 3;
     private static readonly int[] Horizons = { 7, 30, 90 };
@@ -62,7 +62,8 @@ public class BacktestService : IBacktestService
     {
         var results = new List<BacktestResultDto>();
         var news = await LoadNewsAsync(cancellationToken);
-        foreach (var instrument in await _instrumentRepository.GetActiveInstrumentsAsync(cancellationToken))
+        // A cash fund's price only creeps up, so there is nothing for Buy/Sell rules to time
+        foreach (var instrument in (await _instrumentRepository.GetActiveInstrumentsAsync(cancellationToken)).Where(i => !i.IsLowRisk))
         {
             try
             {
@@ -83,19 +84,19 @@ public class BacktestService : IBacktestService
         return instrument == null ? null : await BuildAsync(instrument, costPercent, await LoadNewsAsync(cancellationToken), cancellationToken);
     }
 
-    private async Task<List<(NewsArticle Article, SentimentResult Sentiment)>> LoadNewsAsync(CancellationToken cancellationToken)
+    private async Task<List<NewsArticle>> LoadNewsAsync(CancellationToken cancellationToken)
     {
         if (_newsRepository == null)
             return new();
 
         var articles = await _newsRepository.GetPublishedBetweenAsync(DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc), DateTime.UtcNow.AddDays(1), cancellationToken);
-        return articles.Select(a => (a, NewsSentimentAnalyzer.Analyze(a.Title, a.Summary))).ToList();
+        return articles;
     }
 
     private async Task<BacktestResultDto> BuildAsync(
         Instrument instrument,
         decimal costPercent,
-        List<(NewsArticle Article, SentimentResult Sentiment)> news,
+        List<NewsArticle> news,
         CancellationToken cancellationToken)
     {
         var prices = await PriceHistory.LoadDailyAsync(_pricePointRepository, _fundPayoutRepository, instrument.Id, cancellationToken: cancellationToken);
@@ -111,35 +112,8 @@ public class BacktestService : IBacktestService
     /// The signal score for each day from the first day all five rules can be evaluated (exposed for testing).
     /// Uses the same rules as the live signal; each day's score only depends on prices up to that day.
     /// </summary>
-    public List<(DateTime Date, decimal Price, int Score)> ComputeDailyScores(IReadOnlyList<PriceDataPoint> prices)
-    {
-        var sorted = prices.OrderBy(p => p.DateTime).ToList();
-        var sma200 = _indicators.ComputeSma(sorted, SignalRules.LongTrendPeriod);
-        var sma50 = _indicators.ComputeSma(sorted, SignalRules.MediumTrendPeriod);
-        var rsi = _indicators.ComputeRsi(sorted, SignalRules.RsiPeriod);
-        var (_, _, histogram) = _indicators.ComputeMacd(sorted);
-        var (upper, lower) = _indicators.ComputeBollingerBands(sorted);
-
-        var scores = new List<(DateTime, decimal, int)>();
-        foreach (var point in sorted)
-        {
-            var date = point.DateTime;
-            if (sma200[date] is not decimal longAverage || sma50[date] is not decimal mediumAverage
-                || rsi[date] is not decimal rsiValue || histogram[date] is not decimal macdHistogram
-                || upper[date] is not decimal upperBand || lower[date] is not decimal lowerBand)
-                continue;
-
-            var percentB = SignalRules.PercentB(point.Price, upperBand, lowerBand);
-            var score = SignalRules.Trend(point.Price, longAverage)
-                + SignalRules.Trend(point.Price, mediumAverage)
-                + SignalRules.Momentum(macdHistogram)
-                + SignalRules.Rsi(rsiValue)
-                + (percentB is decimal b ? SignalRules.Bollinger(b) : 0);
-
-            scores.Add((date, point.Price, score));
-        }
-        return scores;
-    }
+    public List<(DateTime Date, decimal Price, int Score)> ComputeDailyScores(IReadOnlyList<PriceDataPoint> prices) =>
+        SignalHistory.TechnicalScores(_indicators, prices);
 
     /// <summary>
     /// Runs the full backtest on daily prices (exposed for testing).
@@ -148,7 +122,9 @@ public class BacktestService : IBacktestService
     {
         var result = new BacktestResultDto { CostPercent = costPercent, CashInterestPercent = AssumedCashInterestPercent };
 
-        var days = ComputeDailyScores(prices);
+        // One set of indicator series for the daily scores and the trend rules
+        var series = IndicatorSeries.Compute(_indicators, prices);
+        var days = SignalHistory.TechnicalScores(series);
         if (days.Count < MinTradingDays)
             return result;
 
@@ -178,21 +154,28 @@ public class BacktestService : IBacktestService
         result.Strategy = Performance(strategy.Equity, years, strategy.Trades, strategy.TimeInvested);
         result.StrategyWithInterest = Performance(withInterest.Equity, years, withInterest.Trades, withInterest.TimeInvested);
         result.Verdict = VerdictFor(result.Strategy, result.BuyAndHold);
-        result.Outcomes = BuildOutcomes(dates, closes, scores);
+        result.Outcomes = BuildOutcomes(dates, closes, scores.Select(SignalRules.ActionFor).ToList());
 
         var middle = dates.Count / 2;
         result.BuyMinusSell30D = BuyMinusSell(dates, closes, scores, 0, dates.Count);
         result.BuyMinusSell30DFirstHalf = BuyMinusSell(dates, closes, scores, 0, middle);
         result.BuyMinusSell30DSecondHalf = BuyMinusSell(dates, closes, scores, middle, dates.Count);
 
+        // The same for the steady signal, so the page can show whichever signal the reader chose
+        var steadyScores = SignalRules.SteadyScores(scores, MaxTechnicalScore);
+        var steadyPositions = steadyScores.Select(SignalRules.PositionForScaledScore).ToList();
+        result.SteadyOutcomes = BuildOutcomes(dates, closes, steadyScores.Select(SignalRules.ActionForScaledScore).ToList());
+        result.SteadyBuyMinusSell30D = BuyMinusSell(dates, closes, steadyPositions, 0, dates.Count);
+        result.SteadyBuyMinusSell30DFirstHalf = BuyMinusSell(dates, closes, steadyPositions, 0, middle);
+        result.SteadyBuyMinusSell30DSecondHalf = BuyMinusSell(dates, closes, steadyPositions, middle, dates.Count);
+
         // Slower trend rules, fixed in advance, on the same dates and with the same costs as the signal
-        var byDate = prices.OrderBy(p => p.DateTime).ToList();
-        var sma50 = _indicators.ComputeSma(byDate, SignalRules.MediumTrendPeriod);
-        var sma200 = _indicators.ComputeSma(byDate, SignalRules.LongTrendPeriod);
+        var (sma50, sma200) = (series.Sma50, series.Sma200);
         var medium = dates.Select(d => sma50[d]!.Value).ToList();
         var longTerm = dates.Select(d => sma200[d]!.Value).ToList();
         var goldenCross = Simulate(dates, closes, GoldenCrossScores(medium, longTerm), cost, cashInterest: 0);
         var monthlyTrend = Simulate(dates, closes, MonthlyTrendScores(dates, days.Select(d => d.Price).ToList(), longTerm), cost, cashInterest: 0);
+        var steadySignal = Simulate(dates, closes, steadyPositions, cost, cashInterest: 0);
 
         var firstHalfYears = (dates[middle] - dates[0]).TotalDays / 365.25;
         var secondHalfYears = (dates[^1] - dates[middle]).TotalDays / 365.25;
@@ -214,8 +197,8 @@ public class BacktestService : IBacktestService
             };
         }
 
-        result.Rules = new List<RuleResultDto> { Rule("signal", strategy), Rule("goldenCross", goldenCross), Rule("monthlyTrend", monthlyTrend) };
-        result.EquityCurve = ThinCurve(dates, buyAndHold, strategy.Equity, goldenCross.Equity, monthlyTrend.Equity);
+        result.Rules = new List<RuleResultDto> { Rule("signal", strategy), Rule("steadySignal", steadySignal), Rule("goldenCross", goldenCross), Rule("monthlyTrend", monthlyTrend) };
+        result.EquityCurve = ThinCurve(dates, buyAndHold, strategy.Equity, goldenCross.Equity, monthlyTrend.Equity, steadySignal.Equity);
         result.NewsTest = RunNewsTest(dates, closes, scores, news ?? Array.Empty<ScoredNews>(), cost);
         return result;
     }
@@ -236,12 +219,15 @@ public class BacktestService : IBacktestService
         var testDates = dates.Skip(start).ToList();
         var testCloses = closes.Skip(start).ToList();
         var testTechnical = technicalScores.Skip(start).ToList();
+        // Averaged over the whole history first, so the first test days already have 20 days behind them
+        var testSteady = SignalRules.SteadyScores(technicalScores, MaxTechnicalScore).Skip(start).ToList();
         var testMoods = moods.Skip(start).ToList();
         var years = (testDates[^1] - testDates[0]).TotalDays / 365.25;
 
         var technicalScaled = testTechnical.Select(t => t * 100.0 / MaxTechnicalScore).ToList();
         var newsScaled = testMoods.Select(m => SignalRules.NewsScore(m.Score, m.Articles)).ToList();
         var combinedScaled = testTechnical.Select((t, i) => SignalRules.CombinedScore(t, MaxTechnicalScore, testMoods[i].Score, testMoods[i].Articles)).ToList();
+        var steadyCombinedScaled = testSteady.Select((t, i) => SignalRules.CombinedScaledScore(t, testMoods[i].Score, testMoods[i].Articles)).ToList();
 
         var holding = new double[testCloses.Count];
         holding[0] = 1;
@@ -258,7 +244,7 @@ public class BacktestService : IBacktestService
         test.Holding = Performance(holding, years, trades: 1, timeInvested: 100);
 
         var equity = new Dictionary<string, double[]>();
-        foreach (var (key, scaled) in new[] { ("technical", technicalScaled), ("news", newsScaled), ("combined", combinedScaled) })
+        foreach (var (key, scaled) in new[] { ("technical", technicalScaled), ("news", newsScaled), ("combined", combinedScaled), ("steadyTechnical", testSteady), ("steadyCombined", steadyCombinedScaled) })
         {
             var positions = scaled.Select(SignalRules.PositionForScaledScore).ToList();
             var run = Simulate(testDates, testCloses, positions, cost, cashInterest: 0);
@@ -287,6 +273,8 @@ public class BacktestService : IBacktestService
                     Technical = (decimal)(equity["technical"][i] * 100),
                     News = (decimal)(equity["news"][i] * 100),
                     Combined = (decimal)(equity["combined"][i] * 100),
+                    SteadyTechnical = (decimal)(equity["steadyTechnical"][i] * 100),
+                    SteadyCombined = (decimal)(equity["steadyCombined"][i] * 100),
                 });
             }
         }
@@ -387,9 +375,8 @@ public class BacktestService : IBacktestService
         return muchSmallerFall && betterPerFall ? "LowerRisk" : "DidNotHelp";
     }
 
-    private static List<SignalOutcomeDto> BuildOutcomes(List<DateTime> dates, List<double> closes, List<int> scores)
+    private static List<SignalOutcomeDto> BuildOutcomes(List<DateTime> dates, List<double> closes, List<string> actions)
     {
-        var actions = scores.Select(SignalRules.ActionFor).ToList();
         var forward = Horizons.ToDictionary(h => h, h => ForwardChanges(dates, closes, h));
 
         var outcomes = Actions.Append("All").Select(action =>
@@ -460,7 +447,7 @@ public class BacktestService : IBacktestService
         return buys.Count > 0 && sells.Count > 0 ? (decimal)(buys.Average() - sells.Average()) : null;
     }
 
-    private static List<EquityPointDto> ThinCurve(List<DateTime> dates, double[] buyAndHold, double[] strategy, double[] goldenCross, double[] monthlyTrend)
+    private static List<EquityPointDto> ThinCurve(List<DateTime> dates, double[] buyAndHold, double[] strategy, double[] goldenCross, double[] monthlyTrend, double[] steadySignal)
     {
         var step = Math.Max(1, dates.Count / MaxCurvePoints);
         var curve = new List<EquityPointDto>();
@@ -474,6 +461,7 @@ public class BacktestService : IBacktestService
                     Strategy = (decimal)(strategy[i] * 100),
                     GoldenCross = (decimal)(goldenCross[i] * 100),
                     MonthlyTrend = (decimal)(monthlyTrend[i] * 100),
+                    SteadySignal = (decimal)(steadySignal[i] * 100),
                 });
         }
         return curve;

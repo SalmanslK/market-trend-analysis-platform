@@ -31,6 +31,11 @@ export const glossary = {
     what: 'Buy or Sell from the tone of the last 7 days of news about this instrument, from -100 to +100. +20 or more is Buy, +60 or more Strong Buy, -20 or less Sell, -60 or less Strong Sell. With fewer than 3 stories it stays on Hold.',
     howToRead: 'Sentiment is read automatically from headline wording, so complicated headlines can be misread. Many headlines report moves that have already happened, so news can lag the price.',
   },
+  steadySignal: {
+    title: 'Steady or daily technical signal',
+    what: 'Daily: today\'s five indicator votes, which can flip from Buy to Sell from one day to the next. Steady: the same daily score averaged over the last 20 trading days, so one odd day doesn\'t change the call.',
+    howToRead: 'In testing over each instrument\'s history, at 0.5% per trade, the steady signal earned about +17% a year with 2 trades a year, the daily one about +7% with 19 trades; simply holding earned about +20%. Steady is the default; the combined signal, alerts and track record follow your choice.',
+  },
   combinedSignal: {
     title: 'Combined signal',
     what: 'Buy or Sell only when the technical and news signals clearly point the same way (each at least +20, or each at most -20). Its score is their average. Otherwise it says Hold.',
@@ -90,6 +95,31 @@ export const glossary = {
     title: 'Payouts (dividends)',
     what: 'Cash a fund pays out per unit, usually once a year in June. On that day the fund\'s price drops by about the same amount, but investors don\'t lose anything: they get the cash, or more units if they reinvest.',
     howToRead: 'Prices, returns and charts here count payouts as reinvested, so a payout does not show as a fall. The latest price is the real price. "Last 12 months" is the payouts of the past year as a share of today\'s price.',
+  },
+  portfolio: {
+    title: 'Portfolio mix',
+    what: 'Splitting your money between different investments, for example 60% in a stock fund, 20% in a gold fund and 20% in a cash fund. Stocks and gold often move differently, and the cash part never falls, so the mix usually falls less than any one of its risky parts.',
+    howToRead: 'Compare "Return per year" with "Worst fall": a mix that earns a little less but falls much less can be easier to stick with in a crash.',
+  },
+  rebalance: {
+    title: 'Rebalancing',
+    what: 'Bringing the mix back to its target split on a schedule, for example every January. After stocks rise, you sell some stocks and buy the parts that fell behind.',
+    howToRead: '"Never" lets the split drift with prices. Yearly is common; more often means more trading costs.',
+  },
+  trendFilter: {
+    title: 'Trend filter',
+    what: 'Each stock or gold part is moved to the cash fund while its own long-term trend is Down, and bought back when it turns Up.',
+    howToRead: 'It aims to avoid long falls, but it trades more and can sell near the bottom and buy back higher. The table shows whether it helped.',
+  },
+  sharpe: {
+    title: 'Sharpe ratio',
+    what: 'How much return a mix earned above the cash fund for each unit of ups and downs (volatility).',
+    howToRead: 'Higher is better. It lets you compare a calm mix with a bumpy one: a mix with a lower return can still have a higher Sharpe ratio.',
+  },
+  cashFund: {
+    title: 'Cash and income funds',
+    what: 'Low-risk Meezan funds. Cash funds (Meezan Cash Fund, Rozana Amdani) invest in very short-term Islamic deposits and government papers; income funds (Islamic Income Fund, Munafa Plan I) in slightly longer Islamic bonds and deposits. Their price creeps up almost every day and rarely falls.',
+    howToRead: 'They show what money earns while it waits. Buy/Sell signals don\'t apply to them. They pay their return out as payouts: yearly for most, daily for Rozana Amdani, whose price stays at Rs 50. Returns here count payouts as reinvested.',
   },
   backtest: {
     title: 'Track record (backtest)',

@@ -158,3 +158,6 @@ coverage/
 appsettings.Production.json
 *.secrets.json
 secrets.json
+
+# Database backups made by scripts/backup-db.ps1
+backups/

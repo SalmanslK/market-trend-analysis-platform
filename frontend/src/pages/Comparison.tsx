@@ -17,10 +17,14 @@ import IntervalSelector from '../components/controls/IntervalSelector'
 import TimeframeSelector from '../components/controls/TimeframeSelector'
 import { intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences } from '../services/preferences'
+import { formatNumber } from '../services/format'
 import PlainSummary from '../components/help/PlainSummary'
 
-// Distinct colors for up to 9 instruments
-const SERIES_COLORS = ['#1976d2', '#d32f2f', '#388e3c', '#f57c00', '#7b1fa2', '#0097a7', '#5d4037', '#c2185b', '#616161']
+// One distinct colour per instrument (13 today, with spares); with fewer colours than instruments two lines matched
+const SERIES_COLORS = [
+  '#1565c0', '#c62828', '#2e7d32', '#ef6c00', '#6a1b9a', '#00838f', '#5d4037', '#ad1457',
+  '#455a64', '#9e9d24', '#283593', '#00897b', '#d84315', '#7cb342', '#8e24aa', '#f9a825',
+]
 
 const DEFAULT_SELECTION = ['KSE100', 'KMI30', 'USDPKR']
 
@@ -137,7 +141,7 @@ export default function Comparison() {
 
   return (
     <div style={{ padding: '20px' }}>
-      <h1>Comparison View</h1>
+      <h1>Compare Instruments</h1>
       <p style={{ marginBottom: '20px', color: '#555' }}>
         Compare how instruments performed over the same period. Each line shows the % change from
         the first price in the selected timeframe, so instruments on very different scales share one axis.
@@ -245,16 +249,20 @@ export default function Comparison() {
             <tbody>
               {stats.map((row) => (
                 <tr key={row.symbol}>
-                  <td style={{ ...cellStyle, fontWeight: 'bold', color: colorFor(row.symbol) }}>{row.symbol}</td>
+                  <td style={{ ...cellStyle, fontWeight: 'bold' }}>
+                    {/* The dot matches the chart line; the name stays dark so it is readable whatever the colour */}
+                    <span aria-hidden="true" style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: colorFor(row.symbol), marginRight: '6px' }} />
+                    {row.symbol}
+                  </td>
                   <td style={cellStyle}>{new Date(row.startDate).toLocaleDateString()}</td>
-                  <td style={cellStyle}>{row.startPrice.toFixed(2)}</td>
-                  <td style={cellStyle}>{row.endPrice.toFixed(2)}</td>
+                  <td style={cellStyle}>{formatNumber(row.startPrice)}</td>
+                  <td style={cellStyle}>{formatNumber(row.endPrice)}</td>
                   <td style={{ ...cellStyle, color: row.changePercent >= 0 ? '#388e3c' : '#d32f2f' }}>
                     {row.changePercent >= 0 ? '+' : ''}{row.changePercent.toFixed(2)}%
                     {row.points < 2 && ' (1 data point)'}
                   </td>
-                  <td style={cellStyle}>{row.high.toFixed(2)}</td>
-                  <td style={cellStyle}>{row.low.toFixed(2)}</td>
+                  <td style={cellStyle}>{formatNumber(row.high)}</td>
+                  <td style={cellStyle}>{formatNumber(row.low)}</td>
                 </tr>
               ))}
             </tbody>

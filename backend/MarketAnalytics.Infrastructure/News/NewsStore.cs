@@ -3,9 +3,8 @@ using MarketAnalytics.Application.Services;
 using MarketAnalytics.Domain.Entities;
 using MarketAnalytics.Infrastructure.Data;
 using MarketAnalytics.Infrastructure.Data.Configurations;
-using MarketAnalytics.Infrastructure.News;
 
-namespace MarketAnalytics.Worker;
+namespace MarketAnalytics.Infrastructure.News;
 
 /// <summary>
 /// One collected news item and how it was found.

@@ -1,4 +1,4 @@
-import { BacktestResult, BacktestVerdict, InstrumentAnalyticsDto, InstrumentType, NewsSentimentSummary, SignalAction } from './types/marketData'
+import { BacktestResult, BacktestVerdict, InstrumentAnalyticsDto, InstrumentType, NewsSentimentSummary, SignalAction, PortfolioComparison } from './types/marketData'
 import { formatDate, formatNumber } from './format'
 
 /**
@@ -116,7 +116,7 @@ export function describeMood(mood: NewsSentimentSummary | undefined, symbol: str
 /**
  * A short plain-language summary of one instrument: a headline and a few key points.
  */
-export function describeInstrument(a: InstrumentAnalyticsDto, mood?: NewsSentimentSummary): { headline: string; points: string[] } {
+export function describeInstrument(a: InstrumentAnalyticsDto, mood?: NewsSentimentSummary, news = true): { headline: string; points: string[] } {
   const points: string[] = []
 
   // Recent performance, from short to long term
@@ -161,10 +161,17 @@ export function describeInstrument(a: InstrumentAnalyticsDto, mood?: NewsSentime
   if (mood && mood.articles > 0 && mood.label !== 'Neutral' && a.signal.score !== 0) {
     const signalUp = a.signal.score > 0
     const newsUp = mood.label === 'Positive'
+    // When they disagree, say why: they look at different periods, so after a sharp turn the news moves first
+    const dailyAgrees = a.signal.steady && a.dailySignal && a.dailySignal.score !== 0 && (a.dailySignal.score > 0) === newsUp
     points.push(
       signalUp === newsUp
         ? `The signal and the news point the same way (${newsUp ? 'up' : 'down'}), which makes the picture clearer.`
-        : `The signal points ${signalUp ? 'up' : 'down'} but the news sounds ${newsUp ? 'positive' : 'negative'}. When they disagree, the picture is less certain: worth reading the news before deciding.`,
+        : `The technical signal points ${signalUp ? 'up' : 'down'} but the news sounds ${newsUp ? 'positive' : 'negative'}. They look at different periods: ` +
+          (a.signal.steady
+            ? 'the news covers the last 7 days, the steady technical signal the last 20 trading days, so after a sharp turn they disagree until the move lasts.'
+            : 'the news covers the last 7 days, the technical signal where today\'s price stands against its averages.') +
+          (dailyAgrees ? ' Today\'s votes on their own already agree with the news.' : '') +
+          ' Until they agree, the combined signal says Hold.',
     )
   }
 
@@ -172,9 +179,14 @@ export function describeInstrument(a: InstrumentAnalyticsDto, mood?: NewsSentime
   if (note) points.push(note)
 
   const labels: Record<SignalAction, string> = { StrongBuy: 'Strong Buy', Buy: 'Buy', Hold: 'Hold', Sell: 'Sell', StrongSell: 'Strong Sell' }
-  const newsText = a.newsSignal.articles >= 3 ? labels[a.newsSignal.action] : `Hold (only ${a.newsSignal.articles} recent ${a.newsSignal.articles === 1 ? 'story' : 'stories'})`
-  const combinedText = a.combinedSignal.action === 'Hold' ? 'Hold, because technical and news don\'t clearly agree' : labels[a.combinedSignal.action]
-  points.unshift(`Combined signal: ${combinedText}. Technical says ${labels[a.signal.action]}, news says ${newsText}.`)
+  if (news) {
+    const newsText = a.newsSignal.articles >= 3 ? labels[a.newsSignal.action] : `Hold (only ${a.newsSignal.articles} recent ${a.newsSignal.articles === 1 ? 'story' : 'stories'})`
+    const combinedText = a.combinedSignal.action === 'Hold' ? 'Hold (stay as you are), because technical and news don\'t clearly agree' : labels[a.combinedSignal.action]
+    points.unshift(`Combined signal: ${combinedText}. Technical says ${labels[a.signal.action]}, news says ${newsText}.`)
+  } else {
+    const technical = a.signal.action === 'Hold' ? 'Hold (stay as you are)' : labels[a.signal.action]
+    points.unshift(`Technical signal: ${technical}${a.signal.steady ? ', from the last 20 trading days' : ', from today\'s prices'}.`)
+  }
 
   return {
     headline: `${signalMeaning[a.signal.action].headline}. ${a.name} is at ${formatNumber(a.lastPrice)} (${priceMeaning(a)}).`,
@@ -185,7 +197,9 @@ export function describeInstrument(a: InstrumentAnalyticsDto, mood?: NewsSentime
 /**
  * A few sentences describing the whole market from all instruments' analytics.
  */
-export function describeMarket(all: InstrumentAnalyticsDto[], moods: NewsSentimentSummary[]): string[] {
+export function describeMarket(everything: InstrumentAnalyticsDto[], moods: NewsSentimentSummary[], news = true): string[] {
+  // A cash fund is a reference for what money earns, not part of the market's mood
+  const all = everything.filter((a) => !a.isCash)
   if (all.length === 0) return []
   const sentences: string[] = []
 
@@ -214,11 +228,19 @@ export function describeMarket(all: InstrumentAnalyticsDto[], moods: NewsSentime
   const leaning = (action: string) => action === 'StrongBuy' || action === 'Buy' ? 'buy' : action === 'StrongSell' || action === 'Sell' ? 'sell' : 'hold'
   const buys = all.filter((a) => leaning(a.combinedSignal.action) === 'buy').length
   const sells = all.filter((a) => leaning(a.combinedSignal.action) === 'sell').length
-  sentences.push(`Combined signals (Buy or Sell only when technical and news agree): ${buys} of ${all.length} lean towards Buy, ${sells} towards Sell and ${all.length - buys - sells} are Hold.`)
+  sentences.push(news
+    ? `Combined signal (Buy or Sell only when technical and news agree): ${buys} Buy, ${sells} Sell, ${all.length - buys - sells} Hold (stay as you are).`
+    : `Technical signal: ${buys} Buy, ${sells} Sell, ${all.length - buys - sells} Hold (stay as you are).`)
 
   const trendsUp = all.filter((a) => a.longTermTrend.direction === 'Up').length
   const trendsDown = all.filter((a) => a.longTermTrend.direction === 'Down').length
-  sentences.push(`The long-term trend is up for ${trendsUp} of ${all.length} instruments and down for ${trendsDown}. It reacts slowly, so it can lag recent moves.`)
+  const recovering = all.filter((a) => a.longTermTrend.phase === 'Recovering').map((a) => a.symbol)
+  const weakening = all.filter((a) => a.longTermTrend.phase === 'Weakening').map((a) => a.symbol)
+  const phases = [
+    recovering.length ? `${recovering.join(', ')} already recovering` : '',
+    weakening.length ? `${weakening.join(', ')} already weakening` : '',
+  ].filter(Boolean).join('; ')
+  sentences.push(`Long-term trend: up for ${trendsUp}, down for ${trendsDown}${phases ? `; ${phases}` : ''}.`)
 
   const scored = moods.filter((m) => m.articles > 0)
   const positiveMood = scored.filter((m) => m.label === 'Positive').map((m) => m.symbol)
@@ -232,6 +254,16 @@ export function describeMarket(all: InstrumentAnalyticsDto[], moods: NewsSentime
     if (negativeMood.length) parts.push(`negative for ${negativeMood.map((s) => name(s, 'Negative')).join(', ')}`)
     sentences.push(`This week's news sounds ${parts.join(' and ')}.`)
   }
+
+  // Instruments linked to the same stories have one shared reading, not separate ones
+  const groups = new Map<string, string[]>()
+  for (const a of all.filter((a) => a.newsSignal.sharedWith.length)) {
+    const key = [a.symbol, ...a.newsSignal.sharedWith].sort().join(', ')
+    groups.set(key, key.split(', '))
+  }
+  // One line for all groups: it's a caveat, not news
+  if (news && groups.size > 0)
+    sentences.push(`Some instruments read the same news, so their news signals move together: ${[...groups.values()].map((g) => g.join(' & ')).join('; ')}.`)
 
   return sentences
 }
@@ -360,4 +392,49 @@ export function describeNewsRuleRecord(r: BacktestResult, key: 'news' | 'combine
   const short = r.newsTest.years < MIN_RELIABLE_YEARS ? ' This is too little history to judge.' : ''
 
   return `Over ${r.newsTest.years.toFixed(1)} years, ${signedPct(annualReturn)} a year after costs with ${trades} trades: ${outcome} simply holding (${signedPct(holding.annualReturn)}). Worst fall ${maxDrawdown.toFixed(0)}% against ${holding.maxDrawdown.toFixed(0)}%.${short}`
+}
+
+/**
+ * Plain sentences comparing portfolio mixes: which earned most, which fell least, and the trade-off between them.
+ */
+export function describePortfolios(comparison: PortfolioComparison): string[] {
+  const results = comparison.results
+  if (results.length === 0) return []
+  const sentences: string[] = []
+  const years = results[0].years
+
+  const byReturn = [...results].sort((a, b) => b.annualReturn - a.annualReturn)
+  const risky = results.filter((r) => r.maxDrawdown < -1)
+  const byFall = [...risky].sort((a, b) => b.maxDrawdown - a.maxDrawdown)
+  const best = byReturn[0]
+  sentences.push(`Over these ${years.toFixed(1)} years, "${best.name}" earned the most: ${best.annualReturn.toFixed(1)}% a year, with a worst fall of ${best.maxDrawdown.toFixed(0)}%.`)
+
+  // Mixes that kept most of the best return for much less fall
+  const tradeOffs = risky
+    .filter((r) => r !== best && r.annualReturn >= best.annualReturn - 3 && r.maxDrawdown > best.maxDrawdown * 0.75)
+    .sort((a, b) => b.annualReturn - a.annualReturn)
+  if (tradeOffs.length > 0) {
+    const t = tradeOffs[0]
+    sentences.push(`"${t.name}" earned ${(best.annualReturn - t.annualReturn).toFixed(1)} points a year less, but its worst fall was ${t.maxDrawdown.toFixed(0)}% instead of ${best.maxDrawdown.toFixed(0)}%.`)
+  } else if (byFall.length > 0) {
+    const calm = byFall[0]
+    sentences.push(`The calmest mix with risky parts, "${calm.name}", fell at most ${calm.maxDrawdown.toFixed(0)}% and earned ${calm.annualReturn.toFixed(1)}% a year.`)
+  }
+
+  if (comparison.cashAnnualReturn != null)
+    sentences.push(`The cash fund earned ${comparison.cashAnnualReturn.toFixed(1)}% a year over the same dates without falling, so money waiting in cash wasn't idle.`)
+
+  const filtered = results.filter((r) => r.trendFilter)
+  for (const f of filtered) {
+    const plain = results.find((r) => !r.trendFilter && r.rebalance === f.rebalance && JSON.stringify(r.weights) === JSON.stringify(f.weights))
+    if (!plain) continue
+    const helped = f.annualReturn > plain.annualReturn && f.maxDrawdown >= plain.maxDrawdown
+    const hurt = f.annualReturn < plain.annualReturn && f.maxDrawdown <= plain.maxDrawdown
+    sentences.push(`The trend filter on "${plain.name}" ${helped ? 'helped' : hurt ? 'hurt' : 'was mixed'}: ${f.annualReturn.toFixed(1)}% a year and a worst fall of ${f.maxDrawdown.toFixed(0)}%, against ${plain.annualReturn.toFixed(1)}% and ${plain.maxDrawdown.toFixed(0)}% without it.`)
+  }
+
+  if (years < MIN_RELIABLE_YEARS)
+    sentences.push(`Only ${years.toFixed(1)} years can be compared, because one of the chosen instruments has a short history. One good or bad stretch can decide a result this short.`)
+
+  return sentences
 }

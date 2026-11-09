@@ -238,20 +238,18 @@ public class IndicatorCalculationService : IIndicatorCalculationService
         int period, 
         string label)
     {
-        var result = new Dictionary<DateTime, decimal?>();
+        var result = new Dictionary<DateTime, decimal?>(sortedData.Count);
 
+        // A running total: add the newest price and drop the one leaving the window. Decimal sums are exact,
+        // so this gives the same averages as summing each window, without re-adding 200 prices per day
+        var sum = 0m;
         for (int i = 0; i < sortedData.Count; i++)
         {
-            if (i < period - 1)
-            {
-                result[sortedData[i].DateTime] = null;
-            }
-            else
-            {
-                var window = sortedData.Skip(i - period + 1).Take(period);
-                var average = window.Average(d => d.Price);
-                result[sortedData[i].DateTime] = average;
-            }
+            sum += sortedData[i].Price;
+            if (i >= period)
+                sum -= sortedData[i - period].Price;
+
+            result[sortedData[i].DateTime] = i < period - 1 ? null : sum / period;
         }
 
         return result;

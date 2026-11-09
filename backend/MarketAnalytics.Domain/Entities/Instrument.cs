@@ -38,6 +38,15 @@ public class Instrument
     /// Whether this instrument is active for data updates and queries.
     /// </summary>
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// "Cash fund" or "Income fund" for a low-risk fund whose price only creeps up: Buy/Sell signals don't apply to it,
+    /// it is left out of the signal backtests and alerts, and moving money into or out of it costs nothing in a mix.
+    /// Null for everything else.
+    /// </summary>
+    public string? LowRiskKind { get; set; }
+
+    public bool IsLowRisk => LowRiskKind != null;
     
     /// <summary>
     /// Timestamp when the instrument was created.

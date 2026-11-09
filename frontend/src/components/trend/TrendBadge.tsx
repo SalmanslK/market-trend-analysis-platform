@@ -1,5 +1,6 @@
 import { LongTermTrend } from '../../services/types/marketData'
 import { formatDate } from '../../services/format'
+import Tip from '../help/Tip'
 
 interface TrendBadgeProps {
   trend: LongTermTrend
@@ -17,12 +18,20 @@ const styles = {
 export default function TrendBadge({ trend, large = false }: TrendBadgeProps) {
   const style = styles[trend.direction]
   const since = trend.since ? `since ${formatDate(trend.since)}` : undefined
+  const phase = trend.phase === 'Recovering'
+    ? 'Recovering: the price is already back above both averages. The trend turns Up only when the 50-day average crosses above the 200-day, which can take weeks.'
+    : trend.phase === 'Weakening'
+      ? 'Weakening: the price has already fallen below both averages. The trend turns Down only when the 50-day average crosses below the 200-day, which can take weeks.'
+      : ''
+  const text = trend.direction === 'Unknown'
+    ? 'The long-term trend needs at least 200 prices'
+    : `Long-term trend: ${style.label}${since ? `, ${since}` : ''}. This describes the past and isn't a recommendation.${phase ? `
+
+${phase}` : ''}`
 
   return (
+    <Tip text={text}>
     <span
-      title={trend.direction === 'Unknown'
-        ? 'The long-term trend needs at least 200 prices'
-        : `Long-term trend: ${style.label}${since ? `, ${since}` : ''}. This describes the past and isn't a recommendation.`}
       style={{
         display: 'inline-block',
         padding: large ? '6px 14px' : '3px 10px',
@@ -35,7 +44,9 @@ export default function TrendBadge({ trend, large = false }: TrendBadgeProps) {
       }}
     >
       {style.icon} {style.label}
+      {trend.phase && <span style={{ fontWeight: 'normal', marginLeft: '4px' }}>· {trend.phase.toLowerCase()}</span>}
       {large && since && <span style={{ fontWeight: 'normal', marginLeft: '6px', fontSize: '13px' }}>{since}</span>}
     </span>
+    </Tip>
   )
 }

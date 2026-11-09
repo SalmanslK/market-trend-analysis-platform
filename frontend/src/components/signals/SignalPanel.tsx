@@ -1,10 +1,11 @@
 import { InstrumentAnalyticsDto } from '../../services/types/marketData'
-import { COLORS, formatDate, TREND_DISCLAIMER } from '../../services/format'
+import { COLORS, formatDate, TREND_DISCLAIMER, signalStyles } from '../../services/format'
 import { describeTrend, directionNote, signalMeaning } from '../../services/plainLanguage'
 import InfoTip from '../help/InfoTip'
 import TrendBadge from '../trend/TrendBadge'
 import ScaledSignalBadge from './ScaledSignalBadge'
 import SignalBadge from './SignalBadge'
+import { useFeatures } from '../../services/features'
 import SignalTrackRecord from './SignalTrackRecord'
 
 interface SignalPanelProps {
@@ -20,27 +21,37 @@ const impactStyle = (impact: number) =>
 
 export default function SignalPanel({ analytics }: SignalPanelProps) {
   const { signal, longTermTrend } = analytics
+  const { news } = useFeatures()
   const note = directionNote(analytics.symbol)
 
   return (
     <section style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px' }}>
       <h2 style={{ fontSize: '1.2rem', marginBottom: '10px' }}>Buy/Sell signals</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px', marginBottom: '14px' }}>
+        {news && (
         <div style={{ padding: '10px 12px', border: `2px solid ${COLORS.border}`, borderRadius: '6px' }}>
           <div style={{ fontSize: '12px', color: COLORS.muted, marginBottom: '6px' }}>Combined<InfoTip term="combinedSignal" /></div>
           <ScaledSignalBadge signal={analytics.combinedSignal} large />
         </div>
+        )}
         <div style={{ padding: '10px 12px', border: `1px solid ${COLORS.border}`, borderRadius: '6px' }}>
-          <div style={{ fontSize: '12px', color: COLORS.muted, marginBottom: '6px' }}>Technical<InfoTip term="signal" /></div>
+          <div style={{ fontSize: '12px', color: COLORS.muted, marginBottom: '6px' }}>Technical{signal.steady ? ' (steady)' : ' (daily)'}<InfoTip term="signal" /></div>
           <SignalBadge signal={signal} large />
         </div>
+        {news && (
         <div style={{ padding: '10px 12px', border: `1px solid ${COLORS.border}`, borderRadius: '6px' }}>
           <div style={{ fontSize: '12px', color: COLORS.muted, marginBottom: '6px' }}>News, last 7 days<InfoTip term="newsSignal" /></div>
           <ScaledSignalBadge signal={analytics.newsSignal} large />
           <div style={{ fontSize: '12px', color: COLORS.muted, marginTop: '6px' }}>
             {analytics.newsSignal.articles} {analytics.newsSignal.articles === 1 ? 'story' : 'stories'}, {analytics.newsSignal.newsConfidence}% sure
           </div>
+          {analytics.newsSignal.sharedWith.length > 0 && (
+            <div style={{ fontSize: '12px', color: COLORS.muted, marginTop: '4px' }}>
+              Same news as {analytics.newsSignal.sharedWith.join(', ')}: not specific to {analytics.symbol}
+            </div>
+          )}
         </div>
+        )}
       </div>
 
       <h3 style={{ fontSize: '1rem', marginBottom: '6px' }}>Why the technical signal says this</h3>
@@ -48,7 +59,17 @@ export default function SignalPanel({ analytics }: SignalPanelProps) {
         <strong>{signalMeaning[signal.action].headline}.</strong> {signalMeaning[signal.action].detail}
       </p>
       <p style={{ color: COLORS.muted, fontSize: '13px', marginBottom: '12px' }}>
-        Each indicator below votes ▲ up, ▼ down or ● no view, giving {signal.score > 0 ? '+' : ''}{signal.score} of {signal.maxScore} votes.<InfoTip term="score" /> Based on daily prices up to {formatDate(analytics.lastDate)}.
+        {signal.steady && analytics.dailySignal ? (
+          <>
+            This is the steady signal: the daily vote count averaged over the last 20 trading days, {signal.score > 0 ? '+' : ''}{signal.score} on a scale of -100 to +100.<InfoTip term="steadySignal" />{' '}
+            Today the indicators below give {analytics.dailySignal.score > 0 ? '+' : ''}{analytics.dailySignal.score} of {analytics.dailySignal.maxScore} votes,
+            which on its own would say {signalStyles[analytics.dailySignal.action].label}. Based on daily prices up to {formatDate(analytics.lastDate)}.
+          </>
+        ) : (
+          <>
+            Each indicator below votes ▲ up, ▼ down or ● no view, giving {signal.score > 0 ? '+' : ''}{signal.score} of {signal.maxScore} votes.<InfoTip term="score" /> Based on daily prices up to {formatDate(analytics.lastDate)}.
+          </>
+        )}
       </p>
 
       <ul style={{ listStyle: 'none' }}>

@@ -40,6 +40,12 @@ public class BacktestResultDto
     public decimal? BuyMinusSell30DFirstHalf { get; set; }
     public decimal? BuyMinusSell30DSecondHalf { get; set; }
 
+    /// <summary>The same outcomes and spreads for the steady technical signal (the daily score averaged over 20 days).</summary>
+    public List<SignalOutcomeDto> SteadyOutcomes { get; set; } = new();
+    public decimal? SteadyBuyMinusSell30D { get; set; }
+    public decimal? SteadyBuyMinusSell30DFirstHalf { get; set; }
+    public decimal? SteadyBuyMinusSell30DSecondHalf { get; set; }
+
     /// <summary>Holding's return per year in each half of the period, to compare with each rule's.</summary>
     public decimal HoldingFirstHalfAnnual { get; set; }
     public decimal HoldingSecondHalfAnnual { get; set; }
@@ -60,7 +66,7 @@ public class BacktestResultDto
 /// </summary>
 public class RuleResultDto
 {
-    /// <summary>signal, goldenCross or monthlyTrend.</summary>
+    /// <summary>signal, steadySignal, goldenCross or monthlyTrend.</summary>
     public string Key { get; set; } = string.Empty;
     public PerformanceDto Performance { get; set; } = new();
     /// <summary>Helped, LowerRisk or DidNotHelp, compared with holding.</summary>
@@ -91,7 +97,7 @@ public class NewsBacktestDto
 
 public class NewsRuleResultDto
 {
-    /// <summary>technical, news or combined.</summary>
+    /// <summary>technical, news, combined, steadyTechnical or steadyCombined.</summary>
     public string Key { get; set; } = string.Empty;
     public PerformanceDto Performance { get; set; } = new();
     public string Verdict { get; set; } = "DidNotHelp";
@@ -108,6 +114,8 @@ public class NewsEquityPointDto
     public decimal Technical { get; set; }
     public decimal News { get; set; }
     public decimal Combined { get; set; }
+    public decimal SteadyTechnical { get; set; }
+    public decimal SteadyCombined { get; set; }
 }
 
 public class PerformanceDto
@@ -151,4 +159,5 @@ public class EquityPointDto
     public decimal Strategy { get; set; }
     public decimal GoldenCross { get; set; }
     public decimal MonthlyTrend { get; set; }
+    public decimal SteadySignal { get; set; }
 }

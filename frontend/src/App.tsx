@@ -5,24 +5,39 @@ import Comparison from './pages/Comparison'
 import News from './pages/News'
 import Guide from './pages/Guide'
 import TrackRecord from './pages/TrackRecord'
+import Portfolio from './pages/Portfolio'
+import Holdings from './pages/Holdings'
 import Settings from './pages/Settings'
 import Navigation from './components/layout/Navigation'
+import SignalModeBar from './components/layout/SignalModeBar'
+import PageTitle from './components/layout/PageTitle'
+import { useFeatures } from './services/features'
+import NotFound from './pages/NotFound'
 
 function App() {
+  const { news } = useFeatures()
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="app">
-        <Navigation />
+        <PageTitle />
+        <a href="#main" className="skip-link">Skip to content</a>
+        <header>
+          <Navigation />
+          <SignalModeBar />
+        </header>
         {/* Same width as the navigation bar so page content lines up with it */}
-        <main style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <main id="main" tabIndex={-1} style={{ maxWidth: '1200px', margin: '0 auto', outline: 'none' }}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/instrument/:symbol" element={<InstrumentView />} />
-            <Route path="/news" element={<News />} />
+            <Route path="/news" element={news ? <News /> : <NotFound />} />
             <Route path="/comparison" element={<Comparison />} />
             <Route path="/track-record" element={<TrackRecord />} />
+            <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/holdings" element={<Holdings />} />
             <Route path="/guide" element={<Guide />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
       </div>

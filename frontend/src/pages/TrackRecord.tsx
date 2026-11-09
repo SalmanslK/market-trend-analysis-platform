@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   CartesianGrid,
@@ -17,6 +17,8 @@ import { changeColor, COLORS, formatDate, formatPercent, signalStyles } from '..
 import { compareWithHolding, describeBacktests, describeRuleRecord, describeTrendRules, MIN_RELIABLE_YEARS, ruleNames, verdictStyles } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
 import PlainSummary from '../components/help/PlainSummary'
+import { applyBacktestMode, useSignalMode } from '../services/signalMode'
+import { useFeatures } from '../services/features'
 import NewsSignalComparison from '../components/signals/NewsSignalComparison'
 
 const COST_OPTIONS = [0, 0.25, 0.5, 1, 2]
@@ -100,14 +102,19 @@ function OldScoreSection({ results, detail, cost }: { results: BacktestResult[];
 
   return (
     <section style={cardStyle}>
-      <h2 style={{ fontSize: '1.2rem' }}>How the Buy/Sell signal did</h2>
+      <h2 style={{ fontSize: '1.2rem' }}>How the technical Buy/Sell signal did</h2>
       <p style={{ ...noteStyle, margin: '4px 0 10px' }}>
-        The Buy/Sell signal adds up five indicators into Strong Buy, Buy, Hold, Sell or Strong Sell. This is what acting on it would have done.
+        The technical signal adds up five indicators into Strong Buy, Buy, Hold, Sell or Strong Sell (steady or daily, as chosen at the top). This is what acting on it would have done.
       </p>
 
       <PlainSummary points={describeBacktests(results, cost)} />
 
-      <div style={{ overflowX: 'auto' }}>
+      {/* The same results per instrument, and what followed each signal: detail most readers can skip */}
+      <details>
+        <summary style={{ cursor: 'pointer', color: COLORS.link, fontSize: '14px', padding: '4px 0' }}>
+          Show each instrument's result and what happened after each signal
+        </summary>
+      <div style={{ overflowX: 'auto', marginTop: '8px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
           <thead>
             <tr>
@@ -177,6 +184,7 @@ function OldScoreSection({ results, detail, cost }: { results: BacktestResult[];
           </div>
         </>
       )}
+      </details>
     </section>
   )
 }
@@ -185,7 +193,12 @@ export default function TrackRecord() {
   const [params, setParams] = useSearchParams()
   const selected = params.get('symbol') ?? ''
   const [cost, setCost] = useState(DEFAULT_COST)
-  const [results, setResults] = useState<BacktestResult[]>([])
+  const [loaded, setResults] = useState<BacktestResult[]>([])
+  // The technical and combined signals chosen at the top of the page
+  const mode = useSignalMode()
+  // The news and combined comparison only when news is switched on (Features:News)
+  const { news } = useFeatures()
+  const results = useMemo(() => loaded.map((r) => applyBacktestMode(r, mode)), [loaded, mode])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -226,7 +239,7 @@ export default function TrackRecord() {
 
       {error && <div style={{ color: COLORS.down, marginBottom: '12px' }}>{error}</div>}
 
-      {tested.length > 0 && (
+      {news && tested.length > 0 && (
         <NewsSignalComparison
           results={tested}
           detail={detail}

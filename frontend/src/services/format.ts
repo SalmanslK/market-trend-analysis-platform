@@ -1,12 +1,16 @@
 import { SignalAction } from './types/marketData'
 
+/**
+ * The app's colours. Text colours meet the WCAG AA contrast ratio (4.5:1) on white, the page grey (#f5f5f5) and the
+ * light tints used for boxes, so muted text and links stay readable.
+ */
 export const COLORS = {
   up: '#2e7d32',
   down: '#c62828',
   neutral: '#616161',
-  muted: '#757575',
+  muted: '#5f6368',
   border: '#e0e0e0',
-  link: '#1976d2',
+  link: '#1565c0',
 }
 
 /** 166409.25 -> "166,409.25" */
@@ -32,6 +36,14 @@ export function changeColor(value: number | undefined | null): string {
 export function formatDate(value: string): string {
   return new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }
+
+/** Whole days from a date to now. */
+export function daysSince(value: string): number {
+  return Math.floor((Date.now() - new Date(value).getTime()) / 86_400_000)
+}
+
+// A weekend plus a holiday can leave prices 4 days old; more than that means the updates have stopped
+export const STALE_AFTER_DAYS = 4
 
 export const signalStyles: Record<SignalAction, { label: string; background: string; color: string }> = {
   StrongBuy: { label: 'Strong Buy', background: '#1b5e20', color: 'white' },

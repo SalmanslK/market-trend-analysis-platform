@@ -35,6 +35,17 @@ public static class SignalRules
     /// <summary>Golden cross: the 50-period average above (+1) or below (-1) the 200-period average.</summary>
     public static int GoldenCross(decimal mediumAverage, decimal longAverage) => mediumAverage >= longAverage ? 1 : -1;
 
+    /// <summary>
+    /// The averages cross weeks after a turn, so the trend can lag the price: "Recovering" when the trend is Down
+    /// but the price is above both averages, "Weakening" when it is Up but the price is below both, otherwise null.
+    /// </summary>
+    public static string? TrendPhase(string direction, decimal price, decimal mediumAverage, decimal longAverage) => direction switch
+    {
+        "Down" when price > mediumAverage && price > longAverage => "Recovering",
+        "Up" when price < mediumAverage && price < longAverage => "Weakening",
+        _ => null,
+    };
+
     /// <summary>Where the price sits between the bands: 0 = lower band, 1 = upper band. Null if the bands have no width.</summary>
     public static decimal? PercentB(decimal price, decimal upperBand, decimal lowerBand) =>
         upperBand > lowerBand ? (price - lowerBand) / (upperBand - lowerBand) : null;
@@ -59,14 +70,44 @@ public static class SignalRules
     /// same way, otherwise 0 (Hold). News swings about twice as much as technical, so simply averaging them let
     /// news decide; requiring agreement keeps either one from overruling the other.
     /// </summary>
-    public static double CombinedScore(int technicalScore, int technicalMax, int moodScore, int articles)
+    public static double CombinedScore(int technicalScore, int technicalMax, int moodScore, int articles) =>
+        CombinedScaledScore(TechnicalScaledScore(technicalScore, technicalMax), moodScore, articles);
+
+    /// <summary>
+    /// The combined signal from a technical score already on the -100 to +100 scale (e.g. the steady signal).
+    /// </summary>
+    public static double CombinedScaledScore(double technical, int moodScore, int articles)
     {
         if (articles < MinNewsArticles)
             return 0;
 
-        var technical = TechnicalScaledScore(technicalScore, technicalMax);
         var bothClear = Math.Abs(technical) >= BuySellThreshold && Math.Abs(moodScore) >= BuySellThreshold;
         return bothClear && Math.Sign(technical) == Math.Sign(moodScore) ? (technical + moodScore) / 2 : 0;
+    }
+
+    /// <summary>
+    /// The steady technical signal averages the daily score over this many trading days. The daily score flips
+    /// often and trading costs eat its gains; in Nov 2026 tests (scripts/research/news-and-ma-research.cs) the
+    /// 20-day average earned +16.7% a year with 1.8 trades against +6.8% with 18.6 trades for the daily score.
+    /// </summary>
+    public const int SteadyDays = 20;
+
+    /// <summary>
+    /// The steady score for each day, -100 to +100: the average of the daily scores of the last
+    /// <see cref="SteadyDays"/> days (fewer at the start), so each day only uses days up to itself.
+    /// </summary>
+    public static List<double> SteadyScores(IReadOnlyList<int> dailyScores, int technicalMax)
+    {
+        var result = new List<double>(dailyScores.Count);
+        double sum = 0;
+        for (int i = 0; i < dailyScores.Count; i++)
+        {
+            sum += dailyScores[i];
+            if (i >= SteadyDays) sum -= dailyScores[i - SteadyDays];
+            var count = Math.Min(i + 1, SteadyDays);
+            result.Add(TechnicalScaledScore(1, technicalMax) * sum / count);
+        }
+        return result;
     }
 
     private const double BuySellThreshold = 20;

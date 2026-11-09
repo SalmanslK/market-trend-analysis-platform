@@ -275,7 +275,8 @@ export const verdictStyles: Record<BacktestVerdict, { label: string; background:
   DidNotHelp: { label: 'Did worse than holding', background: '#ffcdd2', color: '#b71c1c' },
 }
 
-const signedPct = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
+/** 2.345 -> "+2.3%": a return with its sign, to one decimal */
+export const signedPct = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
 
 /** How acting on a rule would have compared with holding, for one instrument. */
 export function describeRuleRecord(r: BacktestResult, key: 'signal' | 'goldenCross' | 'monthlyTrend'): string {
@@ -455,18 +456,17 @@ export const GOLD_SYMBOLS = ['GOLDPK', 'GOLDINT', 'MGF']
  * while its last 12 months beat cash, and cash otherwise, checked on the first trading day of each month.
  */
 export function cashTestInWords(symbol: string, test: CashTest): { word: string; tone: 'good' | 'bad'; sentence: string } {
-  const pct = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
   const since = test.since ? ` It has been ${test.aheadOfCash ? 'ahead' : 'behind'} since ${formatDate(test.since)}.` : ''
   const untested = GOLD_SYMBOLS.includes(symbol) ? ' The rule was tested on stocks; for gold it is untested.' : ''
   return test.aheadOfCash
     ? {
       word: 'Ahead of cash',
       tone: 'good',
-      sentence: `In the 12 months to ${formatDate(test.checkedOn)} it earned ${pct(test.return12M)}, more than cash's ${pct(test.cashReturn12M)}, so the "stronger than cash" rule stays invested.${since}${untested}`,
+      sentence: `In the 12 months to ${formatDate(test.checkedOn)} it earned ${signedPct(test.return12M)}, more than cash's ${signedPct(test.cashReturn12M)}, so the "stronger than cash" rule stays invested.${since}${untested}`,
     }
     : {
       word: 'Behind cash',
       tone: 'bad',
-      sentence: `In the 12 months to ${formatDate(test.checkedOn)} it earned ${pct(test.return12M)}, less than cash's ${pct(test.cashReturn12M)}, so the "stronger than cash" rule would wait in cash until it catches up. It is checked again at the start of next month.${since}${untested}`,
+      sentence: `In the 12 months to ${formatDate(test.checkedOn)} it earned ${signedPct(test.return12M)}, less than cash's ${signedPct(test.cashReturn12M)}, so the "stronger than cash" rule would wait in cash until it catches up. It is checked again at the start of next month.${since}${untested}`,
     }
 }

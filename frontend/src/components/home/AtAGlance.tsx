@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { InstrumentAnalyticsDto } from '../../services/types/marketData'
-import { GOLD_SYMBOLS, trendInWords } from '../../services/plainLanguage'
+import { GOLD_SYMBOLS, signedPct, trendInWords } from '../../services/plainLanguage'
 import { COLORS, signalStyles, SURFACE } from '../../services/format'
 
 interface AtAGlanceProps {
@@ -24,7 +24,15 @@ function status(a: InstrumentAnalyticsDto): { word: string; tone: Tone } {
   return { word: 'Not enough history', tone: 'calm' }
 }
 
-const pct = (value?: number) => (value == null ? '-' : `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`)
+/** USD/PKR rising means the rupee is weakening, so the story is told from the rupee's side. */
+function rupeeStatus(change1M?: number): { word: string; tone: Tone; note: string } {
+  const change = change1M ?? 0
+  if (change > 0.2) return { word: 'Weakening', tone: 'bad', note: 'Imports and dollar savings cost more.' }
+  if (change < -0.2) return { word: 'Firmer', tone: 'good', note: 'The rupee has gained a little against the dollar.' }
+  return { word: 'Steady', tone: 'calm', note: 'The rate has hardly moved.' }
+}
+
+const pct = (value?: number) => (value == null ? '-' : signedPct(value))
 
 /** The stronger-than-cash check in a few words, or nothing when it doesn't apply. */
 const versusCash = (a: InstrumentAnalyticsDto) => {
@@ -33,7 +41,6 @@ const versusCash = (a: InstrumentAnalyticsDto) => {
   const untested = GOLD_SYMBOLS.includes(a.symbol) ? ' (a check tested on stocks, not gold)' : ''
   return ` Over 12 months it is ${test.aheadOfCash ? 'ahead of' : 'behind'} cash (${pct(test.return12M)} against ${pct(test.cashReturn12M)})${untested}.`
 }
-
 
 interface Card {
   key: string
@@ -59,32 +66,26 @@ export default function AtAGlance({ analytics }: AtAGlanceProps) {
   const cards: Card[] = []
 
   if (stocks) {
-    const s = status(stocks)
     cards.push({
-      key: 'stocks', title: 'Pakistan stocks', ...s,
+      key: 'stocks', title: 'Pakistan stocks', ...status(stocks),
       sentence: `The KSE-100 is ${pct(stocks.change1M)} over the past month. ${trendInWords(stocks.longTermTrend)}${versusCash(stocks)}`,
       signal: signalStyles[stocks.signal.action].label,
       link: '/instrument/KSE100', linkText: 'Open the KSE-100',
     })
   }
   if (gold) {
-    const s = status(gold)
     cards.push({
-      key: 'gold', title: 'Gold in Pakistan', ...s,
+      key: 'gold', title: 'Gold in Pakistan', ...status(gold),
       sentence: `Gold per tola is ${pct(gold.change1M)} over the past month. ${trendInWords(gold.longTermTrend)}${versusCash(gold)}`,
       signal: signalStyles[gold.signal.action].label,
       link: '/instrument/GOLDPK', linkText: 'Open gold',
     })
   }
   if (dollar) {
-    // USD/PKR rising means the rupee is weakening, so the story is told from the rupee's side
-    const weaker = (dollar.change1M ?? 0) > 0.2
-    const firmer = (dollar.change1M ?? 0) < -0.2
+    const rupee = rupeeStatus(dollar.change1M)
     cards.push({
-      key: 'rupee', title: 'The rupee',
-      word: weaker ? 'Weakening' : firmer ? 'Firmer' : 'Steady',
-      tone: weaker ? 'bad' : firmer ? 'good' : 'calm',
-      sentence: `A dollar costs Rs ${dollar.lastPrice.toFixed(2)}, ${pct(dollar.change1M)} over the past month. ${weaker ? 'Imports and dollar savings cost more.' : firmer ? 'The rupee has gained a little against the dollar.' : 'The rate has hardly moved.'}`,
+      key: 'rupee', title: 'The rupee', word: rupee.word, tone: rupee.tone,
+      sentence: `A dollar costs Rs ${dollar.lastPrice.toFixed(2)}, ${pct(dollar.change1M)} over the past month. ${rupee.note}`,
       link: '/instrument/USDPKR', linkText: 'Open USD/PKR',
     })
   }

@@ -6,6 +6,7 @@ import { useFeatures } from '../../services/features'
 import InfoTip from '../help/InfoTip'
 
 const cellStyle = { padding: '8px 10px', borderBottom: `1px solid ${COLORS.border}`, textAlign: 'right' as const }
+const sectionStyle = { ...SURFACE, padding: '20px', marginTop: '12px' }
 
 /**
  * The forward record: the signals saved each day as they were shown, and what prices did over the following weeks.
@@ -34,7 +35,7 @@ export default function LiveRecord() {
   )
   if (error) {
     return (
-      <section aria-labelledby="live-record" style={{ ...SURFACE, padding: '20px', marginTop: '12px' }}>
+      <section aria-labelledby="live-record" style={sectionStyle}>
         {heading}
         <p role="alert" style={{ color: COLORS.down }}>The live record couldn't be loaded. Reload the page; if it keeps failing, the API log says why.</p>
       </section>
@@ -44,7 +45,7 @@ export default function LiveRecord() {
 
   const groups = record.groups.filter((g) => g.count > 0 && (news || g.signal !== 'Combined signal'))
   return (
-    <section aria-labelledby="live-record" style={{ ...SURFACE, padding: '20px', marginTop: '12px' }}>
+    <section aria-labelledby="live-record" style={sectionStyle}>
       {heading}
       <p style={{ fontSize: '14px', color: '#334e68', lineHeight: 1.5 }}>
         Every day the app saves each instrument's signals as shown, before anyone knows what happens next. Each reading is then scored by

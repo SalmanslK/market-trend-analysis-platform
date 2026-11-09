@@ -19,6 +19,8 @@ public static class SignalRecordSummary
     public const string Combined = "Combined signal";
     public const string VersusCash = "Stronger than cash";
 
+    private static readonly string[] Sides = { "Buy", "Hold", "Sell" };
+
     public static SignalRecordDto Summarize(IReadOnlyCollection<SignalSnapshot> snapshots, IReadOnlyDictionary<int, List<PriceDataPoint>> pricesByInstrument)
     {
         var scored = new List<(SignalSnapshot Snapshot, decimal Move)>();
@@ -34,9 +36,9 @@ public static class SignalRecordSummary
 
         var groups = new List<SignalRecordGroupDto> { Group(AnyDay, "All readings", scored) };
         // Only readings where the steady signal existed, so its forward test isn't mixed with the daily signal
-        foreach (var side in new[] { "Buy", "Hold", "Sell" })
+        foreach (var side in Sides)
             groups.Add(Group(Steady, side, scored.Where(s => Side(s.Snapshot.SteadyAction) == side)));
-        foreach (var side in new[] { "Buy", "Hold", "Sell" })
+        foreach (var side in Sides)
             groups.Add(Group(Combined, side, scored.Where(s => Side(s.Snapshot.CombinedAction) == side)));
         groups.Add(Group(VersusCash, "Ahead of cash", scored.Where(s => s.Snapshot.AheadOfCash == true)));
         groups.Add(Group(VersusCash, "Behind cash", scored.Where(s => s.Snapshot.AheadOfCash == false)));

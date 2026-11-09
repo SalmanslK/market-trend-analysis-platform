@@ -32,6 +32,8 @@ const cellStyle = { padding: '10px', borderBottom: `1px solid ${COLORS.border}`,
 const headerStyle = { ...cellStyle, backgroundColor: '#f5f5f5', whiteSpace: 'nowrap' as const }
 const cardStyle = { padding: '20px', ...SURFACE, marginTop: '12px' }
 const noteStyle = { fontSize: '13px', color: '#546e7a', lineHeight: 1.45 }
+// The small grey line under a figure, e.g. its worst fall
+const subNoteStyle = { fontSize: '12px', color: COLORS.muted }
 
 const RULE_COLORS = { ahead: COLORS.up, tied: COLORS.neutral, behind: COLORS.down }
 
@@ -51,7 +53,7 @@ function RuleCell({ result, ruleKey }: { result: BacktestResult; ruleKey: RuleRe
   return (
     <td style={cellStyle}>
       <strong style={{ color: RULE_COLORS[comparison] }}>{formatPercent(rule.performance.annualReturn, 1)}</strong>
-      <div style={{ fontSize: '12px', color: COLORS.muted }}>
+      <div style={subNoteStyle}>
         {rule.performance.trades} trades, fall {rule.performance.maxDrawdown.toFixed(0)}%
       </div>
     </td>
@@ -221,7 +223,7 @@ function StrongerThanCashResult() {
             {CASH_RULE_RESULTS.map((r) => (
               <tr key={r.period}>
                 <td style={{ ...cellStyle, textAlign: 'left' }}>{r.period}</td>
-                <td style={cellStyle}>{formatPercent(r.holding, 1)}<div style={{ fontSize: '12px', color: COLORS.muted }}>fall {r.holdingFall}%</div></td>
+                <td style={cellStyle}>{formatPercent(r.holding, 1)}<div style={subNoteStyle}>fall {r.holdingFall}%</div></td>
                 <td style={cellStyle}><strong>{formatPercent(r.rule, 1)}</strong><div style={{ fontSize: '12px', color: COLORS.up, fontWeight: 600 }}>fall {r.ruleFall}%</div></td>
               </tr>
             ))}
@@ -314,7 +316,7 @@ export default function TrackRecord() {
 
       {tested.length > 0 && (<>
       <h2 style={{ fontSize: '1.2rem', margin: '20px 0 8px' }}>Technical signal and trend rules, over all price history</h2>
-      {tested.length > 0 && <PlainSummary points={describeTrendRules(tested, shownCost)} />}
+      <PlainSummary points={describeTrendRules(tested, shownCost)} />
 
       <div style={{ overflowX: 'auto', ...SURFACE }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
@@ -337,7 +339,7 @@ export default function TrackRecord() {
               >
                 <td style={{ ...cellStyle, textAlign: 'left' }}>
                   <strong style={{ color: COLORS.link }}>{r.symbol}</strong>
-                  <div style={{ fontSize: '12px', color: COLORS.muted }}>{r.name}</div>
+                  <div style={subNoteStyle}>{r.name}</div>
                 </td>
                 <td style={cellStyle}>
                   {r.years.toFixed(1)}
@@ -345,7 +347,7 @@ export default function TrackRecord() {
                 </td>
                 <td style={cellStyle}>
                   <strong>{formatPercent(r.buyAndHold.annualReturn, 1)}</strong>
-                  <div style={{ fontSize: '12px', color: COLORS.muted }}>fall {r.buyAndHold.maxDrawdown.toFixed(0)}%</div>
+                  <div style={subNoteStyle}>fall {r.buyAndHold.maxDrawdown.toFixed(0)}%</div>
                 </td>
                 <RuleCell result={r} ruleKey="goldenCross" />
                 <RuleCell result={r} ruleKey="monthlyTrend" />

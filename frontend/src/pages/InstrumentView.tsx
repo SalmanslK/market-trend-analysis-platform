@@ -26,6 +26,11 @@ import { useFeatures } from '../services/features'
 import SignalBadge from '../components/signals/SignalBadge'
 import { changeColor, COLORS, formatDate, formatNumber, formatPercent, daysSince, STALE_AFTER_DAYS, SURFACE } from '../services/format'
 
+// The reading tiles in the answer card at the top
+const tileStyle = { padding: '12px 14px', borderRadius: '10px', backgroundColor: '#f0f4f8' }
+const tileLabelStyle = { fontSize: '12px', color: COLORS.muted, fontWeight: 600, textTransform: 'uppercase' as const }
+const tileTextStyle = { fontSize: '14px', marginTop: '6px', color: '#334e68' }
+
 export default function InstrumentView() {
   // The URL is the source of truth for the selected instrument, so links between instruments work
   const { symbol = '' } = useParams<{ symbol: string }>()
@@ -124,36 +129,36 @@ export default function InstrumentView() {
           {analytics && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(230px, 100%), 1fr))', gap: '12px', flex: '1 1 300px', maxWidth: '640px', minWidth: 0 }}>
               {analytics.isCash ? (
-                <div style={{ padding: '12px 14px', borderRadius: '10px', backgroundColor: '#f0f4f8' }}>
-                  <div style={{ fontSize: '12px', color: COLORS.muted, fontWeight: 600, textTransform: 'uppercase' }}>{analytics.lowRiskKind ?? 'Cash fund'}<InfoTip term="cashFund" /></div>
+                <div style={tileStyle}>
+                  <div style={tileLabelStyle}>{analytics.lowRiskKind ?? 'Cash fund'}<InfoTip term="cashFund" /></div>
                   <p style={{ fontSize: '14px', marginTop: '6px' }}>Its price creeps up almost every day, so Buy/Sell signals don't apply. It shows what money earns while it waits.</p>
                 </div>
               ) : (<>
-                <div style={{ padding: '12px 14px', borderRadius: '10px', backgroundColor: '#f0f4f8' }}>
-                  <div style={{ fontSize: '12px', color: COLORS.muted, fontWeight: 600, textTransform: 'uppercase', marginBottom: '6px' }}>
+                <div style={tileStyle}>
+                  <div style={{ ...tileLabelStyle, marginBottom: '6px' }}>
                     {news ? 'Combined signal' : `Technical signal${analytics.signal.steady ? ', last 20 days' : ', today'}`}
                   </div>
                   {news ? <ScaledSignalBadge signal={analytics.combinedSignal} large /> : <SignalBadge signal={analytics.signal} large />}
                   {/* The meaning of the badge shown above it: the combined signal when news is on */}
-                  <p style={{ fontSize: '14px', marginTop: '6px', color: '#334e68' }}>{signalMeaning[(news ? analytics.combinedSignal : analytics.signal).action].headline}.</p>
+                  <p style={tileTextStyle}>{signalMeaning[(news ? analytics.combinedSignal : analytics.signal).action].headline}.</p>
                 </div>
-                <div style={{ padding: '12px 14px', borderRadius: '10px', backgroundColor: '#f0f4f8' }}>
-                  <div style={{ fontSize: '12px', color: COLORS.muted, fontWeight: 600, textTransform: 'uppercase', marginBottom: '6px' }}>Long-term trend</div>
+                <div style={tileStyle}>
+                  <div style={{ ...tileLabelStyle, marginBottom: '6px' }}>Long-term trend</div>
                   <TrendBadge trend={analytics.longTermTrend} large />
-                  <p style={{ fontSize: '14px', marginTop: '6px', color: '#334e68' }}>{trendInWords(analytics.longTermTrend)}</p>
+                  <p style={tileTextStyle}>{trendInWords(analytics.longTermTrend)}</p>
                 </div>
                 {analytics.strongerThanCash && (() => {
                   const words = cashTestInWords(analytics.symbol, analytics.strongerThanCash)
                   return (
                     // A row of its own under the signal and trend, so neither tile gets squeezed
-                    <div style={{ gridColumn: '1 / -1', padding: '12px 14px', borderRadius: '10px', backgroundColor: '#f0f4f8' }}>
-                      <div style={{ fontSize: '12px', color: COLORS.muted, fontWeight: 600, textTransform: 'uppercase', marginBottom: '6px' }}>
+                    <div style={{ ...tileStyle, gridColumn: '1 / -1' }}>
+                      <div style={{ ...tileLabelStyle, marginBottom: '6px' }}>
                         Stronger than cash?<InfoTip term="strongerThanCash" />
                       </div>
                       <span style={{ display: 'inline-block', padding: '3px 12px', borderRadius: '999px', fontWeight: 700, fontSize: '16px', color: words.tone === 'good' ? '#1b5e20' : '#a23a12', backgroundColor: words.tone === 'good' ? '#e8f5e9' : '#fdeee9' }}>
                         {words.word}
                       </span>
-                      <p style={{ fontSize: '14px', marginTop: '6px', color: '#334e68' }}>{words.sentence}</p>
+                      <p style={tileTextStyle}>{words.sentence}</p>
                     </div>
                   )
                 })()}

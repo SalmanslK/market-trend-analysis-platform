@@ -387,6 +387,74 @@ namespace MarketAnalytics.Infrastructure.Migrations
                     b.ToTable("PricePoints", (string)null);
                 });
 
+            modelBuilder.Entity("MarketAnalytics.Domain.Entities.SignalSnapshot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool?>("AheadOfCash")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("CombinedAction")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("DailyAction")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int>("DailyScore")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("InstrumentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("NewsAction")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int>("NewsArticles")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("NewsScore")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SteadyAction")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int?>("SteadyScore")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Trend")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstrumentId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("SignalSnapshots", (string)null);
+                });
+
             modelBuilder.Entity("MarketAnalytics.Domain.Entities.DataUpdateLog", b =>
                 {
                     b.HasOne("MarketAnalytics.Domain.Entities.Instrument", "Instrument")
@@ -413,6 +481,17 @@ namespace MarketAnalytics.Infrastructure.Migrations
                 {
                     b.HasOne("MarketAnalytics.Domain.Entities.Instrument", "Instrument")
                         .WithMany("PricePoints")
+                        .HasForeignKey("InstrumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Instrument");
+                });
+
+            modelBuilder.Entity("MarketAnalytics.Domain.Entities.SignalSnapshot", b =>
+                {
+                    b.HasOne("MarketAnalytics.Domain.Entities.Instrument", "Instrument")
+                        .WithMany()
                         .HasForeignKey("InstrumentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

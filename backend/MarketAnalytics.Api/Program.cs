@@ -48,6 +48,7 @@ builder.Services.AddScoped<InstrumentDataFetcherFactory>();
 // The same updates the Worker runs on its schedule, for the "Check for new data" button
 builder.Services.AddScoped<MarketDataUpdater>();
 builder.Services.AddScoped<NewsUpdater>();
+builder.Services.AddScoped<SignalRecorder>();
 
 // Register application services
 builder.Services.AddScoped<IResamplingService, ResamplingService>();

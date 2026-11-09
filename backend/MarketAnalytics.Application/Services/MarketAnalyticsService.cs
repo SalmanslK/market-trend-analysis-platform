@@ -123,7 +123,24 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         ApplyNewsSignals(analytics, mood);
         analytics.NewsSignal.SharedWith = SharedNews(mood, moods);
         ApplyPayouts(analytics, cleaned, payouts);
+        if (!instrument.IsLowRisk && instrument.Type != Domain.Enums.InstrumentType.Forex)
+            analytics.StrongerThanCash = StrongerThanCash.Evaluate(dailyPrices, await LoadCashAsync(cancellationToken));
         return analytics;
+    }
+
+    // The cash fund's history, loaded once per request
+    private List<PriceDataPoint>? _cash;
+
+    private async Task<List<PriceDataPoint>> LoadCashAsync(CancellationToken cancellationToken)
+    {
+        if (_cash != null)
+            return _cash;
+
+        var cash = await _instrumentRepository.GetBySymbolAsync(StrongerThanCash.CashSymbol, cancellationToken);
+        _cash = cash == null
+            ? new List<PriceDataPoint>()
+            : await PriceHistory.LoadDailyAsync(_pricePointRepository, _fundPayoutRepository, cash.Id, cancellationToken: cancellationToken);
+        return _cash;
     }
 
     /// <summary>

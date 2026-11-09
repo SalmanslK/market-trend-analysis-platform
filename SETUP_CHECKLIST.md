@@ -310,9 +310,11 @@ price update, in the `FundPayouts` table. Prices are adjusted when read (`Payout
 - Prices before each payout are scaled by (1 - payout / NAV before it), like adjusted stock prices. The latest price
   stays the real NAV, and returns, metrics, charts and backtests count payouts as reinvested.
 - The fund page lists the payouts and the last 12 months' payouts as a share of the price.
-- Gaps: the source lists MIF's payouts only from 2020 (and none for 2021-2023), while MIF's history goes back to 2005
-  with large drops each July that look like payouts. These are left unadjusted rather than guessed, so MIF's
-  long-term returns and worst fall understate it. KSE-100 and KMI-30 are price indices and exclude stock dividends.
+- Gaps filled by migrations: the source lists MIF's payouts only from 2020 and MCF's only from 2018.
+  `AddEarlyMifPayouts` adds MIF 2005-2017 (2014-2017 as published by Al Meezan; 2005-2013 are the July ex-date NAV
+  drops, which include that day's market move). `AddEarlyMcfPayouts` adds MCF 2010-2017 from its NAV drops, which
+  are exact for a cash fund except where a drop spans a gap in the price data. KSE-100 and KMI-30 are price indices
+  and exclude stock dividends.
 
 ## Track record (backtest)
 
@@ -377,6 +379,23 @@ with 1.8 trades; the golden cross +17.2% and price above both its 50- and 200-da
 worst fall than holding (-29% against -34%) but behind it in both halves of the history. Faster averages (price vs 50-day,
 EMA 12/26) did little better than the plain signal. In the combined signal, a technical score averaged over 5 to 20
 days earned +18.8% to +19.2% against +16.2% (holding +22.6%), with 1.4 to 3.1 trades a year instead of 6.2.
+
+## Stronger than cash, and the forward record
+
+**Stronger than cash** (`StrongerThanCash`): on the first trading day of each month, compare an instrument's 12-month
+return (payouts included) with the Meezan Cash Fund's over the same 12 months. The rule stays invested while it is
+ahead and waits in cash while it is behind. It is the one rule that passed a test fixed in advance on both periods
+(see the research notes above). The analytics include it as `strongerThanCash` for stock and gold instruments (not
+cash and income funds or USD/PKR); the instrument page, the Overview's glance cards, Track Record and the Guide show
+it. With MCF's payouts filled in, the app's version gives the same answer as the research version (policy rate minus
+1%) in 193 of 197 months since 2010; MCF earned about 1.1 points a year less than that assumption.
+
+**Forward record** (`SignalSnapshots` table, `SignalRecorder`, `GET /api/signal-record`): after every price update
+(the Worker's, and the refresh button's) the app saves each instrument's daily, steady, news and combined signals,
+trend and stronger-than-cash answer for its latest price date. A reading is updated until the next price arrives and
+never written for an older date, so nothing is recorded with hindsight. Track Record's "Live record" scores the saved
+readings by the move over the next 20 trading days from the next close, grouped by what the app said. Started
+9 Nov 2026; results appear after about a month and mean something after about a year.
 
 ## Alerts (what changed)
 

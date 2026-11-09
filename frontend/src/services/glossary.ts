@@ -121,6 +121,11 @@ export const glossary = {
     what: 'Low-risk Meezan funds. Cash funds (Meezan Cash Fund, Rozana Amdani) invest in very short-term Islamic deposits and government papers; income funds (Islamic Income Fund, Munafa Plan I) in slightly longer Islamic bonds and deposits. Their price creeps up almost every day and rarely falls.',
     howToRead: 'They show what money earns while it waits. Buy/Sell signals don\'t apply to them. They pay their return out as payouts: yearly for most, daily for Rozana Amdani, whose price stays at Rs 50. Returns here count payouts as reinvested.',
   },
+  strongerThanCash: {
+    title: 'Stronger than cash',
+    what: 'Once a month, on the first trading day, compare what the instrument earned over the past 12 months with what the Meezan Cash Fund earned. Stay invested while it is ahead; wait in cash while it is behind.',
+    howToRead: 'It is about avoiding long, deep falls, not about timing the best days: it switches about once a year. Tested in advance on Meezan Islamic Fund from 2006, it kept similar returns while cutting the worst fall from about -60% to -25%. It was tested on stocks only, and about four big falls decide the result, so treat it as a guide, not a guarantee.',
+  },
   backtest: {
     title: 'Track record (backtest)',
     what: 'A replay of a rule over past prices: invested while the rule says so, in cash otherwise, paying a cost on every trade. Each day uses only the prices known on that day, and trades happen at the next day\'s close.',

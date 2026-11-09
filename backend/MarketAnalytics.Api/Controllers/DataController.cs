@@ -16,12 +16,14 @@ public class DataController : ControllerBase
 
     private readonly MarketDataUpdater _marketDataUpdater;
     private readonly NewsUpdater _newsUpdater;
+    private readonly SignalRecorder _signalRecorder;
     private readonly ILogger<DataController> _logger;
 
-    public DataController(MarketDataUpdater marketDataUpdater, NewsUpdater newsUpdater, ILogger<DataController> logger)
+    public DataController(MarketDataUpdater marketDataUpdater, NewsUpdater newsUpdater, SignalRecorder signalRecorder, ILogger<DataController> logger)
     {
         _marketDataUpdater = marketDataUpdater;
         _newsUpdater = newsUpdater;
+        _signalRecorder = signalRecorder;
         _logger = logger;
     }
 
@@ -51,6 +53,15 @@ public class DataController : ControllerBase
                 // Prices are the important part; a news failure is reported, not fatal
                 _logger.LogError(ex, "News refresh failed");
                 newsError = ex.Message;
+            }
+
+            try
+            {
+                await _signalRecorder.RecordAsync(cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "Recording signals failed");
             }
 
             return Ok(new RefreshResultDto

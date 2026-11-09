@@ -1,4 +1,4 @@
-import { BacktestResult, BacktestVerdict, InstrumentAnalyticsDto, InstrumentType, NewsSentimentSummary, SignalAction, PortfolioComparison } from './types/marketData'
+import { BacktestResult, BacktestVerdict, CashTest, InstrumentAnalyticsDto, InstrumentType, NewsSentimentSummary, SignalAction, PortfolioComparison } from './types/marketData'
 import { formatDate, formatNumber } from './format'
 
 /**
@@ -445,4 +445,28 @@ export function trendInWords(trend: InstrumentAnalyticsDto['longTermTrend']): st
   if (direction === 'Up') return 'The long-term trend is up.'
   if (direction === 'Down') return 'The long-term trend is down.'
   return 'Not enough history yet for a long-term trend.'
+}
+
+/** Gold instruments: the stronger-than-cash rule was tested on stocks, not on gold. */
+export const GOLD_SYMBOLS = ['GOLDPK', 'GOLDINT', 'MGF']
+
+/**
+ * The stronger-than-cash check in words: a short label and one or two sentences. The rule holds an instrument only
+ * while its last 12 months beat cash, and cash otherwise, checked on the first trading day of each month.
+ */
+export function cashTestInWords(symbol: string, test: CashTest): { word: string; tone: 'good' | 'bad'; sentence: string } {
+  const pct = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
+  const since = test.since ? ` It has been ${test.aheadOfCash ? 'ahead' : 'behind'} since ${formatDate(test.since)}.` : ''
+  const untested = GOLD_SYMBOLS.includes(symbol) ? ' The rule was tested on stocks; for gold it is untested.' : ''
+  return test.aheadOfCash
+    ? {
+      word: 'Ahead of cash',
+      tone: 'good',
+      sentence: `In the 12 months to ${formatDate(test.checkedOn)} it earned ${pct(test.return12M)}, more than cash's ${pct(test.cashReturn12M)}, so the "stronger than cash" rule stays invested.${since}${untested}`,
+    }
+    : {
+      word: 'Behind cash',
+      tone: 'bad',
+      sentence: `In the 12 months to ${formatDate(test.checkedOn)} it earned ${pct(test.return12M)}, less than cash's ${pct(test.cashReturn12M)}, so the "stronger than cash" rule would wait in cash until it catches up. It is checked again at the start of next month.${since}${untested}`,
+    }
 }

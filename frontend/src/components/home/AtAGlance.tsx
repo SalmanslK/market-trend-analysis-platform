@@ -26,6 +26,13 @@ function status(a: InstrumentAnalyticsDto): { word: string; tone: Tone } {
 
 const pct = (value?: number) => (value == null ? '-' : `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`)
 
+/** The stronger-than-cash check in a few words, or nothing when it doesn't apply. */
+const versusCash = (a: InstrumentAnalyticsDto) => {
+  const test = a.strongerThanCash
+  if (!test) return ''
+  return ` Over 12 months it is ${test.aheadOfCash ? 'ahead of' : 'behind'} cash (${pct(test.return12M)} against ${pct(test.cashReturn12M)}).`
+}
+
 
 interface Card {
   key: string
@@ -54,7 +61,7 @@ export default function AtAGlance({ analytics }: AtAGlanceProps) {
     const s = status(stocks)
     cards.push({
       key: 'stocks', title: 'Pakistan stocks', ...s,
-      sentence: `The KSE-100 is ${pct(stocks.change1M)} this month. ${trendInWords(stocks.longTermTrend)}`,
+      sentence: `The KSE-100 is ${pct(stocks.change1M)} this month. ${trendInWords(stocks.longTermTrend)}${versusCash(stocks)}`,
       signal: signalStyles[stocks.signal.action].label,
       link: '/instrument/KSE100', linkText: 'Open the KSE-100',
     })
@@ -63,7 +70,7 @@ export default function AtAGlance({ analytics }: AtAGlanceProps) {
     const s = status(gold)
     cards.push({
       key: 'gold', title: 'Gold in Pakistan', ...s,
-      sentence: `Gold per tola is ${pct(gold.change1M)} this month. ${trendInWords(gold.longTermTrend)}`,
+      sentence: `Gold per tola is ${pct(gold.change1M)} this month. ${trendInWords(gold.longTermTrend)}${versusCash(gold)}`,
       signal: signalStyles[gold.signal.action].label,
       link: '/instrument/GOLDPK', linkText: 'Open gold',
     })

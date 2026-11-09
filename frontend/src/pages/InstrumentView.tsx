@@ -18,7 +18,7 @@ import AllMetrics from '../components/analytics/AllMetrics'
 import KeyStats from '../components/analytics/KeyStats'
 import PlainSummary from '../components/help/PlainSummary'
 import InstrumentNews from '../components/news/InstrumentNews'
-import { describeInstrument, signalMeaning, trendInWords } from '../services/plainLanguage'
+import { cashTestInWords, describeInstrument, signalMeaning, trendInWords } from '../services/plainLanguage'
 import { intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences } from '../services/preferences'
 import { applySignalMode, useSignalMode } from '../services/signalMode'
@@ -141,6 +141,21 @@ export default function InstrumentView() {
                   <TrendBadge trend={analytics.longTermTrend} large />
                   <p style={{ fontSize: '14px', marginTop: '6px', color: '#334e68' }}>{trendInWords(analytics.longTermTrend)}</p>
                 </div>
+                {analytics.strongerThanCash && (() => {
+                  const words = cashTestInWords(analytics.symbol, analytics.strongerThanCash)
+                  return (
+                    // A row of its own under the signal and trend, so neither tile gets squeezed
+                    <div style={{ gridColumn: '1 / -1', padding: '12px 14px', borderRadius: '10px', backgroundColor: '#f0f4f8' }}>
+                      <div style={{ fontSize: '12px', color: COLORS.muted, fontWeight: 600, textTransform: 'uppercase', marginBottom: '6px' }}>
+                        Stronger than cash?<InfoTip term="strongerThanCash" />
+                      </div>
+                      <span style={{ display: 'inline-block', padding: '3px 12px', borderRadius: '999px', fontWeight: 700, fontSize: '16px', color: words.tone === 'good' ? '#1b5e20' : '#a23a12', backgroundColor: words.tone === 'good' ? '#e8f5e9' : '#fdeee9' }}>
+                        {words.word}
+                      </span>
+                      <p style={{ fontSize: '14px', marginTop: '6px', color: '#334e68' }}>{words.sentence}</p>
+                    </div>
+                  )
+                })()}
               </>)}
             </div>
           )}

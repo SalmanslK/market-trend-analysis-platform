@@ -7,6 +7,8 @@ import TimeframeSelector from '../components/controls/TimeframeSelector'
 import { instrumentTypeLabels, intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences, savePreferences } from '../services/preferences'
 import RefreshDataButton from '../components/layout/RefreshDataButton'
+import AnswerCard from '../components/help/AnswerCard'
+import { dataStatusAnswer } from '../services/answers'
 import { COLORS, SURFACE } from '../services/format'
 
 // Suggested interval/timeframe combinations for common use cases
@@ -60,18 +62,23 @@ export default function Settings() {
   return (
     <div style={{ padding: '20px' }}>
       <h1>Settings</h1>
-      <section aria-label="Update data" style={{ margin: '12px 0 20px', padding: '16px 20px', ...SURFACE }}>
-        <h2 style={{ fontSize: '1.15rem', marginBottom: '4px' }}>Update data</h2>
-        <p style={{ color: COLORS.muted, fontSize: '14px', marginBottom: '10px' }}>
-          Prices are checked every 6 hours and news every hour while the app is running. Check now if you want the latest before then.
-        </p>
-        <RefreshDataButton onRefreshed={() => setReloadKey((k) => k + 1)} />
-      </section>
+      <p style={{ color: COLORS.muted, margin: '4px 0 16px' }}>Whether the data is up to date, and how charts open.</p>
+
+      {!loading && !error && (() => {
+        const status = dataStatusAnswer(instruments)
+        return (
+          <AnswerCard question="Is the data up to date?" answer={status.answer} meaning={status.meaning}>
+            <div style={{ marginTop: '14px' }}>
+              <RefreshDataButton onRefreshed={() => setReloadKey((k) => k + 1)} />
+            </div>
+          </AnswerCard>
+        )
+      })()}
 
       <section style={{ marginTop: '20px', padding: '20px', ...SURFACE }}>
-        <h2>Default View</h2>
-        <p style={{ margin: '8px 0 15px', color: '#555' }}>
-          The interval and timeframe each page starts with. Saved in this browser.
+        <h2 style={{ fontSize: '1.2rem' }}>How charts open</h2>
+        <p style={{ margin: '6px 0 15px', color: COLORS.muted }}>
+          Pick a suggested setting, or choose your own, then save. Instrument and Compare pages will open with it. Saved in this browser.
         </p>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <label style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -138,16 +145,18 @@ export default function Settings() {
       </section>
 
       <section style={{ marginTop: '20px', padding: '20px', ...SURFACE }}>
-        <h2>Data Sources</h2>
-        <p style={{ margin: '8px 0 15px', color: '#555' }}>
-          The background worker checks every instrument for new prices every 6 hours while the app is running. Last updated is
-          the time of the most recent successful check.
+        <h2 style={{ fontSize: '1.2rem' }}>Each instrument's last update</h2>
+        <p style={{ margin: '6px 0 12px', color: COLORS.muted }}>
+          The background worker checks every instrument for new prices every 6 hours while the app is running.
         </p>
+        <details>
+          <summary style={{ cursor: 'pointer', color: COLORS.link, fontSize: '14px', padding: '4px 0' }}>Show all {instruments.length} instruments</summary>
 
         {error && <div style={{ color: '#d32f2f' }}>{error}</div>}
         {loading ? (
           <div>Loading...</div>
         ) : (
+          <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ backgroundColor: '#f0f0f0' }}>
@@ -182,7 +191,9 @@ export default function Settings() {
               })}
             </tbody>
           </table>
+          </div>
         )}
+        </details>
       </section>
     </div>
   )

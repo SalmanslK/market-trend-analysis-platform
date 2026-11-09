@@ -6,6 +6,8 @@ import { PortfolioComparison, PortfolioMix, PortfolioResult, RebalanceSchedule }
 import { changeColor, COLORS, formatDate, formatPercent, SURFACE } from '../services/format'
 import { describePortfolios } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
+import AnswerCard from '../components/help/AnswerCard'
+import { portfolioAnswer } from '../services/answers'
 import PlainSummary from '../components/help/PlainSummary'
 
 // Prices that can't be bought directly in rupees as they are: an exchange rate and gold priced in dollars
@@ -130,8 +132,16 @@ export default function Portfolio() {
         What if you had split your money between stocks, gold and cash? This replays mixes over past prices.<InfoTip term="portfolio" />
       </p>
 
+      {comparison && (() => {
+        const verdict = portfolioAnswer(comparison)
+        return verdict && (
+          <AnswerCard question="Does spreading money between stocks, gold and cash help?" answer={verdict.answer} facts={verdict.facts} meaning={verdict.meaning} />
+        )
+      })()}
+
       {comparison && comparison.results.length > 0 && (
         <PlainSummary
+          maxPoints={2}
           points={describePortfolios(comparison)}
           footer="Past results don't guarantee future ones. This isn't financial advice: think about your own goals and how much of a fall you could live with."
         />

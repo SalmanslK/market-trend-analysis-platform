@@ -19,6 +19,8 @@ import InfoTip from '../components/help/InfoTip'
 import PlainSummary from '../components/help/PlainSummary'
 import { applyBacktestMode, useSignalMode } from '../services/signalMode'
 import { useFeatures } from '../services/features'
+import AnswerCard from '../components/help/AnswerCard'
+import { trackRecordAnswer } from '../services/answers'
 import NewsSignalComparison from '../components/signals/NewsSignalComparison'
 
 const COST_OPTIONS = [0, 0.25, 0.5, 1, 2]
@@ -229,6 +231,14 @@ export default function TrackRecord() {
         Would acting on the app's signals have worked? This replays them over past prices.<InfoTip term="backtest" />
       </p>
 
+      {(() => {
+        const verdict = trackRecordAnswer(tested)
+        return verdict && (
+          <AnswerCard question="Would following the signals have paid off?" answer={verdict.answer} facts={verdict.facts} meaning={verdict.meaning} />
+        )
+      })()}
+
+      <h2 style={{ fontSize: '1.2rem', marginBottom: '6px' }}>The detail, instrument by instrument</h2>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
         <label htmlFor="cost">Cost per trade<InfoTip term="tradingCost" /></label>
         <select id="cost" value={cost} onChange={(e) => setCost(Number(e.target.value))} style={{ padding: '8px', fontSize: '15px' }}>
@@ -248,6 +258,12 @@ export default function TrackRecord() {
         />
       )}
 
+      {/* While the figures are being calculated, say so instead of showing empty tables */}
+      {loading && tested.length === 0 && (
+        <p role="status" style={{ ...SURFACE, padding: '20px', color: COLORS.muted }}>Calculating the track record from all price history; this takes a few seconds...</p>
+      )}
+
+      {tested.length > 0 && (<>
       <h2 style={{ fontSize: '1.2rem', margin: '20px 0 8px' }}>Technical signal and trend rules, over all price history</h2>
       {tested.length > 0 && <PlainSummary points={describeTrendRules(tested, shownCost)} />}
 
@@ -290,6 +306,7 @@ export default function TrackRecord() {
           </tbody>
         </table>
       </div>
+      </>)}
       {notTested.length > 0 && (
         <p style={{ color: COLORS.muted, fontSize: '13px', marginTop: '8px' }}>Not enough history to test: {notTested.map((r) => r.symbol).join(', ')}.</p>
       )}

@@ -11,5 +11,5 @@ public interface IAlertService
     /// Changes in the last <paramref name="days"/> days (at most 90), newest first. The technical and combined changes
     /// use the steady technical signal unless <paramref name="steady"/> is false.
     /// </summary>
-    Task<List<SignalAlertDto>> GetRecentAsync(int days, bool steady = true, CancellationToken cancellationToken = default);
+    Task<List<SignalAlertDto>> GetRecentAsync(int days, bool steady = true, bool news = true, CancellationToken cancellationToken = default);
 }

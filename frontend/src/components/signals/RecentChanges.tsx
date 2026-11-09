@@ -4,6 +4,7 @@ import { alertsApi } from '../../services/api/alertsApi'
 import { SignalAlert, SignalAction } from '../../services/types/marketData'
 import { COLORS, formatDate, signalStyles } from '../../services/format'
 import InfoTip from '../help/InfoTip'
+import { useFeatures } from '../../services/features'
 import { useSignalMode } from '../../services/signalMode'
 
 const NOTIFY_KEY = 'alerts.notify'
@@ -52,6 +53,7 @@ function describeAlert(a: SignalAlert): string {
 export default function RecentChanges() {
   // Technical and combined changes follow the signal chosen at the top of the page
   const mode = useSignalMode()
+  const { news } = useFeatures()
   const [alerts, setAlerts] = useState<SignalAlert[]>([])
   const [showAll, setShowAll] = useState(false)
   const [expanded, setExpanded] = useState(false)
@@ -102,7 +104,7 @@ export default function RecentChanges() {
           What changed in the last 30 days
           <InfoTip
             title="Recent changes"
-            text="Days a signal or the long-term trend changed side, worked out from each day's close with the same rules as the signals above. Important changes are the combined signal turning Buy or Sell, and the trend turning. A change to Hold means stay as you are."
+            text={`Days a signal or the long-term trend changed side, worked out from each day's close with the same rules as the signals above. Important changes are the ${news ? 'combined' : 'technical'} signal turning Buy or Sell, and the trend turning. A change to Hold means stay as you are.`}
           />
         </h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '13px' }}>

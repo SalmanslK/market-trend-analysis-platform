@@ -45,15 +45,20 @@ export function useSignalMode(): SignalMode {
  * The analytics with the chosen technical and combined signals in `signal` and `combinedSignal`, so every page and
  * summary reads the choice the same way. Today's votes stay in `dailySignal` for the explanation.
  */
-export function applySignalMode(a: InstrumentAnalyticsDto, mode: SignalMode): InstrumentAnalyticsDto {
+export function applySignalMode(a: InstrumentAnalyticsDto, mode: SignalMode, news = true): InstrumentAnalyticsDto {
   // Too little history for a steady reading: show the daily signal rather than an empty Hold
-  if (mode === 'daily' || !a.steadySignal || !a.steadyCombinedSignal) return { ...a, dailySignal: a.signal }
-  return {
-    ...a,
-    dailySignal: a.signal,
-    signal: { action: a.steadySignal.action, score: a.steadySignal.score, maxScore: 100, reasons: a.signal.reasons, steady: true },
-    combinedSignal: a.steadyCombinedSignal,
-  }
+  const chosen = mode === 'daily' || !a.steadySignal || !a.steadyCombinedSignal
+    ? { ...a, dailySignal: a.signal }
+    : {
+      ...a,
+      dailySignal: a.signal,
+      signal: { action: a.steadySignal.action, score: a.steadySignal.score, maxScore: 100, reasons: a.signal.reasons, steady: true },
+      combinedSignal: a.steadyCombinedSignal,
+    }
+  if (news) return chosen
+  // News switched off: whatever acts on "the signal" (counts, sorting, holdings) uses the technical signal alone
+  const score = chosen.signal.maxScore > 0 ? Math.round((chosen.signal.score / chosen.signal.maxScore) * 100) : 0
+  return { ...chosen, combinedSignal: { action: chosen.signal.action, score, articles: 0, newsConfidence: 0, sharedWith: [] } }
 }
 
 /** The backtest with the chosen technical signal in the "signal", "technical" and "combined" rules, outcomes and spreads. */

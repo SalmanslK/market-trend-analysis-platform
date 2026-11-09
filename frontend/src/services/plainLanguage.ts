@@ -116,7 +116,7 @@ export function describeMood(mood: NewsSentimentSummary | undefined, symbol: str
 /**
  * A short plain-language summary of one instrument: a headline and a few key points.
  */
-export function describeInstrument(a: InstrumentAnalyticsDto, mood?: NewsSentimentSummary): { headline: string; points: string[] } {
+export function describeInstrument(a: InstrumentAnalyticsDto, mood?: NewsSentimentSummary, news = true): { headline: string; points: string[] } {
   const points: string[] = []
 
   // Recent performance, from short to long term
@@ -179,9 +179,14 @@ export function describeInstrument(a: InstrumentAnalyticsDto, mood?: NewsSentime
   if (note) points.push(note)
 
   const labels: Record<SignalAction, string> = { StrongBuy: 'Strong Buy', Buy: 'Buy', Hold: 'Hold', Sell: 'Sell', StrongSell: 'Strong Sell' }
-  const newsText = a.newsSignal.articles >= 3 ? labels[a.newsSignal.action] : `Hold (only ${a.newsSignal.articles} recent ${a.newsSignal.articles === 1 ? 'story' : 'stories'})`
-  const combinedText = a.combinedSignal.action === 'Hold' ? 'Hold (stay as you are), because technical and news don\'t clearly agree' : labels[a.combinedSignal.action]
-  points.unshift(`Combined signal: ${combinedText}. Technical says ${labels[a.signal.action]}, news says ${newsText}.`)
+  if (news) {
+    const newsText = a.newsSignal.articles >= 3 ? labels[a.newsSignal.action] : `Hold (only ${a.newsSignal.articles} recent ${a.newsSignal.articles === 1 ? 'story' : 'stories'})`
+    const combinedText = a.combinedSignal.action === 'Hold' ? 'Hold (stay as you are), because technical and news don\'t clearly agree' : labels[a.combinedSignal.action]
+    points.unshift(`Combined signal: ${combinedText}. Technical says ${labels[a.signal.action]}, news says ${newsText}.`)
+  } else {
+    const technical = a.signal.action === 'Hold' ? 'Hold (stay as you are)' : labels[a.signal.action]
+    points.unshift(`Technical signal: ${technical}${a.signal.steady ? ', from the last 20 trading days' : ', from today\'s prices'}.`)
+  }
 
   return {
     headline: `${signalMeaning[a.signal.action].headline}. ${a.name} is at ${formatNumber(a.lastPrice)} (${priceMeaning(a)}).`,
@@ -192,7 +197,7 @@ export function describeInstrument(a: InstrumentAnalyticsDto, mood?: NewsSentime
 /**
  * A few sentences describing the whole market from all instruments' analytics.
  */
-export function describeMarket(everything: InstrumentAnalyticsDto[], moods: NewsSentimentSummary[]): string[] {
+export function describeMarket(everything: InstrumentAnalyticsDto[], moods: NewsSentimentSummary[], news = true): string[] {
   // A cash fund is a reference for what money earns, not part of the market's mood
   const all = everything.filter((a) => !a.isCash)
   if (all.length === 0) return []
@@ -223,7 +228,9 @@ export function describeMarket(everything: InstrumentAnalyticsDto[], moods: News
   const leaning = (action: string) => action === 'StrongBuy' || action === 'Buy' ? 'buy' : action === 'StrongSell' || action === 'Sell' ? 'sell' : 'hold'
   const buys = all.filter((a) => leaning(a.combinedSignal.action) === 'buy').length
   const sells = all.filter((a) => leaning(a.combinedSignal.action) === 'sell').length
-  sentences.push(`Combined signal (Buy or Sell only when technical and news agree): ${buys} Buy, ${sells} Sell, ${all.length - buys - sells} Hold (stay as you are).`)
+  sentences.push(news
+    ? `Combined signal (Buy or Sell only when technical and news agree): ${buys} Buy, ${sells} Sell, ${all.length - buys - sells} Hold (stay as you are).`
+    : `Technical signal: ${buys} Buy, ${sells} Sell, ${all.length - buys - sells} Hold (stay as you are).`)
 
   const trendsUp = all.filter((a) => a.longTermTrend.direction === 'Up').length
   const trendsDown = all.filter((a) => a.longTermTrend.direction === 'Down').length
@@ -255,7 +262,7 @@ export function describeMarket(everything: InstrumentAnalyticsDto[], moods: News
     groups.set(key, key.split(', '))
   }
   // One line for all groups: it's a caveat, not news
-  if (groups.size > 0)
+  if (news && groups.size > 0)
     sentences.push(`Some instruments read the same news, so their news signals move together: ${[...groups.values()].map((g) => g.join(' & ')).join('; ')}.`)
 
   return sentences

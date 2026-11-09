@@ -100,3 +100,23 @@ public class SteadySignalTests
         Assert.Empty(AlertService.Changes(history, DateTime.MinValue, steady: true));
     }
 }
+
+public class TechnicalOnlyAlertTests
+{
+    [Fact]
+    public void WithoutNews_TheTechnicalSignalIsTheImportantOne()
+    {
+        var start = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+        var history = new[]
+        {
+            new DailySignals(start, "Hold", "Hold", "Hold", "Up", "Hold", "Hold"),
+            new DailySignals(start.AddDays(1), "Buy", "Buy", "Buy", "Up", "Buy", "Buy"),
+        };
+
+        var changes = AlertService.Changes(history, DateTime.MinValue, steady: true, news: false);
+
+        var technical = Assert.Single(changes);
+        Assert.Equal("Technical", technical.Signal);
+        Assert.True(technical.Important);
+    }
+}

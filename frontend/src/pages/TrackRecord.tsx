@@ -18,6 +18,7 @@ import { compareWithHolding, describeBacktests, describeRuleRecord, describeTren
 import InfoTip from '../components/help/InfoTip'
 import PlainSummary from '../components/help/PlainSummary'
 import { applyBacktestMode, useSignalMode } from '../services/signalMode'
+import { useFeatures } from '../services/features'
 import NewsSignalComparison from '../components/signals/NewsSignalComparison'
 
 const COST_OPTIONS = [0, 0.25, 0.5, 1, 2]
@@ -195,6 +196,8 @@ export default function TrackRecord() {
   const [loaded, setResults] = useState<BacktestResult[]>([])
   // The technical and combined signals chosen at the top of the page
   const mode = useSignalMode()
+  // The news and combined comparison only when news is switched on (Features:News)
+  const { news } = useFeatures()
   const results = useMemo(() => loaded.map((r) => applyBacktestMode(r, mode)), [loaded, mode])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -236,7 +239,7 @@ export default function TrackRecord() {
 
       {error && <div style={{ color: COLORS.down, marginBottom: '12px' }}>{error}</div>}
 
-      {tested.length > 0 && (
+      {news && tested.length > 0 && (
         <NewsSignalComparison
           results={tested}
           detail={detail}

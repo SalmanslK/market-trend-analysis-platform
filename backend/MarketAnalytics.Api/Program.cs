@@ -17,6 +17,9 @@ builder.Services.AddOpenApi();
 // Unhandled errors return a short JSON problem description instead of a stack trace
 builder.Services.AddProblemDetails();
 
+// Optional parts of the app (appsettings.json "Features"); news and sentiment are off by default
+builder.Services.Configure<MarketAnalytics.Api.FeatureSettings>(builder.Configuration.GetSection("Features"));
+
 // Backtest and price responses are large JSON; compression cuts them to a fraction
 builder.Services.AddResponseCompression();
 

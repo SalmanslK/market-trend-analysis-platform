@@ -108,6 +108,11 @@ It doesn't start automatically after a reboot, and .NET updates may close the AP
 If prices are more than 4 days old, the Overview and instrument pages show a warning. `GET /api/health` reports whether
 the database answers and the newest price date.
 
+**News and sentiment switch:** `Features:News` in `backend/MarketAnalytics.Api/appsettings.json` is `false` by default, so
+the app is based on technical analysis only: no News page, no news or combined signals, no news in summaries, alerts,
+holdings or the track record (the combined signal is replaced by the technical one). The Worker keeps collecting news so
+the history is ready. Set it to `true` (or the environment variable `Features__News=true`) and restart to turn news on.
+
 **Check for new data now:** a button on the Overview and Settings pages (`POST /api/data/refresh`) runs the same price,
 payout and news update as the Worker (`MarketDataUpdater` and `NewsUpdater` in Infrastructure, shared by both) and says
 what it found. One refresh runs at a time; a second request gets "already running".

@@ -5,6 +5,7 @@ import InfoTip from '../help/InfoTip'
 import TrendBadge from '../trend/TrendBadge'
 import ScaledSignalBadge from './ScaledSignalBadge'
 import SignalBadge from './SignalBadge'
+import { useFeatures } from '../../services/features'
 import SignalTrackRecord from './SignalTrackRecord'
 
 interface SignalPanelProps {
@@ -20,20 +21,24 @@ const impactStyle = (impact: number) =>
 
 export default function SignalPanel({ analytics }: SignalPanelProps) {
   const { signal, longTermTrend } = analytics
+  const { news } = useFeatures()
   const note = directionNote(analytics.symbol)
 
   return (
     <section style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px' }}>
       <h2 style={{ fontSize: '1.2rem', marginBottom: '10px' }}>Buy/Sell signals</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px', marginBottom: '14px' }}>
+        {news && (
         <div style={{ padding: '10px 12px', border: `2px solid ${COLORS.border}`, borderRadius: '6px' }}>
           <div style={{ fontSize: '12px', color: COLORS.muted, marginBottom: '6px' }}>Combined<InfoTip term="combinedSignal" /></div>
           <ScaledSignalBadge signal={analytics.combinedSignal} large />
         </div>
+        )}
         <div style={{ padding: '10px 12px', border: `1px solid ${COLORS.border}`, borderRadius: '6px' }}>
           <div style={{ fontSize: '12px', color: COLORS.muted, marginBottom: '6px' }}>Technical{signal.steady ? ' (steady)' : ' (daily)'}<InfoTip term="signal" /></div>
           <SignalBadge signal={signal} large />
         </div>
+        {news && (
         <div style={{ padding: '10px 12px', border: `1px solid ${COLORS.border}`, borderRadius: '6px' }}>
           <div style={{ fontSize: '12px', color: COLORS.muted, marginBottom: '6px' }}>News, last 7 days<InfoTip term="newsSignal" /></div>
           <ScaledSignalBadge signal={analytics.newsSignal} large />
@@ -46,6 +51,7 @@ export default function SignalPanel({ analytics }: SignalPanelProps) {
             </div>
           )}
         </div>
+        )}
       </div>
 
       <h3 style={{ fontSize: '1rem', marginBottom: '6px' }}>Why the technical signal says this</h3>

@@ -22,6 +22,8 @@ import { describeInstrument } from '../services/plainLanguage'
 import { intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences } from '../services/preferences'
 import { applySignalMode, useSignalMode } from '../services/signalMode'
+import { useFeatures } from '../services/features'
+import SignalBadge from '../components/signals/SignalBadge'
 import { changeColor, COLORS, formatDate, formatNumber, formatPercent, daysSince, STALE_AFTER_DAYS } from '../services/format'
 
 export default function InstrumentView() {
@@ -33,7 +35,8 @@ export default function InstrumentView() {
   const [priceData, setPriceData] = useState<PriceDataDto[]>([])
   const [loaded, setAnalytics] = useState<InstrumentAnalyticsDto | null>(null)
   const mode = useSignalMode()
-  const analytics = useMemo(() => (loaded ? applySignalMode(loaded, mode) : null), [loaded, mode])
+  const { news } = useFeatures()
+  const analytics = useMemo(() => (loaded ? applySignalMode(loaded, mode, news) : null), [loaded, mode, news])
   const [mood, setMood] = useState<NewsSentimentSummary>()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -80,7 +83,7 @@ export default function InstrumentView() {
   }, [symbol, interval, timeframe])
 
   const instrumentName = instruments.find((i) => i.symbol === symbol)?.name
-  const summary = analytics ? describeInstrument(analytics, mood) : null
+  const summary = analytics ? describeInstrument(analytics, news ? mood : undefined, news) : null
 
   return (
     <div style={{ padding: '20px' }}>
@@ -117,7 +120,7 @@ export default function InstrumentView() {
             </span>
           ) : (<>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: COLORS.muted, fontSize: '14px' }}>
-            Combined signal <ScaledSignalBadge signal={analytics.combinedSignal} large />
+            {news ? <>Combined signal <ScaledSignalBadge signal={analytics.combinedSignal} large /></> : <>Technical signal <SignalBadge signal={analytics.signal} large /></>}
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: COLORS.muted, fontSize: '14px' }}>
             Long-term trend <TrendBadge trend={analytics.longTermTrend} />
@@ -131,7 +134,7 @@ export default function InstrumentView() {
           headline={summary.headline}
           points={summary.points}
           maxPoints={4}
-          footer="This describes what prices and news have done so far. It isn't a prediction or financial advice."
+          footer={`This describes what prices${news ? ' and news have' : ' have'} done so far. It isn't a prediction or financial advice.`}
         />
       )}
 
@@ -165,7 +168,7 @@ export default function InstrumentView() {
         </div>
       )}
 
-      {symbol && <InstrumentNews symbol={symbol} />}
+      {news && symbol && <InstrumentNews symbol={symbol} />}
 
       {priceData.length > 0 && <IndicatorCharts data={priceData} />}
       {analytics && <AllMetrics analytics={analytics} />}

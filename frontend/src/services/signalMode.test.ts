@@ -56,3 +56,12 @@ describe('fallbacks and outcomes', () => {
     expect(r.strategy.annualReturn).toBe(9)
   })
 })
+
+describe('news switched off', () => {
+  it('uses the technical signal wherever the combined one would act', () => {
+    const a = applySignalMode(analytics, 'steady', false)
+
+    expect(a.combinedSignal).toMatchObject({ action: 'Buy', score: 36 })
+    expect(a.combinedSignal.articles).toBe(0)
+  })
+})

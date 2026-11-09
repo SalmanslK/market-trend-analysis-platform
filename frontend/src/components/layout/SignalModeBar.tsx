@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router-dom'
 import { setSignalMode, SignalMode, useSignalMode } from '../../services/signalMode'
 import { COLORS } from '../../services/format'
+import { useFeatures } from '../../services/features'
 import InfoTip from '../help/InfoTip'
 
 // Pages that show Buy/Sell signals
@@ -14,6 +15,7 @@ const CHOICES: { mode: SignalMode; label: string }[] = [
 /** The choice of technical signal, at the top of every page that shows signals. */
 export default function SignalModeBar() {
   const mode = useSignalMode()
+  const { news } = useFeatures()
   const { pathname } = useLocation()
   const shown = SIGNAL_PAGES.some((p) => (p === '/' ? pathname === '/' : pathname.startsWith(p)))
   if (!shown) return null
@@ -47,7 +49,7 @@ export default function SignalModeBar() {
           ))}
         </div>
         <span style={{ color: COLORS.muted, fontSize: '12px' }}>
-          {mode === 'steady' ? 'Changes a few times a year; did better in testing.' : 'Reacts to every day; changes often.'} The combined signal follows this choice.
+          {mode === 'steady' ? 'Changes a few times a year; did better in testing.' : 'Reacts to every day; changes often.'}{news ? ' The combined signal follows this choice.' : ''}
         </span>
       </div>
     </div>

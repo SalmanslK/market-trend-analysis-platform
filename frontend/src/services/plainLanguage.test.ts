@@ -95,3 +95,13 @@ describe('describePortfolios', () => {
     expect(sentences.some((s) => s.startsWith('The trend filter on "All in stocks" hurt'))).toBe(true)
   })
 })
+
+describe('technical-only summaries', () => {
+  it('leaves out news and talks about the technical signal', () => {
+    const shared = instrument('KSE100', { newsSignal: { action: 'StrongBuy', score: 60, articles: 55, newsConfidence: 79, sharedWith: ['KMI30'] } })
+    const sentences = describeMarket([shared, instrument('KMI30')], [], false)
+
+    expect(sentences.some((s) => s.startsWith('Technical signal:'))).toBe(true)
+    expect(sentences.some((s) => s.includes('news'))).toBe(false)
+  })
+})

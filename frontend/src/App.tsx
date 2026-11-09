@@ -11,9 +11,11 @@ import Settings from './pages/Settings'
 import Navigation from './components/layout/Navigation'
 import SignalModeBar from './components/layout/SignalModeBar'
 import PageTitle from './components/layout/PageTitle'
+import { useFeatures } from './services/features'
 import NotFound from './pages/NotFound'
 
 function App() {
+  const { news } = useFeatures()
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="app">
@@ -28,7 +30,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/instrument/:symbol" element={<InstrumentView />} />
-            <Route path="/news" element={<News />} />
+            <Route path="/news" element={news ? <News /> : <NotFound />} />
             <Route path="/comparison" element={<Comparison />} />
             <Route path="/track-record" element={<TrackRecord />} />
             <Route path="/portfolio" element={<Portfolio />} />

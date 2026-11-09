@@ -12,10 +12,12 @@ namespace MarketAnalytics.Api.Controllers;
 public class AlertsController : ControllerBase
 {
     private readonly IAlertService _alertService;
+    private readonly FeatureSettings _features;
 
-    public AlertsController(IAlertService alertService)
+    public AlertsController(IAlertService alertService, Microsoft.Extensions.Options.IOptions<FeatureSettings> features)
     {
         _alertService = alertService;
+        _features = features.Value;
     }
 
     /// <summary>
@@ -26,9 +28,11 @@ public class AlertsController : ControllerBase
     public async Task<ActionResult<List<SignalAlertDto>>> GetRecent(
         [FromQuery] int days = 30,
         [FromQuery] string technical = "steady",
+        [FromQuery] bool? news = null,
         CancellationToken cancellationToken = default)
     {
         var steady = !technical.Equals("daily", StringComparison.OrdinalIgnoreCase);
-        return Ok(await _alertService.GetRecentAsync(days, steady, cancellationToken));
+        // News changes only when news is switched on (Features:News), unless the caller says otherwise
+        return Ok(await _alertService.GetRecentAsync(days, steady, news ?? _features.News, cancellationToken));
     }
 }

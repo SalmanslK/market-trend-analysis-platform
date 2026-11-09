@@ -7,6 +7,7 @@ import ScaledSignalBadge from '../components/signals/ScaledSignalBadge'
 import TrendBadge from '../components/trend/TrendBadge'
 import InfoTip from '../components/help/InfoTip'
 import { applySignalMode, useSignalMode } from '../services/signalMode'
+import { useFeatures } from '../services/features'
 import PlainSummary from '../components/help/PlainSummary'
 
 export interface Holding {
@@ -57,7 +58,8 @@ export default function Holdings() {
   const [holdings, setHoldings] = useState<Holding[]>(loadHoldings)
   const [loaded, setAnalytics] = useState<InstrumentAnalyticsDto[]>([])
   const mode = useSignalMode()
-  const analytics = useMemo(() => loaded.map((a) => applySignalMode(a, mode)), [loaded, mode])
+  const { news } = useFeatures()
+  const analytics = useMemo(() => loaded.map((a) => applySignalMode(a, mode, news)), [loaded, mode, news])
   const [draft, setDraft] = useState<{ symbol: string; units: string; buyPrice: string; buyDate: string }>({ symbol: '', units: '', buyPrice: '', buyDate: '' })
   const [error, setError] = useState<string | null>(null)
   // Show "enter the units" only after a first try, not while the person is still filling in the form
@@ -161,7 +163,7 @@ export default function Holdings() {
     summary.push(`Split: ${split.map((s) => `${s.kind.toLowerCase()} ${((s.value / total) * 100).toFixed(0)}%`).join(', ')}.`)
     const selling = rows.filter((r) => !r.a.isCash && r.a.combinedSignal.action.includes('Sell')).map((r) => r.h.symbol)
     const down = rows.filter((r) => !r.a.isCash && r.a.longTermTrend.direction === 'Down' && r.a.longTermTrend.phase !== 'Recovering').map((r) => r.h.symbol)
-    if (selling.length) summary.push(`The combined signal says Sell for ${selling.join(', ')}. Signals reduced falls in testing but earned less than holding; see Track Record.`)
+    if (selling.length) summary.push(`The ${news ? 'combined' : 'technical'} signal says Sell for ${selling.join(', ')}. Signals reduced falls in testing but earned less than holding; see Track Record.`)
     if (down.length) summary.push(`The long-term trend is down for ${down.join(', ')}.`)
   }
 
@@ -233,7 +235,7 @@ export default function Holdings() {
                 <th style={headerStyle}>Value (Rs)</th>
                 <th style={headerStyle}>Gain</th>
                 <th style={headerStyle}>Paid out (Rs)<InfoTip term="payouts" /></th>
-                <th style={{ ...headerStyle, textAlign: 'center' }}>Combined<InfoTip term="combinedSignal" /></th>
+                <th style={{ ...headerStyle, textAlign: 'center' }}>{news ? <>Combined<InfoTip term="combinedSignal" /></> : <>Technical<InfoTip term="signal" /></>}</th>
                 <th style={{ ...headerStyle, textAlign: 'center' }}>Trend<InfoTip term="longTermTrend" /></th>
                 <th style={headerStyle}></th>
               </tr>
@@ -310,7 +312,7 @@ export default function Holdings() {
       <ul style={{ color: COLORS.muted, fontSize: '13px', lineHeight: 1.5, marginTop: '16px', paddingLeft: '20px' }}>
         <li>Value uses the latest stored price. "Paid out" is the fund payouts per unit times your units; if you reinvested them, your unit count already includes them.</li>
         <li>Gain compares today's value with the price you paid, without payouts. KSE-100 and KMI-30 aren't listed because they are indices; their index funds (e.g. KMIF) can be held.</li>
-        <li>Signals describe past prices and news. They aren't financial advice.</li>
+        <li>Signals describe past prices{news ? ' and news' : ''}. They aren't financial advice.</li>
       </ul>
     </div>
   )

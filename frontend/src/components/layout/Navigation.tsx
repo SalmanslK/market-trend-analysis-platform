@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useFeatures } from '../../services/features'
 import { useIsNarrow } from '../../services/useIsNarrow'
 
 // In the order people use them: the market, their own money, then deeper analysis and help
@@ -16,6 +17,9 @@ const LINKS = [
 
 export default function Navigation() {
   const location = useLocation()
+  // News is listed only when it is switched on (Features:News)
+  const { news } = useFeatures()
+  const links = LINKS.filter((l) => news || l.path !== '/news')
   // On phones the nine links would take four rows, so they fold behind a menu button
   const narrow = useIsNarrow()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -60,7 +64,7 @@ export default function Navigation() {
             onClick={() => setMenuOpen(!menuOpen)}
             style={{ marginLeft: 'auto', padding: '0.4rem 0.8rem', backgroundColor: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '4px', fontSize: '15px', cursor: 'pointer' }}
           >
-            {menuOpen ? '✕ Close' : `☰ ${LINKS.find(({ path }) => isActive(path))?.label ?? 'Menu'}`}
+            {menuOpen ? '✕ Close' : `☰ ${links.find(({ path }) => isActive(path))?.label ?? 'Menu'}`}
           </button>
         )}
 
@@ -71,7 +75,7 @@ export default function Navigation() {
             ? { display: 'flex', flexDirection: 'column', width: '100%', gap: '0.25rem' }
             : { display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginLeft: 'auto' }}
         >
-          {LINKS.map(({ path, label }) => (
+          {links.map(({ path, label }) => (
             <Link
               key={path}
               to={path}

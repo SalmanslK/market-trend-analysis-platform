@@ -15,6 +15,7 @@ import TrendBadge from '../components/trend/TrendBadge'
 import RecentChanges from '../components/signals/RecentChanges'
 import { applySignalMode, useSignalMode } from '../services/signalMode'
 import RefreshDataButton from '../components/layout/RefreshDataButton'
+import { useFeatures } from '../services/features'
 import RangeBar from '../components/analytics/RangeBar'
 
 type SortKey = 'symbol' | 'change1D' | 'change1M' | 'changeYtd' | 'change1Y' | 'rsi14' | 'signal' | 'combined' | 'trend' | 'news'
@@ -54,7 +55,9 @@ export default function Dashboard() {
   const [loaded, setAnalytics] = useState<InstrumentAnalyticsDto[]>([])
   // The technical and combined signals chosen at the top of the page
   const mode = useSignalMode()
-  const analytics = useMemo(() => loaded.map((a) => applySignalMode(a, mode)), [loaded, mode])
+  // Technical analysis only unless news is switched on (Features:News)
+  const { news } = useFeatures()
+  const analytics = useMemo(() => loaded.map((a) => applySignalMode(a, mode, news)), [loaded, mode, news])
   const [moods, setMoods] = useState<NewsSentimentSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -82,8 +85,8 @@ export default function Dashboard() {
       })
       .finally(() => setLoading(false))
     // News mood is a bonus: the overview still works without it
-    newsApi.getSentiment(7).then(setMoods).catch((err) => console.error('Error loading news sentiment:', err))
-  }, [reloadKey])
+    if (news) newsApi.getSentiment(7).then(setMoods).catch((err) => console.error('Error loading news sentiment:', err))
+  }, [reloadKey, news])
 
   const sorted = useMemo(() => {
     const value = (a: InstrumentAnalyticsDto): string | number => {
@@ -105,7 +108,7 @@ export default function Dashboard() {
 
   const latestDate = analytics.reduce<string | null>((latest, a) => (!latest || a.lastDate > latest ? a.lastDate : latest), null)
 
-  const columns = moreColumns ? 12 : 11
+  const columns = (moreColumns ? 12 : 11) - (news ? 0 : 2)
 
   // Column headings sort when clicked; a real button so the keyboard and screen readers can use them too
   const header = (key: SortKey, label: string, align: 'left' | 'right' | 'center' = 'right', tip?: GlossaryKey) => (
@@ -138,7 +141,7 @@ export default function Dashboard() {
       <h1>Market Overview</h1>
       <p style={{ color: COLORS.muted, margin: '6px 0 20px' }}>
         {latestDate ? `Prices up to ${formatDate(latestDate)}. ` : ''}
-        Select an instrument for its chart and news; tap a signal to see why it says so.
+        Select an instrument for its chart{news ? ' and news' : ''}; tap a signal to see why it says so.
       </p>
       <div style={{ marginBottom: '16px' }}>
         <RefreshDataButton onRefreshed={() => setReloadKey((k) => k + 1)} />
@@ -153,7 +156,7 @@ export default function Dashboard() {
 
       {analytics.length > 0 && (
         <PlainSummary
-          points={describeMarket(analytics, moods)}
+          points={describeMarket(analytics, news ? moods : [], news)}
           maxPoints={4}
           footer={<>New here? The <Link to="/guide" style={{ color: COLORS.link }}>Guide</Link> explains every number in plain words, or tap any ⓘ.</>}
         />
@@ -188,9 +191,9 @@ export default function Dashboard() {
                 {header('change1Y', '1Y')}
                 {moreColumns && header('rsi14', 'RSI', 'right', 'rsi')}
                 <th scope="col" style={{ ...headerStyle, cursor: 'default', textAlign: 'center' }}>52-week range<InfoTip term="range52w" /></th>
-                {header('combined', 'Combined', 'center', 'combinedSignal')}
+                {news && header('combined', 'Combined', 'center', 'combinedSignal')}
                 {header('signal', 'Technical', 'center', 'signal')}
-                {header('news', 'News', 'center', 'newsSignal')}
+                {news && header('news', 'News', 'center', 'newsSignal')}
                 {header('trend', 'Long-term trend', 'center', 'longTermTrend')}
               </tr>
             </thead>
@@ -240,7 +243,7 @@ export default function Dashboard() {
                     <RangeBar low={a.low52W} high={a.high52W} position={a.rangePosition52W} />
                   </td>
                   {a.isCash ? (
-                    <td colSpan={4} style={{ ...cellStyle, textAlign: 'center' }}>
+                    <td colSpan={news ? 4 : 2} style={{ ...cellStyle, textAlign: 'center' }}>
                       <Tip text={`A ${(a.lowRiskKind ?? 'cash fund').toLowerCase()}'s price creeps up almost every day, so Buy/Sell signals and trends don't apply. It shows what money earns while it waits; see the Portfolio page.`}>
                         <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '12px', fontSize: '13px', backgroundColor: '#e3f2fd', color: '#0d47a1', fontWeight: 'bold' }}>
                           {a.lowRiskKind ?? 'Cash fund'} · no signals
@@ -248,12 +251,15 @@ export default function Dashboard() {
                       </Tip>
                     </td>
                   ) : (<>
+                  {news && (
                   <td style={{ ...cellStyle, textAlign: 'center' }}>
                     <ScaledSignalBadge signal={a.combinedSignal} title="Technical and news together, from -100 to +100" />
                   </td>
+                  )}
                   <td style={{ ...cellStyle, textAlign: 'center' }}>
                     <SignalBadge signal={a.signal} />
                   </td>
+                  {news && (
                   <td style={{ ...cellStyle, textAlign: 'center' }}>
                     <Link to={`/news?symbol=${a.symbol}`} style={{ textDecoration: 'none' }}>
                       <ScaledSignalBadge
@@ -262,6 +268,7 @@ export default function Dashboard() {
                       />
                     </Link>
                   </td>
+                  )}
                   <td style={{ ...cellStyle, textAlign: 'center' }}>
                     <TrendBadge trend={a.longTermTrend} />
                   </td>

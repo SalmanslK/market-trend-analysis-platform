@@ -33,7 +33,7 @@ public class AlertService : IAlertService
         _fundPayoutRepository = fundPayoutRepository;
     }
 
-    public async Task<List<SignalAlertDto>> GetRecentAsync(int days, bool steady = true, CancellationToken cancellationToken = default)
+    public async Task<List<SignalAlertDto>> GetRecentAsync(int days, bool steady = true, bool news = true, CancellationToken cancellationToken = default)
     {
         days = Math.Clamp(days, 1, MaxDays);
         var since = DateTime.UtcNow.Date.AddDays(-days);
@@ -51,7 +51,7 @@ public class AlertService : IAlertService
 
             var prices = await PriceHistory.LoadDailyAsync(_pricePointRepository, _fundPayoutRepository, instrument.Id, cancellationToken: cancellationToken);
             var history = DailySignals(prices, NewsService.ScoreForSymbol(articles, instrument.Symbol));
-            foreach (var change in Changes(history, since, steady))
+            foreach (var change in Changes(history, since, steady, news))
             {
                 change.Symbol = instrument.Symbol;
                 change.Name = instrument.Name;
@@ -94,9 +94,10 @@ public class AlertService : IAlertService
     /// <summary>
     /// The changes from one day to the next, for days on or after <paramref name="since"/>. Only changes of side count
     /// (Buy to Hold, Hold to Sell...), not Buy to Strong Buy. Important: the combined signal turned to Buy or Sell, or
-    /// the trend changed; a move to Hold means "stay as you are", so it isn't a call to act.
+    /// the trend changed; a move to Hold means "stay as you are", so it isn't a call to act. Without news
+    /// (<paramref name="news"/> false) there are no news or combined changes, and the technical signal is the one that counts.
     /// </summary>
-    public static List<SignalAlertDto> Changes(IReadOnlyList<DailySignals> history, DateTime since, bool steady = true)
+    public static List<SignalAlertDto> Changes(IReadOnlyList<DailySignals> history, DateTime since, bool steady = true, bool news = true)
     {
         var changes = new List<SignalAlertDto>();
         for (int i = 1; i < history.Count; i++)
@@ -109,14 +110,17 @@ public class AlertService : IAlertService
             {
                 if (Side(from) == Side(to))
                     return;
-                var important = signal == "Trend" || (signal == "Combined" && Side(to) != "Hold");
+                var actsOn = news ? "Combined" : "Technical";
+                var important = signal == "Trend" || (signal == actsOn && Side(to) != "Hold");
                 changes.Add(new SignalAlertDto { Date = after.Date, Signal = signal, From = from, To = to, Important = important });
             }
 
             // The technical and combined signals follow the chosen version: steady (20-day average) or daily
-            Add("Combined", steady ? before.SteadyCombined : before.Combined, steady ? after.SteadyCombined : after.Combined);
+            if (news)
+                Add("Combined", steady ? before.SteadyCombined : before.Combined, steady ? after.SteadyCombined : after.Combined);
             Add("Technical", steady ? before.SteadyTechnical : before.Technical, steady ? after.SteadyTechnical : after.Technical);
-            Add("News", before.News, after.News);
+            if (news)
+                Add("News", before.News, after.News);
             Add("Trend", before.Trend, after.Trend);
         }
         return changes;

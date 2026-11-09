@@ -83,6 +83,12 @@ public class InstrumentAnalyticsDto
     /// dollar-priced instruments, and when the instrument or the Meezan Cash Fund lacks 12 months of recent history.
     /// </summary>
     public CashTestDto? StrongerThanCash { get; set; }
+
+    /// <summary>
+    /// Why the stronger-than-cash check couldn't be made for an instrument it applies to; null when it was made or
+    /// doesn't apply. Lets the pages say "not available" instead of silently leaving the check out.
+    /// </summary>
+    public string? StrongerThanCashUnavailable { get; set; }
 }
 
 /// <summary>

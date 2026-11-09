@@ -162,6 +162,17 @@ export default function InstrumentView() {
                     </div>
                   )
                 })()}
+                {!analytics.strongerThanCash && analytics.strongerThanCashUnavailable && (
+                  <div style={{ ...tileStyle, gridColumn: '1 / -1' }}>
+                    <div style={{ ...tileLabelStyle, marginBottom: '6px' }}>
+                      Stronger than cash?<InfoTip term="strongerThanCash" />
+                    </div>
+                    <span style={{ display: 'inline-block', padding: '3px 12px', borderRadius: '999px', fontWeight: 700, fontSize: '16px', color: '#334e68', backgroundColor: '#e4e7eb' }}>
+                      Not available
+                    </span>
+                    <p style={tileTextStyle}>{analytics.strongerThanCashUnavailable}</p>
+                  </div>
+                )}
               </>)}
             </div>
           )}

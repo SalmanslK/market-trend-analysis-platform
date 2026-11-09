@@ -16,4 +16,8 @@
     <ProjectReference Include="..\MarketAnalytics.Application\MarketAnalytics.Application.csproj" />
     <ProjectReference Include="..\MarketAnalytics.Infrastructure\MarketAnalytics.Infrastructure.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="MarketAnalytics.Tests" />
+  </ItemGroup>
+
 </Project>

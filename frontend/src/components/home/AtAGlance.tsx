@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import InfoTip from '../help/InfoTip'
 import { InstrumentAnalyticsDto } from '../../services/types/marketData'
 import { GOLD_SYMBOLS, signedPct, trendInWords } from '../../services/plainLanguage'
 import { COLORS, signalStyles, SURFACE } from '../../services/format'
@@ -49,6 +50,8 @@ interface Card {
   tone: Tone
   sentence: string
   signal?: string
+  /** The sentence includes the stronger-than-cash check */
+  versusCash?: boolean
   link: string
   linkText: string
 }
@@ -69,6 +72,7 @@ export default function AtAGlance({ analytics }: AtAGlanceProps) {
     cards.push({
       key: 'stocks', title: 'Pakistan stocks', ...status(stocks),
       sentence: `The KSE-100 is ${pct(stocks.change1M)} over the past month. ${trendInWords(stocks.longTermTrend)}${versusCash(stocks)}`,
+      versusCash: !!stocks.strongerThanCash,
       signal: signalStyles[stocks.signal.action].label,
       link: '/instrument/KSE100', linkText: 'Open the KSE-100',
     })
@@ -77,6 +81,7 @@ export default function AtAGlance({ analytics }: AtAGlanceProps) {
     cards.push({
       key: 'gold', title: 'Gold in Pakistan', ...status(gold),
       sentence: `Gold per tola is ${pct(gold.change1M)} over the past month. ${trendInWords(gold.longTermTrend)}${versusCash(gold)}`,
+      versusCash: !!gold.strongerThanCash,
       signal: signalStyles[gold.signal.action].label,
       link: '/instrument/GOLDPK', linkText: 'Open gold',
     })
@@ -115,7 +120,9 @@ export default function AtAGlance({ analytics }: AtAGlanceProps) {
             </div>
             <p style={{ fontSize: '14px', lineHeight: 1.5, color: '#334e68', flex: 1 }}>
               {card.sentence}
-              {card.signal && <> Technical signal: <strong>{card.signal}</strong>.</>}
+              <InfoTip term={card.key === 'cash' ? 'cashFund' : 'change'} />
+              {card.versusCash && <InfoTip term="strongerThanCash" />}
+              {card.signal && <> Technical signal: <strong>{card.signal}</strong>.<InfoTip term="signal" /></>}
             </p>
             <Link to={card.link} style={{ color: COLORS.link, fontWeight: 600, fontSize: '14px' }}>{card.linkText} →</Link>
           </div>

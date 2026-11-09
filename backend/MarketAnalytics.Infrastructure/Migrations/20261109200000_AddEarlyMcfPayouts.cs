@@ -9,8 +9,9 @@ namespace MarketAnalytics.Infrastructure.Migrations
     /// <summary>
     /// Meezan Cash Fund's payouts from 2010 to 2017, which the payout source doesn't list. Without them the fund's
     /// price sat near Rs 50 for years and its return looked like zero. A cash fund's NAV barely moves day to day, so
-    /// each payout is the NAV's one-day drop (quarterly in 2010, monthly from 2011 to mid-2014, then yearly). Where a
-    /// drop spans a gap in the price data, it is a little smaller than the payout, by the interest earned in the gap.
+    /// each payout is the NAV's one-day drop: quarterly in 2010, monthly from April 2011 to June 2014, then yearly.
+    /// No drop was found for July 2011 or January to March 2013 (the price data has a gap there). Where a drop spans
+    /// a gap in the price data, it is a little smaller than the payout, by the interest earned in the gap.
     /// </summary>
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20261109200000_AddEarlyMcfPayouts")]

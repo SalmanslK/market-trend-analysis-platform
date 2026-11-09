@@ -70,8 +70,8 @@ export default function LiveRecord() {
               <tr>
                 <th style={{ ...cellStyle, textAlign: 'left' }}>When the app said</th>
                 <th style={cellStyle}>Readings</th>
-                <th style={cellStyle}>Average move over the next {record.horizonDays} days</th>
-                <th style={cellStyle}>Followed by a rise</th>
+                <th style={cellStyle}>Average move over the next {record.horizonDays} days<InfoTip term="liveRecord" /></th>
+                <th style={cellStyle}>Followed by a rise<InfoTip term="liveRecord" /></th>
               </tr>
             </thead>
             <tbody>

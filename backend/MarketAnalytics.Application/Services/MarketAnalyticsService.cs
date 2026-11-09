@@ -124,12 +124,18 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         analytics.NewsSignal.SharedWith = SharedNews(mood, moods);
         ApplyPayouts(analytics, cleaned, payouts);
         if (StrongerThanCash.AppliesTo(instrument))
+        {
             analytics.StrongerThanCash = await EvaluateCashTestAsync(instrument, dailyPrices, cancellationToken);
+            if (analytics.StrongerThanCash == null)
+                analytics.StrongerThanCashUnavailable = _cashProblem ?? "It needs 12 months of recent prices for this instrument and the Meezan Cash Fund.";
+        }
         return analytics;
     }
 
     // The cash fund's history, loaded once per scope (an API request or one Worker run); empty when missing or failed
     private List<PriceDataPoint>? _cash;
+    // Why the cash history couldn't be used, shown to the reader; null when it loaded
+    private string? _cashProblem;
 
     /// <summary>
     /// The stronger-than-cash check. It is a secondary reading, so a failure is logged and leaves it out instead of
@@ -143,7 +149,10 @@ public class MarketAnalyticsService : IMarketAnalyticsService
             {
                 var cash = await _instrumentRepository.GetBySymbolAsync(StrongerThanCash.CashSymbol, cancellationToken);
                 if (cash == null)
+                {
                     _logger.LogWarning("Cash fund {Symbol} not found; the stronger-than-cash check is skipped", StrongerThanCash.CashSymbol);
+                    _cashProblem = "The Meezan Cash Fund's prices are missing, so there is nothing to compare with.";
+                }
                 _cash = cash == null
                     ? new List<PriceDataPoint>()
                     : await PriceHistory.LoadDailyAsync(_pricePointRepository, _fundPayoutRepository, cash.Id, cancellationToken: cancellationToken);
@@ -153,6 +162,7 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _cash ??= new List<PriceDataPoint>();
+            _cashProblem ??= "It couldn't be calculated this time; the app's log says why.";
             _logger.LogError(ex, "Stronger-than-cash check failed for {Symbol}", instrument.Symbol);
             return null;
         }

@@ -154,6 +154,8 @@ export interface InstrumentAnalyticsDto {
   payoutYield1Y?: number;
   /** The "stronger than cash" check; null for cash and income funds, currencies, dollar-priced gold and short histories */
   strongerThanCash?: CashTest | null;
+  /** Why the stronger-than-cash check couldn't be made for an instrument it applies to */
+  strongerThanCashUnavailable?: string | null;
 }
 
 /** Whether an instrument beat cash over the 12 months before this month's check (the first trading day) */

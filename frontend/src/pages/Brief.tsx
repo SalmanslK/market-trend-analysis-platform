@@ -45,13 +45,13 @@ export default function Brief() {
   return (
     <div style={{ padding: '20px', maxWidth: '820px' }}>
       <h1>Market brief</h1>
-      <p style={{ color: COLORS.muted, marginBottom: '16px', lineHeight: 1.5 }}>
+      <p className="no-print" style={{ color: COLORS.muted, marginBottom: '16px', lineHeight: 1.5 }}>
         Everything in one page, in plain words: what Pakistan's stocks, gold, the rupee and cash are doing, what is
         happening in the world economy, and what history says has tended to follow. Written by Claude from this
         app's figures and today's news, when you ask.
       </p>
 
-      <section style={{ ...SURFACE, padding: '16px 18px', marginBottom: '20px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px' }}>
+      <section className="no-print" style={{ ...SURFACE, padding: '16px 18px', marginBottom: '20px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px' }}>
         <button
           type="button"
           onClick={write}
@@ -60,6 +60,23 @@ export default function Brief() {
         >
           {writing ? 'Writing the brief…' : writtenToday ? 'Write a fresh brief' : "Write today's brief"}
         </button>
+        {latest && !writing && (
+          // The browser's print dialog offers "Save as PDF"; the print styles leave out everything but the brief
+          <button
+            type="button"
+            title="Opens the print window: choose Save as PDF"
+            onClick={() => {
+              // The browser names the PDF after the page title
+              const title = document.title
+              document.title = `Market brief ${new Date(latest.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
+              window.print()
+              document.title = title
+            }}
+            style={{ padding: '10px 18px', fontSize: '16px', fontWeight: 700, borderRadius: '8px', cursor: 'pointer', color: COLORS.ink, backgroundColor: 'white', border: `2px solid ${COLORS.ink}` }}
+          >
+            Export PDF
+          </button>
+        )}
         <span style={{ fontSize: '14px', color: COLORS.muted, flex: '1 1 260px' }}>
           {writing
             ? 'Reading the figures and searching the news. This takes two to five minutes; you can keep using the app.'
@@ -74,8 +91,8 @@ export default function Brief() {
       {status && !latest && !writing && <p style={{ color: COLORS.muted }}>No brief yet. Press the button above to write the first one.</p>}
 
       {latest && (
-        <article style={{ ...ANSWER_SURFACE, padding: '20px 24px', lineHeight: 1.6, fontSize: '16px' }} aria-busy={writing}>
-          <p style={{ color: COLORS.muted, fontSize: '14px', marginBottom: '8px' }}>Written {when(latest.createdAt)}</p>
+        <article className="print-plain" style={{ ...ANSWER_SURFACE, padding: '20px 24px', lineHeight: 1.6, fontSize: '16px' }} aria-busy={writing}>
+          <p style={{ color: COLORS.muted, fontSize: '14px', marginBottom: '8px' }}>Market brief, written {when(latest.createdAt)}</p>
           {parseBrief(latest.text).map((block, i) => {
             if (block.kind === 'heading')
               return <h2 key={i} style={{ fontSize: '1.15rem', marginTop: i === 0 ? 0 : '22px', marginBottom: '6px', color: COLORS.ink }}><Rich text={block.text} /></h2>

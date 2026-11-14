@@ -128,6 +128,14 @@ public class NewsSentimentAnalyzerTests
     [InlineData("USDPKR", "Rupee gains against US dollar", "Negative")]                 // rupee stronger -> USD/PKR falls
     [InlineData("USDPKR", "Dollar hits historic high at Rs170 in interbank market", "Positive")]
     [InlineData("USDPKR", "Pakistan's foreign exchange reserves climb to record high", "Negative")]
+    // A tracked company's own headlines count for it, whatever they mention (here gold and copper)
+    [InlineData("MARI", "Mari Energies announces major copper-gold discovery in Balochistan", "Positive")]
+    [InlineData("MARI", "Ivanhoe Atlantic signs MoU with Pakistan's Mari Energies", "Positive")]
+    [InlineData("FATIMA", "Fatima Fertilizer posts Rs29.96bn nine-month profit", "Positive")]
+    [InlineData("SRVI", "Service Industries reports quarterly loss as costs rise", "Negative")]
+    [InlineData("PIOC", "Pioneer Cement fined by competition commission", "Negative")]
+    // Market phrases keep their meaning
+    [InlineData("KSE100", "PSX slips on profit-taking", "Negative")]
     public void Sentiment_IsReadFromTheInstrumentsPointOfView(string symbol, string title, string expected)
     {
         Assert.Equal(expected, NewsSentimentAnalyzer.AnalyzeFor(symbol, title, "").Label);

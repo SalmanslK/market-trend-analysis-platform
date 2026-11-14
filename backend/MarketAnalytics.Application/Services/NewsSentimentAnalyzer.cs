@@ -28,7 +28,7 @@ public static class NewsSentimentAnalyzer
     private const RegexOptions Options = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled;
 
     /// <summary>Whose point of view an article is read from.</summary>
-    public enum View { General, Stocks, Gold, Rupee }
+    public enum View { General, Stocks, Gold, Rupee, Company }
 
     private enum Subject { None, Stocks, Gold, Rupee, Dollar, Oil, OtherMetal, GlobalStocks, Rates, Reserves }
 
@@ -40,7 +40,10 @@ public static class NewsSentimentAnalyzer
         @"surplus|inflows?|upgraded?|upgrades|beats? (?:expectations|estimates)|appreciates?|appreciated|appreciation|positive|" +
         @"approves?|approved|uptrend|upward|higher|edges? up|bull run|reclaims?|reclaimed|regains?|regained|comeback|" +
         @"increases?|increased|go(?:es)? up|went up|spikes?|spiked|bolsters?|emboldened|milestone|firms?|firmed|shines?|" +
-        @"soaring|surging|jumping|bounces?|bounced|ascent|crosses|crossed|tops|topped|surpass(?:es|ed)?|winning streak|stellar)\b",
+        @"soaring|surging|jumping|bounces?|bounced|ascent|crosses|crossed|tops|topped|surpass(?:es|ed)?|winning streak|stellar|" +
+        // Company news: results, payouts and deals
+        @"discover(?:s|ed|y|ies)|MoUs?|deals?|agreements?|partnership|contracts?|expan(?:ds?|ded|sion)|invests?|investments?|" +
+        @"acquires?|acquired|acquisition|dividends?|payouts?|bonus shares|(?:posts?|posted|reports?|reported|earns?|earned|books?|booked)\s+[^,;]{0,40}?\bprofits?)\b",
         Options);
 
     // Words and phrases that describe prices or the economy moving the wrong way
@@ -52,7 +55,10 @@ public static class NewsSentimentAnalyzer
         @"(?:record|all-time|all time|lifetime|historic|new) lows?|lowest|red zone|jittery|suffers?|suffered|escalat\w+|losing streak|" +
         @"uncertainty|volatile|volatility|slowdown|recession|default|downtrend|downward|lower|slips?|slipped|retreats?|retreated|" +
         @"profit-taking|selling|tensions|pressure|negative|shortage|dives?|dived|dumped|rout|plummets?|plummeted|" +
-        @"dips?|dipped|decreases?|decreased|threaten(?:s|ed)?|edges? down|eases?|eased|slashed|cools?|cooled|dims?|dimmed)\b",
+        @"dips?|dipped|decreases?|decreased|threaten(?:s|ed)?|edges? down|eases?|eased|slashed|cools?|cooled|dims?|dimmed|" +
+        // Company news: losses, penalties and troubles
+        @"loss|penalt(?:y|ies)|fined|probe|investigation|lawsuit|suspend(?:s|ed)?|suspension|shut(?:s|down)?|closure|fraud|scam|" +
+        @"delist(?:s|ed|ing)?|impairment|write-?offs?)\b",
         Options);
 
     // Words that make a move big or small
@@ -104,12 +110,15 @@ public static class NewsSentimentAnalyzer
     };
 
     /// <summary>
-    /// The view an instrument reads news from: USD/PKR moves opposite to the rupee, gold with gold, the rest with stocks.
+    /// The view an instrument reads news from: USD/PKR moves opposite to the rupee, gold with gold, a tracked company
+    /// with whatever its own headlines say (they name it, so a "copper-gold discovery" is the company's news, not gold's),
+    /// the rest with stocks.
     /// </summary>
     public static View ViewFor(string symbol) => symbol.ToUpperInvariant() switch
     {
         "USDPKR" => View.Rupee,
         "GOLDPK" or "GOLDINT" or "MGF" => View.Gold,
+        _ when TrackedStocks.Find(symbol) != null => View.Company,
         _ => View.Stocks,
     };
 
@@ -129,6 +138,7 @@ public static class NewsSentimentAnalyzer
         (View.Rupee, Subject.Reserves) => -1,
         (View.Rupee, Subject.Dollar) => 1,
         (View.Rupee, Subject.Oil) => 1,
+        (View.Company, _) => 1,
         _ => 0,
     };
 

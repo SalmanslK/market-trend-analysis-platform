@@ -4,6 +4,7 @@ import { analyticsApi } from '../services/api/analyticsApi'
 import { newsApi } from '../services/api/newsApi'
 import { InstrumentAnalyticsDto, InstrumentType, NewsSentimentSummary } from '../services/types/marketData'
 import { indicesApi } from '../services/api/indicesApi'
+import { INSTRUMENT_GROUPS, InstrumentGroup } from '../services/instrumentGroups'
 import Kmi30Badge from '../components/signals/Kmi30Badge'
 import { GlossaryKey } from '../services/glossary'
 import { describeMarket } from '../services/plainLanguage'
@@ -26,12 +27,8 @@ import RangeBar from '../components/analytics/RangeBar'
 type SortKey = 'symbol' | 'change1D' | 'change1M' | 'changeYtd' | 'change1Y' | 'rsi14' | 'signal' | 'combined' | 'trend' | 'news'
 
 // Three tabs, one short table at a time; each tab splits into at most two plain sub-groups
-const TABS = [
-  { key: 'markets', title: 'Markets', note: 'Pakistan stock indices, gold and the dollar' },
-  { key: 'funds', title: 'Funds', note: 'Meezan funds: shares and gold, then cash and income' },
-  { key: 'shares', title: 'Shariah stocks', note: 'Ten companies with the best long-run records; see Rankings' },
-] as const
-type TabKey = (typeof TABS)[number]['key']
+const TABS = INSTRUMENT_GROUPS
+type TabKey = InstrumentGroup
 
 const SUBGROUPS = [
   { key: 'pakistan', tab: 'markets', title: 'Pakistan' },

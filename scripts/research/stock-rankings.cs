@@ -78,6 +78,12 @@ List<(DateTime Date, double Price, double Volume)> Parse(JsonNode? rows) =>
         .GroupBy(r => r.Date).Select(g => g.Last())
         .OrderBy(r => r.Date).ToList();
 
+// KMI-30 membership, shown on the Rankings page (output only; not used in scoring)
+var kmi30 = new HashSet<string>();
+foreach (var sector in (await Get("/indices/sunbrust/KMI30"))!["sectors"]!.AsArray())
+    foreach (var company in sector!["companies"]!.AsArray())
+        kmi30.Add(company!["symbol"]!.GetValue<string>());
+
 var index = Parse(await Get("/indices/price-history/KSE100?days=10000"));
 var indexByDate = index.ToDictionary(r => r.Date, r => r.Price);
 var indexDates = index.Select(r => r.Date).ToList();
@@ -163,7 +169,9 @@ foreach (var r in eligible.OrderByDescending(r => r.Score))
         final.Add(r);
 
 // Company names for everything shown
-var shown = industries.SelectMany(i => i.Top).Concat(final).DistinctBy(r => r.Symbol).ToList();
+var shown = industries.SelectMany(i => i.Top).Concat(final)
+    .Concat(results.Where(r => kmi30.Contains(r.Symbol)))
+    .DistinctBy(r => r.Symbol).ToList();
 foreach (var r in shown)
 {
     try
@@ -189,6 +197,7 @@ Console.WriteLine("\nFINAL 10");
 foreach (var t in final)
     Console.WriteLine($"  {t.Score,5:0.0} {t.Symbol,-8} {t.Name} ({t.Sector}): {t.GrowthPercent:+0.0;-0.0}%/yr vs {t.IndexGrowthPercent:+0.0}% since {t.FirstDate:yyyy}, beat {t.YearsBeat}/{t.YearsCounted} yrs, worst {t.WorstFallPercent}%");
 
+var ranked = eligible.OrderByDescending(e => e.Score).ToList();
 var output = new
 {
     asOf = asOf.ToString("yyyy-MM-dd"),
@@ -207,6 +216,22 @@ var output = new
         top = i.Top.Select(Row),
     }),
     final = final.Select(Row),
+    // Every KMI-30 member: its rank among the eligible companies, or why it wasn't ranked
+    kmi30 = kmi30.Select(symbol =>
+        {
+            var r = results.FirstOrDefault(x => x.Symbol == symbol);
+            int? rank = r is { Eligible: true } ? ranked.IndexOf(r) + 1 : null;
+            object row = r == null
+                ? new { symbol, name = symbol, sector = "", eligible = false, rank, score = (double?)null, reason = "No price history at the source" }
+                : new
+                {
+                    symbol, name = r.Name, sector = r.Sector, eligible = r.Eligible, rank, score = r.Eligible ? r.Score : (double?)null,
+                    firstYear = r.FirstDate.Year, r.GrowthPercent, r.IndexGrowthPercent, r.YearsBeat, r.YearsCounted, r.WorstFallPercent,
+                    reason = r.Eligible ? null : r.FirstDate > minFirstDate ? "Less than 5 years of prices" : "Not enough trading",
+                };
+            return (rank, row);
+        })
+        .OrderBy(t => t.rank ?? 999).Select(t => t.row),
 };
 var path = Path.Combine("..", "..", "frontend", "public", "data", "stock-rankings.json");
 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
@@ -215,7 +240,7 @@ Console.WriteLine($"\nWrote {path}");
 
 object Row(Result r) => new
 {
-    r.Symbol, r.Name, r.Sector, r.Score, firstYear = r.FirstDate.Year, r.Years, r.GrowthPercent, r.IndexGrowthPercent,
+    r.Symbol, r.Name, r.Sector, r.Score, inKmi30 = kmi30.Contains(r.Symbol), firstYear = r.FirstDate.Year, r.Years, r.GrowthPercent, r.IndexGrowthPercent,
     r.ExtraPercent, r.YearsBeat, r.YearsCounted, r.WorstFallPercent,
 };
 

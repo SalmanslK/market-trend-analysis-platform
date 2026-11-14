@@ -152,17 +152,14 @@ public class NewsService : INewsService
         return instruments.Select(instrument =>
         {
             var linked = articles.Where(a => LinkedSymbols(a).Contains(instrument.Symbol, StringComparer.OrdinalIgnoreCase)).ToList();
-            var scored = linked
-                .Where(a => IsDirect(a, instrument.Symbol))
-                .Select(a =>
-                {
-                    var sentiment = NewsSentimentAnalyzer.AnalyzeFor(instrument.Symbol, a.Title, a.Summary);
-                    return (Score: sentiment.Score, Weight: sentiment.Confidence / 100.0, Label: sentiment.Label);
-                })
+            var direct = linked.Where(a => IsDirect(a, instrument.Symbol)).ToList();
+            // Each news event counts once, however many outlets carried it
+            var scored = ScoreEvents(direct, instrument.Symbol)
+                .Select(e => (e.Score, e.Weight, e.Label))
                 .ToList();
 
             var summary = Summarize(instrument.Symbol, days, scored);
-            summary.BackgroundArticles = linked.Count - scored.Count;
+            summary.BackgroundArticles = linked.Count - direct.Count;
             return summary;
         }).ToList();
     }
@@ -203,16 +200,31 @@ public class NewsService : INewsService
     /// An instrument's direct news with its sentiment from the instrument's point of view, by Pakistan-time date.
     /// </summary>
     public static List<ScoredNews> ScoreForSymbol(IEnumerable<NewsArticle> articles, string symbol) =>
-        articles
-            .Where(a => IsDirect(a, symbol))
-            .Select(a =>
-            {
-                // Read from this instrument's point of view: a stronger dollar is bad news for gold but good for USD/PKR
-                var sentiment = NewsSentimentAnalyzer.AnalyzeFor(symbol, a.Title, a.Summary);
-                return new ScoredNews((a.PublishedAt + PakistanOffset).Date, sentiment.Score, sentiment.Confidence / 100.0, sentiment.Label);
-            })
+        ScoreEvents(articles.Where(a => IsDirect(a, symbol)), symbol)
+            .Select(e => new ScoredNews((e.PublishedAt + PakistanOffset).Date, e.Score, e.Weight, e.Label))
             .OrderBy(n => n.Date)
             .ToList();
+
+    /// <summary>
+    /// An instrument's direct news as events (see <see cref="NewsEvents"/>): headlines about the same event are scored
+    /// together, from the instrument's point of view (a stronger dollar is bad news for gold but good for USD/PKR).
+    /// An event's tone is its headlines' confidence-weighted average; its weight their average confidence; its date the
+    /// first headline's.
+    /// </summary>
+    public static List<(DateTime PublishedAt, int Score, double Weight, string Label)> ScoreEvents(IEnumerable<NewsArticle> direct, string symbol)
+    {
+        var scored = direct.Select(a => (Article: a, Sentiment: NewsSentimentAnalyzer.AnalyzeFor(symbol, a.Title, a.Summary)));
+        return NewsEvents.Group(scored, x => x.Article.Title, x => x.Article.PublishedAt)
+            .Select(group =>
+            {
+                var weights = group.Sum(x => x.Sentiment.Confidence / 100.0);
+                var score = weights > 0
+                    ? (int)Math.Round(group.Sum(x => x.Sentiment.Score * x.Sentiment.Confidence / 100.0) / weights)
+                    : (int)Math.Round(group.Average(x => x.Sentiment.Score));
+                return (group.Min(x => x.Article.PublishedAt), score, weights / group.Count, NewsSentimentAnalyzer.LabelFor(score));
+            })
+            .ToList();
+    }
 
     /// <summary>
     /// The news mood on each date, using only articles from that date and the days before it, the same way as the

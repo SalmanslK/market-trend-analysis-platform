@@ -334,3 +334,58 @@ public class NewsFilterTests
         Assert.True(NewsService.IsDirect(Searched("GOLDPK", "Gold price per tola rises Rs1,500"), "GOLDPK"));
     }
 }
+
+public class NewsEventTests
+{
+    private static NewsArticle Story(string title, int day, int hour = 9) => new()
+    {
+        Title = title,
+        Summary = string.Empty,
+        Source = "Test",
+        Url = $"https://example.com/{Guid.NewGuid()}",
+        Symbols = "MARI",
+        PublishedAt = new DateTime(2026, 11, day, hour, 0, 0, DateTimeKind.Utc),
+    };
+
+    [Fact]
+    public void SameNewsThreeTimes_CountsTheSameAsOnce()
+    {
+        var once = new[] { Story("Mari Energies announces major copper-gold discovery in Balochistan", 13) };
+        var thrice = once.Concat(new[]
+        {
+            Story("Mari Energies discovers copper-gold deposits near Reko Diq", 13, 11),
+            Story("Balochistan: Mari Energies discovery of copper and gold in Chagai", 14),
+        }).ToArray();
+
+        var summaryOnce = NewsService.Summarize("MARI", 7, NewsService.ScoreEvents(once, "MARI").Select(e => (e.Score, e.Weight, e.Label)).ToList());
+        var summaryThrice = NewsService.Summarize("MARI", 7, NewsService.ScoreEvents(thrice, "MARI").Select(e => (e.Score, e.Weight, e.Label)).ToList());
+
+        Assert.Equal(1, summaryThrice.Articles);
+        Assert.Equal(summaryOnce.Articles, summaryThrice.Articles);
+        Assert.Equal(summaryOnce.Label, summaryThrice.Label);
+        Assert.Equal(summaryOnce.Confidence, summaryThrice.Confidence);
+    }
+
+    [Fact]
+    public void DifferentEvents_StaySeparate()
+    {
+        var stories = new[]
+        {
+            Story("Mari Energies announces major copper-gold discovery in Balochistan", 13),
+            Story("Ivanhoe Atlantic signs MoU with Pakistan's Mari Energies", 13, 10),
+            Story("Canadian co signs MoU with Mari Energies", 13, 12),
+        };
+
+        var events = NewsEvents.Group(stories, s => s.Title, s => s.PublishedAt);
+
+        Assert.Equal(2, events.Count);
+        Assert.Single(events, e => e.Count == 2); // the two MoU headlines
+    }
+
+    [Fact]
+    public void SameWordsDaysApart_AreDifferentEvents()
+    {
+        var stories = new[] { Story("Mari Energies posts record profit", 1), Story("Mari Energies posts record profit", 10) };
+        Assert.Equal(2, NewsEvents.Group(stories, s => s.Title, s => s.PublishedAt).Count);
+    }
+}

@@ -247,6 +247,29 @@ least 25% smaller than holding's and yearly return no more than 2 points lower):
   similar returns; on KSE-100 and KMI30 since 2021 (no big crash) it matched holding. Caveats: about 4 big falls in
   21 years decide the result, and cash in Pakistan paid unusually well (up to 21%), which helps the rule.
 
+**Trading volume and fund flows** (`scripts/research/volume-research.cs`, committed before running on Nov 14 2026;
+KMI-30 price and volume decide, MIF with payouts is held, cash and costs as above; development Mar 2014 to 2019,
+holdout 2020 on; fund flows: development 2010-2017, holdout 2018 on). Volume is "confirming" when the 20-day average is
+at least the 100-day average.
+- Volume confirmation for entries: failed for the golden cross and stronger than cash (no help, slightly worse).
+  **Passed both periods for the technical signal** against its own price-only version: development +8.9% a year and
+  worst fall -15% against +5.1% and -28%; holdout +9.7% and -24% against +6.3% and -49%. It halves the moves too.
+  But it still trails simply holding MIF (holdout +19.8%) and stronger than cash (+19.4%, worst fall -23%), and the
+  same test with KSE-100 deciding (information only) failed its holdout. Volume makes a weak rule less bad; it does
+  not make one worth following.
+- On-balance volume: failed badly (-7.7% a year in development, 160 moves). Selling climaxes (2% falls on twice the
+  usual volume): only one per period, too rare to use. Contrarian fund flows (buy after money leaves MIF): failed
+  (development -4.3 points, the opposite of the idea; holdout +1.8).
+- Volume history (Sarmaaya `indices/volume-history`) starts Nov 2013; fund sizes (`mutual-funds/aum-history`) are
+  monthly and were in thousands of rupees before 2025.
+
+**Longer price history** (`scripts/research/backfill-history.cs`, Nov 14 2026): most instruments had been added with
+prices from 2020 or later although the source goes back much further. Added after checking the source matches the
+stored prices (99.7-100% of overlapping days): KSE-100 from 2002, KMI-30 from 2009, MBF from 2005, KMIF from 2012,
+MGF from 2015, USD/PKR from 2010, plus missing days of MIF (2008-09) and MGF (2024). Gold (Pakistan) before 2019 is
+monthly at the source and was left out. Earlier results that used KSE-100, KMI-30 or MGF "since 2020/2021" can now be
+rechecked on the longer history (as new tests, since those periods were already seen).
+
 **Biggest moves**: for each of an instrument's largest daily moves in the last 30 days, the API returns the news
 published from the day before to the next trading day (so weekend reports of a Friday move are included).
 

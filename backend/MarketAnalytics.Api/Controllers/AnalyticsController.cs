@@ -12,10 +12,12 @@ namespace MarketAnalytics.Api.Controllers;
 public class AnalyticsController : ControllerBase
 {
     private readonly IMarketAnalyticsService _analyticsService;
+    private readonly DataCache _cache;
 
-    public AnalyticsController(IMarketAnalyticsService analyticsService)
+    public AnalyticsController(IMarketAnalyticsService analyticsService, DataCache cache)
     {
         _analyticsService = analyticsService;
+        _cache = cache;
     }
 
     /// <summary>
@@ -24,7 +26,7 @@ public class AnalyticsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<InstrumentAnalyticsDto>>> GetAll(CancellationToken cancellationToken)
     {
-        return Ok(await _analyticsService.GetAllAnalyticsAsync(cancellationToken));
+        return Ok(await _cache.GetOrComputeAsync("analytics", async () => (await _analyticsService.GetAllAnalyticsAsync(cancellationToken)).ToList(), cancellationToken));
     }
 
     /// <summary>
@@ -33,7 +35,7 @@ public class AnalyticsController : ControllerBase
     [HttpGet("{symbol}")]
     public async Task<ActionResult<InstrumentAnalyticsDto>> Get(string symbol, CancellationToken cancellationToken)
     {
-        var analytics = await _analyticsService.GetInstrumentAnalyticsAsync(symbol, cancellationToken);
+        var analytics = await _cache.GetOrComputeAsync($"analytics:{symbol.ToUpperInvariant()}", () => _analyticsService.GetInstrumentAnalyticsAsync(symbol, cancellationToken), cancellationToken);
         return analytics == null
             ? NotFound($"No analytics available for instrument '{symbol}'.")
             : Ok(analytics);

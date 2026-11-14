@@ -14,9 +14,12 @@ public class AlertsController : ControllerBase
     private readonly IAlertService _alertService;
     private readonly FeatureSettings _features;
 
-    public AlertsController(IAlertService alertService, Microsoft.Extensions.Options.IOptions<FeatureSettings> features)
+    private readonly DataCache _cache;
+
+    public AlertsController(IAlertService alertService, Microsoft.Extensions.Options.IOptions<FeatureSettings> features, DataCache cache)
     {
         _alertService = alertService;
+        _cache = cache;
         _features = features.Value;
     }
 
@@ -33,6 +36,8 @@ public class AlertsController : ControllerBase
     {
         var steady = !technical.Equals("daily", StringComparison.OrdinalIgnoreCase);
         // News changes only when news is switched on (Features:News), unless the caller says otherwise
-        return Ok(await _alertService.GetRecentAsync(days, steady, news ?? _features.News, cancellationToken));
+        var withNews = news ?? _features.News;
+        return Ok(await _cache.GetOrComputeAsync($"alerts:{days}:{steady}:{withNews}",
+            () => _alertService.GetRecentAsync(days, steady, withNews, cancellationToken), cancellationToken));
     }
 }

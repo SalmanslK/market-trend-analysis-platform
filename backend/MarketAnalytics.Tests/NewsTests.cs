@@ -275,9 +275,21 @@ public class RssNewsFetcherTests
     [InlineData("Phillips 66 $PSX Stock Holdings Cut by Profund Advisors LLC")]
     [InlineData("KMI 30 Index Today: Live Chart & Price (KMI30)")]
     [InlineData("KSE100PR - KSE 100 Price Action Index Constituents")]
+    [InlineData("SYS Technical Analysis - Systems Ltd")]
+    [InlineData("DCR Competitors - Dolmen City REIT")]
+    [InlineData("GHNI Company Announcements - Ghandhara Industries Ltd")]
     public void NonNewsAndForeignTickerResults_AreExcluded(string title)
     {
         Assert.Matches(RssNewsFetcher.Excluded, title);
+    }
+
+    [Theory]
+    [InlineData("Ghandhara Industries to Invest Up to Rs3 Billion in Zhongtong Bus Assembly Line")]
+    [InlineData("Fatima Fertilizer posts Rs29.96bn nine-month profit")]
+    [InlineData("Service Industries reports higher quarterly revenue but lower profit and EPS")]
+    public void CompanyNews_IsKept(string title)
+    {
+        Assert.DoesNotMatch(RssNewsFetcher.Excluded, title);
     }
 
     [Fact]

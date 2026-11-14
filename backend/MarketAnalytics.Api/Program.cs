@@ -13,6 +13,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddControllers();
+// Computed answers kept until new prices or news arrive (see DataCache)
+builder.Services.AddMemoryCache(o => o.SizeLimit = 500);
+builder.Services.AddScoped<MarketAnalytics.Api.DataCache>();
+builder.Services.AddHostedService<MarketAnalytics.Api.CacheWarmer>();
 builder.Services.AddOpenApi();
 
 // Unhandled errors return a short JSON problem description instead of a stack trace
@@ -45,6 +49,7 @@ builder.Services.AddHttpClient<HtmlScraperDataFetcher>();
 builder.Services.AddHttpClient<CurrencyApiDataFetcher>();
 builder.Services.AddHttpClient<FundPayoutFetcher>();
 builder.Services.AddHttpClient<MarketActivityFetcher>();
+builder.Services.AddHttpClient<IndexMembersFetcher>();
 builder.Services.AddHttpClient<RssNewsFetcher>();
 builder.Services.AddScoped<InstrumentDataFetcherFactory>();
 

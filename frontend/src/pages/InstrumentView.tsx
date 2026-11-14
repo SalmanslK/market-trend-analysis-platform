@@ -4,6 +4,8 @@ import { instrumentsApi } from '../services/api/instrumentsApi'
 import { pricesApi } from '../services/api/pricesApi'
 import { analyticsApi } from '../services/api/analyticsApi'
 import { newsApi } from '../services/api/newsApi'
+import { indicesApi } from '../services/api/indicesApi'
+import Kmi30Badge from '../components/signals/Kmi30Badge'
 import { InstrumentAnalyticsDto, InstrumentDto, NewsSentimentSummary, PriceDataDto, Interval, Timeframe } from '../services/types/marketData'
 import PriceChart from '../components/charts/PriceChart'
 import IndicatorCharts from '../components/charts/IndicatorCharts'
@@ -48,6 +50,11 @@ export default function InstrumentView() {
   const [error, setError] = useState<string | null>(null)
   const [interval, setInterval] = useState<Interval>(() => loadPreferences().interval)
   const [timeframe, setTimeframe] = useState<Timeframe>(() => loadPreferences().timeframe)
+
+  const [kmi30, setKmi30] = useState<string[]>([])
+  useEffect(() => {
+    indicesApi.getMembers('KMI30').then(setKmi30).catch((err) => console.error('Error loading KMI-30 members:', err))
+  }, [])
 
   useEffect(() => {
     instrumentsApi.getAll()
@@ -111,6 +118,7 @@ export default function InstrumentView() {
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '10px' }}>
               <h1>{symbol}</h1>
               {instrumentName && <span style={{ color: COLORS.muted, fontSize: '17px' }}>{instrumentName}</span>}
+              {kmi30.includes(symbol) && <Kmi30Badge />}
             </div>
             {analytics && (
               <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '12px', marginTop: '6px' }}>

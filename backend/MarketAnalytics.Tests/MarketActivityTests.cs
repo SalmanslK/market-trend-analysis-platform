@@ -53,3 +53,19 @@ public class MarketActivityTests
         Assert.Empty(MarketActivityFetcher.ParseFundSizes("""{"response":null}"""));
     }
 }
+
+public class IndexMembersTests
+{
+    [Fact]
+    public void Parse_ListsEachCompanyOnce_AcrossSectors()
+    {
+        var json = """{"success":true,"response":{"sectors":[{"sectorName":"CEMENT","companies":[{"symbol":"LUCK"},{"symbol":"DGKC"}]},{"sectorName":"BANKS","companies":[{"symbol":"MEBL"},{"symbol":"LUCK"}]}]}}""";
+        Assert.Equal(new[] { "DGKC", "LUCK", "MEBL" }, MarketAnalytics.Infrastructure.DataFetchers.IndexMembersFetcher.Parse(json));
+    }
+
+    [Fact]
+    public void Parse_ToleratesAnUnexpectedResponse()
+    {
+        Assert.Empty(MarketAnalytics.Infrastructure.DataFetchers.IndexMembersFetcher.Parse("""{"success":false,"response":null}"""));
+    }
+}

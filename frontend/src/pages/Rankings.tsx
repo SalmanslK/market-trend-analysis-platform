@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { ANSWER_SURFACE, COLORS, SURFACE } from '../services/format'
 import { signedPct } from '../services/plainLanguage'
+import Kmi30Badge from '../components/signals/Kmi30Badge'
 
 interface RankedStock {
   symbol: string
@@ -17,6 +18,24 @@ interface RankedStock {
   yearsBeat: number
   yearsCounted: number
   worstFallPercent: number
+  inKmi30?: boolean
+}
+
+/** A KMI-30 company: its rank among all ranked companies, or why it couldn't be ranked */
+interface Kmi30Row {
+  symbol: string
+  name: string
+  sector: string
+  eligible: boolean
+  rank: number | null
+  score: number | null
+  firstYear?: number
+  growthPercent?: number
+  indexGrowthPercent?: number
+  yearsBeat?: number
+  yearsCounted?: number
+  worstFallPercent?: number
+  reason?: string | null
 }
 
 interface Rankings {
@@ -26,6 +45,7 @@ interface Rankings {
   criteria: string[]
   industries: { name: string; eligible: number; members: number; medianScore: number | null; medianExtraPercent: number; top: RankedStock[] }[]
   final: RankedStock[]
+  kmi30?: Kmi30Row[]
 }
 
 const cell = { padding: '8px 10px', borderBottom: `1px solid ${COLORS.border}`, textAlign: 'right' as const, whiteSpace: 'nowrap' as const }
@@ -57,6 +77,7 @@ function StockTable({ stocks, tracked }: { stocks: RankedStock[]; tracked: Set<s
                 {tracked.has(s.symbol)
                   ? <Link to={`/instrument/${s.symbol}`} style={{ color: COLORS.link, fontWeight: 700 }}>{s.symbol}</Link>
                   : <strong>{s.symbol}</strong>}{' '}
+                {s.inKmi30 && <Kmi30Badge />}{' '}
                 <span style={{ color: COLORS.muted }}>{s.name}, since {s.firstYear}</span>
               </td>
               <td style={cell}>{s.score.toFixed(0)}</td>
@@ -113,6 +134,7 @@ export default function RankingsPage() {
             <li key={s.symbol} style={{ marginBottom: '10px', lineHeight: 1.5 }}>
               <Link to={`/instrument/${s.symbol}`} style={{ color: COLORS.link, fontWeight: 700 }}>{s.name}</Link>{' '}
               <span style={{ color: COLORS.muted }}>({s.symbol}, {s.sector})</span>
+              {s.inKmi30 && <Kmi30Badge />}
               <div style={{ fontSize: '14px' }}>{record(s)}</div>
             </li>
           ))}
@@ -143,6 +165,56 @@ export default function RankingsPage() {
           exchange aren't in today's list, which flatters every figure. Use it as a list to study, not a list to buy.
         </p>
       </section>
+
+      {data.kmi30 && data.kmi30.length > 0 && (
+        <section style={{ ...SURFACE, padding: '16px 20px', marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '1.1rem', marginBottom: '6px' }}>The KMI-30 companies</h2>
+          <p style={{ fontSize: '14px', color: COLORS.muted, marginBottom: '10px', lineHeight: 1.5 }}>
+            The 30 largest, most traded Shariah-compliant companies, and where each ranks among the {data.eligible} ranked
+            companies on the same three measures. Being big doesn't mean a strong record: many of them trailed the KSE-100.
+          </p>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '14px' }}>
+              <thead>
+                <tr>
+                  <th style={{ ...head, textAlign: 'left' }}>Company</th>
+                  <th style={head}>Rank</th>
+                  <th style={head}>Score</th>
+                  <th style={head}>A year</th>
+                  <th style={head}>KSE-100</th>
+                  <th style={head}>Years ahead</th>
+                  <th style={head}>Worst fall</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.kmi30.map((k) => (
+                  <tr key={k.symbol}>
+                    <td style={{ ...cell, textAlign: 'left', whiteSpace: 'normal' }}>
+                      {tracked.has(k.symbol)
+                        ? <Link to={`/instrument/${k.symbol}`} style={{ color: COLORS.link, fontWeight: 700 }}>{k.symbol}</Link>
+                        : <strong>{k.symbol}</strong>}{' '}
+                      <span style={{ color: COLORS.muted }}>{k.name !== k.symbol ? k.name : ''}{k.sector ? `, ${k.sector}` : ''}</span>
+                    </td>
+                    {k.eligible && k.growthPercent != null ? (<>
+                      <td style={cell}>{k.rank}</td>
+                      <td style={cell}>{k.score?.toFixed(0)}</td>
+                      <td style={{ ...cell, color: k.growthPercent >= 0 ? COLORS.up : COLORS.down }}>{signedPct(k.growthPercent)}</td>
+                      <td style={cell}>{signedPct(k.indexGrowthPercent ?? 0)}</td>
+                      <td style={cell}>{k.yearsBeat} of {k.yearsCounted}</td>
+                      <td style={{ ...cell, color: COLORS.down }}>{(k.worstFallPercent ?? 0).toFixed(0)}%</td>
+                    </>) : (
+                      <td colSpan={6} style={{ ...cell, textAlign: 'left', color: COLORS.muted }}>Not ranked: {(k.reason ?? 'not enough data').toLowerCase()}</td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p style={{ fontSize: '13px', color: COLORS.muted, marginTop: '8px' }}>
+            Companies with a link are among the ten followed in the app. Any other can be added later.
+          </p>
+        </section>
+      )}
 
       <h2 style={{ fontSize: '1.15rem', margin: '24px 0 10px' }}>Top companies in each industry</h2>
       {data.industries.map((industry, i) => (

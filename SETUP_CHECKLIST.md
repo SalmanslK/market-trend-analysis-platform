@@ -420,6 +420,35 @@ never written for an older date, so nothing is recorded with hindsight. Track Re
 readings by the move over the next 20 trading days from the next close, grouped by what the app said. Started
 9 Nov 2026; results appear after about a month and mean something after about a year.
 
+## Shariah stocks and the Rankings page
+
+**Ranking** (`scripts/research/stock-rankings.cs`, criteria committed before running, Nov 14 2026): the 291
+Shariah-compliant companies in the KMI All-Share index (Sarmaaya `indices/sunbrust/KMIALLSHR`), prices from Sarmaaya
+`stocks/price-history` (back to 2002). Eligible: 5+ years of prices and a median of Rs 10 million+ traded a day over the
+last year (83 companies). Score: equal-weight percentile ranks of (a) yearly growth minus the KSE-100's over the same
+dates, (b) share of calendar years ahead of the KSE-100, (c) yearly growth divided by the worst fall. Top 5 per
+industry; best industry = highest median score (3+ ranked companies); final 10 = highest scores, at most 2 per
+industry. Prices only (dividends are listed only from about 2022), like the KSE-100 itself.
+- Two corrections after running, labelled in the script header: the first split rule erased real crashes (penny
+  shares, the 2008 freeze); the second caught the source's multi-day price glitches. The final rule is
+  `StockSplitAdjuster` (below). Each final-10 company's adjustments were checked by hand against known splits and
+  bonus issues.
+- Result: **GHNI, SYS, SAZEW, SRVI, PIOC, JVDC, MARI, FATIMA, MEBL, DCR**; best industry Automobile Assembler. PIOC
+  and GHNI start in 2002 as distressed penny shares, which drives much of their record. Survivorship: today's
+  Shariah list leaves out failed companies. The page says these are past records, not picks.
+- Output `frontend/public/data/stock-rankings.json`, shown on the **Rankings** page. Rerun the script to refresh it.
+
+**Tracked stocks** (`TrackedStocks`, Application): the one list the seed (`InstrumentType.Stock`, ids 14-23,
+migration `AddShariahStocks`), news searches (Google News by company name) and news topics (company-name patterns)
+read. Changing the selection = edit the list + a migration.
+- **Splits and bonus issues** (`StockSplitAdjuster`): Sarmaaya gives share prices as traded, so a 5-for-1 split looks
+  like -80%. A move below -15% or above +18% (beyond PSX's daily limits) counts as one when the trading days are at
+  most 7 days apart, the price was at least Rs 20, and the price is steady (within 10% of the middle) for the 5 days
+  before and after; one-day spikes are removed first. For stocks the updater always fetches the full history and
+  stores it adjusted, so a new split rescales everything once. Funds, indices, gold and the dollar are untouched.
+- Volume comes from the same price history. The overview shows them as a "Shariah stocks" group.
+- Company data pages ("SYS Technical Analysis - Systems Ltd") are excluded from news collection.
+
 ## Market brief (the only AI)
 
 The Brief page writes one page in plain words, on request: Pakistan stocks, gold, the rupee, cash and interest

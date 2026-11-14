@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { analyticsApi } from '../services/api/analyticsApi'
 import { newsApi } from '../services/api/newsApi'
-import { InstrumentAnalyticsDto, NewsSentimentSummary } from '../services/types/marketData'
+import { InstrumentAnalyticsDto, InstrumentType, NewsSentimentSummary } from '../services/types/marketData'
 import { GlossaryKey } from '../services/glossary'
 import { describeMarket } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
@@ -26,6 +26,7 @@ type SortKey = 'symbol' | 'change1D' | 'change1M' | 'changeYtd' | 'change1Y' | '
 // Rows are grouped by what they are, so stocks, gold, the dollar and cash funds aren't mixed in one list
 const GROUPS = [
   { key: 'stocks', title: 'Stocks and stock funds', note: 'Pakistan stock indices and Meezan funds that invest in shares' },
+  { key: 'shares', title: 'Shariah stocks', note: 'Ten Shariah-compliant companies with the best long-run records; see Rankings for how they were chosen' },
   { key: 'gold', title: 'Gold', note: 'Gold prices and the Meezan Gold Fund' },
   { key: 'currency', title: 'Currency', note: 'Rupees per US dollar: up means a weaker rupee' },
   { key: 'cash', title: 'Cash and income funds', note: "Low-risk funds whose price creeps up; Buy/Sell signals don't apply" },
@@ -36,6 +37,7 @@ function groupOf(a: InstrumentAnalyticsDto): GroupKey {
   if (a.isCash) return 'cash'
   if (a.symbol === 'USDPKR') return 'currency'
   if (a.symbol.startsWith('GOLD') || a.symbol === 'MGF') return 'gold'
+  if (a.type === InstrumentType.Stock) return 'shares'
   return 'stocks'
 }
 

@@ -9,6 +9,7 @@ import Portfolio from './pages/Portfolio'
 import Holdings from './pages/Holdings'
 import Settings from './pages/Settings'
 import Brief from './pages/Brief'
+import Rankings from './pages/Rankings'
 import Navigation from './components/layout/Navigation'
 import SignalModeBar from './components/layout/SignalModeBar'
 import PageTitle from './components/layout/PageTitle'
@@ -34,6 +35,7 @@ function App() {
             <Route path="/instrument/:symbol" element={<InstrumentView />} />
             <Route path="/news" element={news ? <News /> : <NotFound />} />
             <Route path="/comparison" element={<Comparison />} />
+            <Route path="/rankings" element={<Rankings />} />
             <Route path="/track-record" element={<TrackRecord />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/holdings" element={<Holdings />} />

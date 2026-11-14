@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MarketAnalytics.Application.Services;
 using MarketAnalytics.Domain.Entities;
 using MarketAnalytics.Domain.Enums;
 using MarketAnalytics.Infrastructure.Data;
@@ -128,9 +129,14 @@ public class MarketDataUpdater
         var fetcher = _fetcherFactory.GetFetcher(instrument.DataSourceType);
 
         // Fetch new data since latest date (matches Python: new_df = new_df[new_df["datetime"] > max_date]).
-        // A new instrument asks for its whole history instead of the usual last year
-        var url = latestDate == null ? FullHistoryUrl(instrument.DataSourceUrl) : instrument.DataSourceUrl;
-        var newDataList = (await fetcher.FetchHistoricalDataAsync(url, instrument.Symbol, latestDate)).ToList();
+        // A new instrument asks for its whole history instead of the usual last year.
+        // Company shares always fetch everything: a new split or bonus issue rescales all earlier prices, so the whole
+        // adjusted history is stored again (the source gives prices as traded)
+        var isStock = instrument.Type == InstrumentType.Stock;
+        var url = latestDate == null || isStock ? FullHistoryUrl(instrument.DataSourceUrl) : instrument.DataSourceUrl;
+        var newDataList = (await fetcher.FetchHistoricalDataAsync(url, instrument.Symbol, isStock ? null : latestDate)).ToList();
+        if (isStock)
+            newDataList = StockSplitAdjuster.Adjust(newDataList).Prices;
 
         if (newDataList.Count == 0)
         {

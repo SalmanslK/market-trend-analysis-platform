@@ -11,6 +11,7 @@ const LINKS = [
   { path: '/news', label: 'News' },
   { path: '/portfolio', label: 'Portfolio' },
   { path: '/comparison', label: 'Compare' },
+  { path: '/rankings', label: 'Rankings' },
   { path: '/track-record', label: 'Track Record' },
   { path: '/guide', label: 'Guide' },
   { path: '/settings', label: 'Settings' },

@@ -22,6 +22,8 @@ export enum InstrumentType {
   MutualFund = 1,
   Forex = 2,
   Commodity = 3,
+  /** A company's shares (prices adjusted for splits and bonus issues) */
+  Stock = 4,
 }
 
 export interface PriceDataDto extends PriceIndicatorFields {

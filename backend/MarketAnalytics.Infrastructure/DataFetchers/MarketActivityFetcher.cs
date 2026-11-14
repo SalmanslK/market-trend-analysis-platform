@@ -23,17 +23,23 @@ public partial class MarketActivityFetcher
         _logger = logger;
     }
 
-    [GeneratedRegex(@"^(?<base>https?://[^?]+/indices/)price-history/(?<symbol>[^/?]+)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^(?<base>https?://[^?]+/(?<kind>indices|stocks)/)price-history/(?<symbol>[^/?]+)", RegexOptions.IgnoreCase)]
     private static partial Regex IndexPriceUrl();
 
     [GeneratedRegex(@"^(?<base>https?://[^?]+/mutual-funds/)nav-history/(?<id>[0-9a-fA-F-]+)", RegexOptions.IgnoreCase)]
     private static partial Regex NavHistoryUrl();
 
-    /// <summary>The volume URL for an index priced from an indices/price-history URL, or null for other instruments.</summary>
+    /// <summary>
+    /// The volume URL for an index (indices/volume-history) or a company share (its price-history, which carries the
+    /// day's volume too), or null for other instruments.
+    /// </summary>
     public static string? VolumeUrlFor(string dataSourceUrl, int days)
     {
         var match = IndexPriceUrl().Match(dataSourceUrl);
-        return match.Success ? $"{match.Groups["base"].Value}volume-history/{match.Groups["symbol"].Value}?days={days}" : null;
+        if (!match.Success)
+            return null;
+        var history = match.Groups["kind"].Value.Equals("stocks", StringComparison.OrdinalIgnoreCase) ? "price-history" : "volume-history";
+        return $"{match.Groups["base"].Value}{history}/{match.Groups["symbol"].Value}?days={days}";
     }
 
     /// <summary>The fund-size URL for a fund priced from a nav-history URL, or null for other instruments.</summary>

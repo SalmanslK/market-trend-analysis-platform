@@ -54,13 +54,13 @@ public static class NewsTopicClassifier
     /// </summary>
     public static bool IsForeignLocalMarket(string title) => ForeignLocalMarket.IsMatch(title) && !ClearlyPakistan.IsMatch(title);
 
-    public static IReadOnlyList<NewsTopic> Topics { get; } = new[]
+    private static readonly NewsTopic[] MarketTopics = new[]
     {
         new NewsTopic(
             "pakistan-stocks",
             "Pakistan stocks",
             "Share prices on the Pakistan Stock Exchange drive the KSE-100 and KMI-30 indices and the Meezan stock funds.",
-            PakistanStocks.Concat(MeezanStockFunds).ToArray(),
+            PakistanStocks.Concat(MeezanStockFunds).Concat(TrackedStocks.All.Select(s => s.Symbol)).ToArray(),
             PakistanStocks.Concat(MeezanStockFunds).ToArray(),
             new Regex(@"\b(PSX|KSE[- ]?100|KSE|KMI[- ]?30|stock exchange|stock market|stocks|equities|equity market|bourse|share prices|benchmark index|bulls|bears)\b", Options),
             RequiresPakistanContext: true),
@@ -119,6 +119,20 @@ public static class NewsTopicClassifier
             new Regex(@"\b(oil prices?|crude|Brent|OPEC\+?|petroleum prices?)\b", Options),
             RequiresPakistanContext: false),
     };
+
+    /// <summary>
+    /// The market topics, then one topic per tracked company: a story naming the company is directly about it.
+    /// </summary>
+    public static IReadOnlyList<NewsTopic> Topics { get; } = MarketTopics
+        .Concat(TrackedStocks.All.Select(stock => new NewsTopic(
+            $"company-{stock.Symbol.ToLowerInvariant()}",
+            stock.Name,
+            $"News about {stock.Name} itself: results, payouts, plans and problems.",
+            new[] { stock.Symbol },
+            new[] { stock.Symbol },
+            new Regex(stock.NamePattern, Options),
+            RequiresPakistanContext: false)))
+        .ToArray();
 
     private static readonly Dictionary<string, NewsTopic> TopicsByKey = Topics.ToDictionary(t => t.Key);
 

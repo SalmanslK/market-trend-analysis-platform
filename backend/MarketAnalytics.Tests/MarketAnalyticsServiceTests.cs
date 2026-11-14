@@ -144,6 +144,18 @@ public class MarketAnalyticsServiceTests
     }
 
     [Fact]
+    public void StockSplits_IgnoreAFewDaysOfBadPrices()
+    {
+        // Millat Tractors, November 2003 in the source: 66-67 for days, then 170 and 182.8, then back to about 80
+        var prices = Daily(new[] { 69m, 67.5m, 66.2m, 66.7m, 67m, 170m, 182.8m, 80.8m, 78m, 80m, 79.5m, 80.2m });
+
+        var (adjusted, count) = StockSplitAdjuster.Adjust(prices);
+
+        Assert.Equal(0, count);
+        Assert.Equal(prices.Select(p => p.Price), adjusted.Select(p => p.Price));
+    }
+
+    [Fact]
     public void StockSplits_LeaveRealFallsAfterAGapAndPennyMovesAlone()
     {
         var day = new DateTime(2008, 8, 1, 0, 0, 0, DateTimeKind.Utc);

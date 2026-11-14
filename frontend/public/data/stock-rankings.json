@@ -1,0 +1,1332 @@
+{
+  "asOf": "2026-11-14",
+  "universe": 291,
+  "eligible": 83,
+  "criteria": [
+    "Shariah-compliant companies in the KMI All-Share index today.",
+    "At least 5 years of prices, and at least Rs 10 million traded on a typical day over the last year.",
+    "Scored equally on: extra growth a year over the KSE-100 (same dates); share of calendar years it beat the KSE-100; growth for the size of its worst fall.",
+    "Prices are adjusted for splits and bonus shares but leave out cash dividends, like the KSE-100 itself."
+  ],
+  "industries": [
+    {
+      "name": "Automobile Assembler",
+      "eligible": 4,
+      "members": 7,
+      "medianScore": 91.2,
+      "medianExtraPercent": -1,
+      "top": [
+        {
+          "symbol": "GHNI",
+          "name": "Ghandhara Industries Limited",
+          "sector": "Automobile Assembler",
+          "score": 99.2,
+          "firstYear": 2002,
+          "years": 24.4,
+          "growthPercent": 37.9,
+          "indexGrowthPercent": 20.8,
+          "extraPercent": 17.2,
+          "yearsBeat": 14,
+          "yearsCounted": 23,
+          "worstFallPercent": -91.1
+        },
+        {
+          "symbol": "SAZEW",
+          "name": "Sazgar Engineering Works Limited",
+          "sector": "Automobile Assembler",
+          "score": 93.9,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 23.4,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": 1.6,
+          "yearsBeat": 14,
+          "yearsCounted": 23,
+          "worstFallPercent": -86.3
+        },
+        {
+          "symbol": "MTL",
+          "name": "Millat Tractors Limited",
+          "sector": "Automobile Assembler",
+          "score": 88.6,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 18.2,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -3.6,
+          "yearsBeat": 13,
+          "yearsCounted": 23,
+          "worstFallPercent": -64.4
+        },
+        {
+          "symbol": "HCAR",
+          "name": "Honda Atlas Cars (Pakistan) Limited",
+          "sector": "Automobile Assembler",
+          "score": 57.7,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 15,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -6.8,
+          "yearsBeat": 9,
+          "yearsCounted": 23,
+          "worstFallPercent": -91.1
+        }
+      ]
+    },
+    {
+      "name": "Fertilizer",
+      "eligible": 3,
+      "members": 3,
+      "medianScore": 83.3,
+      "medianExtraPercent": -3.8,
+      "top": [
+        {
+          "symbol": "FATIMA",
+          "name": "Fatima Fertilizer Company Limited",
+          "sector": "Fertilizer",
+          "score": 86.2,
+          "firstYear": 2010,
+          "years": 16.8,
+          "growthPercent": 15.2,
+          "indexGrowthPercent": 19,
+          "extraPercent": -3.8,
+          "yearsBeat": 8,
+          "yearsCounted": 15,
+          "worstFallPercent": -58.9
+        },
+        {
+          "symbol": "EFERT",
+          "name": "Engro Fertilizers Limited",
+          "sector": "Fertilizer",
+          "score": 83.3,
+          "firstYear": 2014,
+          "years": 12.8,
+          "growthPercent": 15.5,
+          "indexGrowthPercent": 15.8,
+          "extraPercent": -0.3,
+          "yearsBeat": 5,
+          "yearsCounted": 11,
+          "worstFallPercent": -48.9
+        },
+        {
+          "symbol": "FFC",
+          "name": "Fauji Fertilizer Company Limited",
+          "sector": "Fertilizer",
+          "score": 60.6,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 15.2,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -6.6,
+          "yearsBeat": 8,
+          "yearsCounted": 23,
+          "worstFallPercent": -67.6
+        }
+      ]
+    },
+    {
+      "name": "Pharmaceuticals",
+      "eligible": 6,
+      "members": 14,
+      "medianScore": 56.3,
+      "medianExtraPercent": -7.4,
+      "top": [
+        {
+          "symbol": "HINOON",
+          "name": "Highnoon Laboratories Limited",
+          "sector": "Pharmaceuticals",
+          "score": 83.7,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 21.6,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -0.2,
+          "yearsBeat": 11,
+          "yearsCounted": 23,
+          "worstFallPercent": -75.2
+        },
+        {
+          "symbol": "ABOT",
+          "name": "Abbott Laboratories (Pakistan) Limited",
+          "sector": "Pharmaceuticals",
+          "score": 63.4,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 15,
+          "indexGrowthPercent": 21.7,
+          "extraPercent": -6.7,
+          "yearsBeat": 9,
+          "yearsCounted": 23,
+          "worstFallPercent": -72.4
+        },
+        {
+          "symbol": "SEARL",
+          "name": "The Searle Company Limited",
+          "sector": "Pharmaceuticals",
+          "score": 63,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 16.4,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -5.4,
+          "yearsBeat": 9,
+          "yearsCounted": 23,
+          "worstFallPercent": -92.4
+        },
+        {
+          "symbol": "GLAXO",
+          "name": "GlaxoSmithKline Pakistan Limited",
+          "sector": "Pharmaceuticals",
+          "score": 49.6,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 13.6,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -8.1,
+          "yearsBeat": 7,
+          "yearsCounted": 23,
+          "worstFallPercent": -74.9
+        },
+        {
+          "symbol": "AGP",
+          "name": "AGP Limited",
+          "sector": "Pharmaceuticals",
+          "score": 45.9,
+          "firstYear": 2018,
+          "years": 8.7,
+          "growthPercent": 7.4,
+          "indexGrowthPercent": 17.5,
+          "extraPercent": -10.1,
+          "yearsBeat": 3,
+          "yearsCounted": 7,
+          "worstFallPercent": -69.4
+        }
+      ]
+    },
+    {
+      "name": "Cement",
+      "eligible": 13,
+      "members": 16,
+      "medianScore": 53.7,
+      "medianExtraPercent": -7.5,
+      "top": [
+        {
+          "symbol": "PIOC",
+          "name": "Pioneer Cement Limited",
+          "sector": "Cement",
+          "score": 89.8,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 22.1,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": 0.3,
+          "yearsBeat": 13,
+          "yearsCounted": 23,
+          "worstFallPercent": -95.5
+        },
+        {
+          "symbol": "KOHC",
+          "name": "Kohat Cement Company Limited",
+          "sector": "Cement",
+          "score": 83.3,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 23,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": 1.2,
+          "yearsBeat": 11,
+          "yearsCounted": 23,
+          "worstFallPercent": -94.6
+        },
+        {
+          "symbol": "LUCK",
+          "name": "Lucky Cement Limited",
+          "sector": "Cement",
+          "score": 81.3,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 17.9,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -3.9,
+          "yearsBeat": 12,
+          "yearsCounted": 23,
+          "worstFallPercent": -83.7
+        },
+        {
+          "symbol": "ACPL",
+          "name": "Attock Cement Pakistan Limited",
+          "sector": "Cement",
+          "score": 77.2,
+          "firstYear": 2002,
+          "years": 24.1,
+          "growthPercent": 17.2,
+          "indexGrowthPercent": 20.4,
+          "extraPercent": -3.2,
+          "yearsBeat": 11,
+          "yearsCounted": 23,
+          "worstFallPercent": -81.1
+        },
+        {
+          "symbol": "DGKC",
+          "name": "D.G. Khan Cement Company Limited",
+          "sector": "Cement",
+          "score": 67.5,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 16.1,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -5.7,
+          "yearsBeat": 10,
+          "yearsCounted": 23,
+          "worstFallPercent": -90.3
+        }
+      ]
+    },
+    {
+      "name": "Refinery",
+      "eligible": 3,
+      "members": 4,
+      "medianScore": 47.6,
+      "medianExtraPercent": -6.8,
+      "top": [
+        {
+          "symbol": "ATRL",
+          "name": "Attock Refinery Limited",
+          "sector": "Refinery",
+          "score": 77.2,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 18.5,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -3.3,
+          "yearsBeat": 11,
+          "yearsCounted": 23,
+          "worstFallPercent": -86.6
+        },
+        {
+          "symbol": "NRL",
+          "name": "National Refinery Limited",
+          "sector": "Refinery",
+          "score": 47.6,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 12.1,
+          "indexGrowthPercent": 21.7,
+          "extraPercent": -9.6,
+          "yearsBeat": 9,
+          "yearsCounted": 23,
+          "worstFallPercent": -91.1
+        },
+        {
+          "symbol": "PRL",
+          "name": "Pakistan Refinery Limited",
+          "sector": "Refinery",
+          "score": 44.3,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 15,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -6.8,
+          "yearsBeat": 5,
+          "yearsCounted": 23,
+          "worstFallPercent": -87.3
+        }
+      ]
+    },
+    {
+      "name": "Technology and Communication",
+      "eligible": 5,
+      "members": 10,
+      "medianScore": 47.2,
+      "medianExtraPercent": -8.3,
+      "top": [
+        {
+          "symbol": "SYS",
+          "name": "Systems Limited",
+          "sector": "Technology and Communication",
+          "score": 98.8,
+          "firstYear": 2015,
+          "years": 11.8,
+          "growthPercent": 31.3,
+          "indexGrowthPercent": 14.9,
+          "extraPercent": 16.4,
+          "yearsBeat": 6,
+          "yearsCounted": 10,
+          "worstFallPercent": -40.6
+        },
+        {
+          "symbol": "AVN",
+          "name": "Avanceon Limited",
+          "sector": "Technology and Communication",
+          "score": 72,
+          "firstYear": 2014,
+          "years": 12.8,
+          "growthPercent": 12.9,
+          "indexGrowthPercent": 16,
+          "extraPercent": -3.2,
+          "yearsBeat": 5,
+          "yearsCounted": 11,
+          "worstFallPercent": -75.1
+        },
+        {
+          "symbol": "NETSOL",
+          "name": "NetSol Technologies Limited",
+          "sector": "Technology and Communication",
+          "score": 47.2,
+          "firstYear": 2005,
+          "years": 21.2,
+          "growthPercent": 7.6,
+          "indexGrowthPercent": 15.9,
+          "extraPercent": -8.3,
+          "yearsBeat": 8,
+          "yearsCounted": 20,
+          "worstFallPercent": -93.4
+        },
+        {
+          "symbol": "AIRLINK",
+          "name": "Air Link Communication Limited",
+          "sector": "Technology and Communication",
+          "score": 43.5,
+          "firstYear": 2021,
+          "years": 5.1,
+          "growthPercent": 9.4,
+          "indexGrowthPercent": 30.1,
+          "extraPercent": -20.7,
+          "yearsBeat": 2,
+          "yearsCounted": 4,
+          "worstFallPercent": -76.6
+        },
+        {
+          "symbol": "TELE",
+          "name": "Telecard Limited",
+          "sector": "Technology and Communication",
+          "score": 6.1,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": -0.5,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -22.3,
+          "yearsBeat": 6,
+          "yearsCounted": 23,
+          "worstFallPercent": -97.6
+        }
+      ]
+    },
+    {
+      "name": "Commercial Banks",
+      "eligible": 3,
+      "members": 3,
+      "medianScore": 45.1,
+      "medianExtraPercent": -9.3,
+      "top": [
+        {
+          "symbol": "MEBL",
+          "name": "Meezan Bank Limited",
+          "sector": "Commercial Banks",
+          "score": 86.2,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 19.6,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -2.2,
+          "yearsBeat": 12,
+          "yearsCounted": 23,
+          "worstFallPercent": -78.6
+        },
+        {
+          "symbol": "BIPL",
+          "name": "BankIslami Pakistan Limited",
+          "sector": "Commercial Banks",
+          "score": 45.1,
+          "firstYear": 2006,
+          "years": 20.5,
+          "growthPercent": 2.6,
+          "indexGrowthPercent": 14.7,
+          "extraPercent": -12.1,
+          "yearsBeat": 10,
+          "yearsCounted": 19,
+          "worstFallPercent": -87.5
+        },
+        {
+          "symbol": "FABL",
+          "name": "Faysal Bank Limited",
+          "sector": "Commercial Banks",
+          "score": 43.5,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 12.5,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -9.3,
+          "yearsBeat": 8,
+          "yearsCounted": 23,
+          "worstFallPercent": -89.5
+        }
+      ]
+    },
+    {
+      "name": "Oil and Gas Exploration Companies",
+      "eligible": 3,
+      "members": 3,
+      "medianScore": 43.1,
+      "medianExtraPercent": -8.5,
+      "top": [
+        {
+          "symbol": "MARI",
+          "name": "Mari Energies Limited",
+          "sector": "Oil and Gas Exploration Companies",
+          "score": 88.2,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 28.8,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": 7,
+          "yearsBeat": 11,
+          "yearsCounted": 23,
+          "worstFallPercent": -81
+        },
+        {
+          "symbol": "OGDC",
+          "name": "Oil \u0026 Gas Development Company Limited",
+          "sector": "Oil and Gas Exploration Companies",
+          "score": 43.1,
+          "firstYear": 2004,
+          "years": 22.8,
+          "growthPercent": 8.2,
+          "indexGrowthPercent": 17.3,
+          "extraPercent": -9.1,
+          "yearsBeat": 8,
+          "yearsCounted": 21,
+          "worstFallPercent": -78.4
+        },
+        {
+          "symbol": "PPL",
+          "name": "Pakistan Petroleum Limited",
+          "sector": "Oil and Gas Exploration Companies",
+          "score": 42.3,
+          "firstYear": 2004,
+          "years": 22.2,
+          "growthPercent": 8.9,
+          "indexGrowthPercent": 17.4,
+          "extraPercent": -8.5,
+          "yearsBeat": 7,
+          "yearsCounted": 21,
+          "worstFallPercent": -70.8
+        }
+      ]
+    },
+    {
+      "name": "Food and Personal Care Products",
+      "eligible": 10,
+      "members": 20,
+      "medianScore": 37.6,
+      "medianExtraPercent": -11.4,
+      "top": [
+        {
+          "symbol": "QUICE",
+          "name": "Quice Food Industries Limited",
+          "sector": "Food and Personal Care Products",
+          "score": 65.4,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 17.4,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -4.4,
+          "yearsBeat": 9,
+          "yearsCounted": 23,
+          "worstFallPercent": -91
+        },
+        {
+          "symbol": "BNL",
+          "name": "Bunnys Limited",
+          "sector": "Food and Personal Care Products",
+          "score": 45.9,
+          "firstYear": 2002,
+          "years": 24.1,
+          "growthPercent": 8.9,
+          "indexGrowthPercent": 20.4,
+          "extraPercent": -11.5,
+          "yearsBeat": 11,
+          "yearsCounted": 23,
+          "worstFallPercent": -93.7
+        },
+        {
+          "symbol": "FCEPL",
+          "name": "Frieslandcampina Engro Pakistan Limited",
+          "sector": "Food and Personal Care Products",
+          "score": 43.9,
+          "firstYear": 2011,
+          "years": 15.3,
+          "growthPercent": 12.1,
+          "indexGrowthPercent": 19.8,
+          "extraPercent": -7.7,
+          "yearsBeat": 4,
+          "yearsCounted": 14,
+          "worstFallPercent": -78.9
+        },
+        {
+          "symbol": "FFL",
+          "name": "Fauji Foods Limited",
+          "sector": "Food and Personal Care Products",
+          "score": 43.1,
+          "firstYear": 2002,
+          "years": 24.6,
+          "growthPercent": 9,
+          "indexGrowthPercent": 20.4,
+          "extraPercent": -11.4,
+          "yearsBeat": 10,
+          "yearsCounted": 23,
+          "worstFallPercent": -95.3
+        },
+        {
+          "symbol": "UNITY",
+          "name": "Unity Foods Limited",
+          "sector": "Food and Personal Care Products",
+          "score": 38.2,
+          "firstYear": 2004,
+          "years": 22.7,
+          "growthPercent": 3.8,
+          "indexGrowthPercent": 17.1,
+          "extraPercent": -13.3,
+          "yearsBeat": 10,
+          "yearsCounted": 21,
+          "worstFallPercent": -97
+        }
+      ]
+    },
+    {
+      "name": "Engineering",
+      "eligible": 6,
+      "members": 11,
+      "medianScore": 32.4,
+      "medianExtraPercent": -11.7,
+      "top": [
+        {
+          "symbol": "ISL",
+          "name": "International Steels Limited",
+          "sector": "Engineering",
+          "score": 53.3,
+          "firstYear": 2011,
+          "years": 15.4,
+          "growthPercent": 11.7,
+          "indexGrowthPercent": 19,
+          "extraPercent": -7.2,
+          "yearsBeat": 5,
+          "yearsCounted": 14,
+          "worstFallPercent": -82.6
+        },
+        {
+          "symbol": "MUGHAL",
+          "name": "Mughal Iron \u0026 Steel Industries Limited",
+          "sector": "Engineering",
+          "score": 50.4,
+          "firstYear": 2015,
+          "years": 11.6,
+          "growthPercent": 11.6,
+          "indexGrowthPercent": 15.7,
+          "extraPercent": -4.1,
+          "yearsBeat": 3,
+          "yearsCounted": 10,
+          "worstFallPercent": -79.5
+        },
+        {
+          "symbol": "INIL",
+          "name": "International Industries Limited",
+          "sector": "Engineering",
+          "score": 41.9,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 12.7,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -9.1,
+          "yearsBeat": 8,
+          "yearsCounted": 23,
+          "worstFallPercent": -99.7
+        },
+        {
+          "symbol": "BECO",
+          "name": "Beco Steel Limited",
+          "sector": "Engineering",
+          "score": 22.8,
+          "firstYear": 2021,
+          "years": 5.3,
+          "growthPercent": 10.7,
+          "indexGrowthPercent": 28.3,
+          "extraPercent": -17.6,
+          "yearsBeat": 1,
+          "yearsCounted": 4,
+          "worstFallPercent": -81.4
+        },
+        {
+          "symbol": "CSAP",
+          "name": "Crescent Steel \u0026 Allied Products Limited",
+          "sector": "Engineering",
+          "score": 18.7,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 7.5,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -14.3,
+          "yearsBeat": 5,
+          "yearsCounted": 23,
+          "worstFallPercent": -91.2
+        }
+      ]
+    },
+    {
+      "name": "Textile Composite",
+      "eligible": 4,
+      "members": 25,
+      "medianScore": 29.4,
+      "medianExtraPercent": -13.4,
+      "top": [
+        {
+          "symbol": "ILP",
+          "name": "Interloop Limited",
+          "sector": "Textile Composite",
+          "score": 84.6,
+          "firstYear": 2019,
+          "years": 7.6,
+          "growthPercent": 17.8,
+          "indexGrowthPercent": 22.7,
+          "extraPercent": -4.9,
+          "yearsBeat": 3,
+          "yearsCounted": 6,
+          "worstFallPercent": -47.4
+        },
+        {
+          "symbol": "NML",
+          "name": "Nishat Mills Limited",
+          "sector": "Textile Composite",
+          "score": 32.1,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 9.2,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -12.6,
+          "yearsBeat": 8,
+          "yearsCounted": 23,
+          "worstFallPercent": -85.1
+        },
+        {
+          "symbol": "KTML",
+          "name": "Kohinoor Textile Mills Limited",
+          "sector": "Textile Composite",
+          "score": 26.8,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 7.5,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -14.3,
+          "yearsBeat": 8,
+          "yearsCounted": 23,
+          "worstFallPercent": -96.9
+        },
+        {
+          "symbol": "GATM",
+          "name": "Gul Ahmed Textile Mills Limited",
+          "sector": "Textile Composite",
+          "score": 24.4,
+          "firstYear": 2002,
+          "years": 24.8,
+          "growthPercent": 3,
+          "indexGrowthPercent": 21.5,
+          "extraPercent": -18.4,
+          "yearsBeat": 9,
+          "yearsCounted": 23,
+          "worstFallPercent": -87.5
+        }
+      ]
+    },
+    {
+      "name": "Chemical",
+      "eligible": 3,
+      "members": 20,
+      "medianScore": 27.6,
+      "medianExtraPercent": -12.5,
+      "top": [
+        {
+          "symbol": "EPCL",
+          "name": "Engro Polymer \u0026 Chemicals Limited",
+          "sector": "Chemical",
+          "score": 63.8,
+          "firstYear": 2008,
+          "years": 18.2,
+          "growthPercent": 17.6,
+          "indexGrowthPercent": 17.7,
+          "extraPercent": -0.1,
+          "yearsBeat": 6,
+          "yearsCounted": 17,
+          "worstFallPercent": -98.7
+        },
+        {
+          "symbol": "LOTCHEM",
+          "name": "Lotte Chemical Pakistan Limited",
+          "sector": "Chemical",
+          "score": 27.6,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 9.3,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -12.5,
+          "yearsBeat": 7,
+          "yearsCounted": 23,
+          "worstFallPercent": -93.4
+        },
+        {
+          "symbol": "GGL",
+          "name": "Ghani Global Holdings Limited",
+          "sector": "Chemical",
+          "score": 26.4,
+          "firstYear": 2010,
+          "years": 16.9,
+          "growthPercent": 1.4,
+          "indexGrowthPercent": 18.9,
+          "extraPercent": -17.5,
+          "yearsBeat": 6,
+          "yearsCounted": 15,
+          "worstFallPercent": -84.9
+        }
+      ]
+    },
+    {
+      "name": "Oil and Gas Marketing Companies",
+      "eligible": 3,
+      "members": 6,
+      "medianScore": 25.6,
+      "medianExtraPercent": -12,
+      "top": [
+        {
+          "symbol": "SNGP",
+          "name": "Sui Northern Gas Pipelines Limited",
+          "sector": "Oil and Gas Marketing Companies",
+          "score": 33.7,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 10.8,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -11,
+          "yearsBeat": 7,
+          "yearsCounted": 23,
+          "worstFallPercent": -87.3
+        },
+        {
+          "symbol": "PSO",
+          "name": "Pakistan State Oil Company Limited",
+          "sector": "Oil and Gas Marketing Companies",
+          "score": 25.6,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 9.8,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -12,
+          "yearsBeat": 5,
+          "yearsCounted": 23,
+          "worstFallPercent": -82.2
+        },
+        {
+          "symbol": "SSGC",
+          "name": "Sui Southern Gas Company Limited",
+          "sector": "Oil and Gas Marketing Companies",
+          "score": 13.8,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 5.6,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -16.2,
+          "yearsBeat": 5,
+          "yearsCounted": 23,
+          "worstFallPercent": -85
+        }
+      ]
+    },
+    {
+      "name": "Paper, Board and Packaging",
+      "eligible": 3,
+      "members": 10,
+      "medianScore": 18.7,
+      "medianExtraPercent": -14.9,
+      "top": [
+        {
+          "symbol": "SPEL",
+          "name": "SPEL Limited",
+          "sector": "Paper, Board and Packaging",
+          "score": 23.6,
+          "firstYear": 2015,
+          "years": 11.8,
+          "growthPercent": 3.5,
+          "indexGrowthPercent": 15.1,
+          "extraPercent": -11.5,
+          "yearsBeat": 3,
+          "yearsCounted": 10,
+          "worstFallPercent": -89.8
+        },
+        {
+          "symbol": "CEPB",
+          "name": "Century Paper \u0026 Board Mills Limited",
+          "sector": "Paper, Board and Packaging",
+          "score": 18.7,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 5.9,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -15.9,
+          "yearsBeat": 6,
+          "yearsCounted": 23,
+          "worstFallPercent": -86.3
+        },
+        {
+          "symbol": "MACFL",
+          "name": "MACPAC Films Limited",
+          "sector": "Paper, Board and Packaging",
+          "score": 15.9,
+          "firstYear": 2004,
+          "years": 22.6,
+          "growthPercent": 1.9,
+          "indexGrowthPercent": 16.8,
+          "extraPercent": -14.9,
+          "yearsBeat": 6,
+          "yearsCounted": 21,
+          "worstFallPercent": -95.8
+        }
+      ]
+    },
+    {
+      "name": "Leather and Tanneries",
+      "eligible": 2,
+      "members": 4,
+      "medianScore": null,
+      "medianExtraPercent": -4.8,
+      "top": [
+        {
+          "symbol": "SRVI",
+          "name": "Service Industries Limited",
+          "sector": "Leather and Tanneries",
+          "score": 91.1,
+          "firstYear": 2002,
+          "years": 24.6,
+          "growthPercent": 25.8,
+          "indexGrowthPercent": 20.3,
+          "extraPercent": 5.6,
+          "yearsBeat": 12,
+          "yearsCounted": 23,
+          "worstFallPercent": -92.3
+        },
+        {
+          "symbol": "SGF",
+          "name": "Service GlobalFootwear Limited",
+          "sector": "Leather and Tanneries",
+          "score": 37,
+          "firstYear": 2021,
+          "years": 5.3,
+          "growthPercent": 12.8,
+          "indexGrowthPercent": 28,
+          "extraPercent": -15.2,
+          "yearsBeat": 1,
+          "yearsCounted": 4,
+          "worstFallPercent": -58.9
+        }
+      ]
+    },
+    {
+      "name": "Property",
+      "eligible": 1,
+      "members": 2,
+      "medianScore": null,
+      "medianExtraPercent": -0.2,
+      "top": [
+        {
+          "symbol": "JVDC",
+          "name": "Javedan Corporation Limited",
+          "sector": "Property",
+          "score": 89.4,
+          "firstYear": 2002,
+          "years": 24.8,
+          "growthPercent": 20.5,
+          "indexGrowthPercent": 20.7,
+          "extraPercent": -0.2,
+          "yearsBeat": 12,
+          "yearsCounted": 23,
+          "worstFallPercent": -67.3
+        }
+      ]
+    },
+    {
+      "name": "Real Estate Investment Trust",
+      "eligible": 1,
+      "members": 3,
+      "medianScore": null,
+      "medianExtraPercent": -4,
+      "top": [
+        {
+          "symbol": "DCR",
+          "name": "Dolmen City REIT",
+          "sector": "Real Estate Investment Trust",
+          "score": 86.2,
+          "firstYear": 2015,
+          "years": 11.4,
+          "growthPercent": 11.7,
+          "indexGrowthPercent": 15.7,
+          "extraPercent": -4,
+          "yearsBeat": 5,
+          "yearsCounted": 10,
+          "worstFallPercent": -28.2
+        }
+      ]
+    },
+    {
+      "name": "Glass and Ceramics",
+      "eligible": 1,
+      "members": 7,
+      "medianScore": null,
+      "medianExtraPercent": -6.7,
+      "top": [
+        {
+          "symbol": "TGL",
+          "name": "Tariq Glass Industries Limited",
+          "sector": "Glass and Ceramics",
+          "score": 66.7,
+          "firstYear": 2002,
+          "years": 24.8,
+          "growthPercent": 14.8,
+          "indexGrowthPercent": 21.5,
+          "extraPercent": -6.7,
+          "yearsBeat": 11,
+          "yearsCounted": 23,
+          "worstFallPercent": -87.4
+        }
+      ]
+    },
+    {
+      "name": "Transport",
+      "eligible": 1,
+      "members": 3,
+      "medianScore": null,
+      "medianExtraPercent": 1.1,
+      "top": [
+        {
+          "symbol": "PIBTL",
+          "name": "Pakistan International Bulk Terminal",
+          "sector": "Transport",
+          "score": 65,
+          "firstYear": 2013,
+          "years": 12.9,
+          "growthPercent": 17.4,
+          "indexGrowthPercent": 16.3,
+          "extraPercent": 1.1,
+          "yearsBeat": 4,
+          "yearsCounted": 12,
+          "worstFallPercent": -91.2
+        }
+      ]
+    },
+    {
+      "name": "Cable and Electrical Goods",
+      "eligible": 2,
+      "members": 5,
+      "medianScore": null,
+      "medianExtraPercent": -13.9,
+      "top": [
+        {
+          "symbol": "PAEL",
+          "name": "Pak Elektron Limited",
+          "sector": "Cable and Electrical Goods",
+          "score": 60.6,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 14.7,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -7.1,
+          "yearsBeat": 10,
+          "yearsCounted": 23,
+          "worstFallPercent": -95.8
+        },
+        {
+          "symbol": "WAVES",
+          "name": "Waves Corporation Limited",
+          "sector": "Cable and Electrical Goods",
+          "score": 3.7,
+          "firstYear": 2002,
+          "years": 24.8,
+          "growthPercent": 0.8,
+          "indexGrowthPercent": 21.5,
+          "extraPercent": -20.7,
+          "yearsBeat": 5,
+          "yearsCounted": 23,
+          "worstFallPercent": -95.3
+        }
+      ]
+    },
+    {
+      "name": "Power Generation and Distribution",
+      "eligible": 2,
+      "members": 6,
+      "medianScore": null,
+      "medianExtraPercent": -14.6,
+      "top": [
+        {
+          "symbol": "HUBC",
+          "name": "The Hub Power Company Limited",
+          "sector": "Power Generation and Distribution",
+          "score": 54.1,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 12.3,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -9.5,
+          "yearsBeat": 9,
+          "yearsCounted": 23,
+          "worstFallPercent": -70.8
+        },
+        {
+          "symbol": "KEL",
+          "name": "K-Electric Limited",
+          "sector": "Power Generation and Distribution",
+          "score": 6.1,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 2.1,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -19.7,
+          "yearsBeat": 4,
+          "yearsCounted": 23,
+          "worstFallPercent": -89.5
+        }
+      ]
+    },
+    {
+      "name": "Textile Spinning",
+      "eligible": 1,
+      "members": 22,
+      "medianScore": null,
+      "medianExtraPercent": -11.7,
+      "top": [
+        {
+          "symbol": "TATM",
+          "name": "Tata Textile Mills Limited",
+          "sector": "Textile Spinning",
+          "score": 47.6,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 10.1,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -11.7,
+          "yearsBeat": 11,
+          "yearsCounted": 23,
+          "worstFallPercent": -91.7
+        }
+      ]
+    },
+    {
+      "name": "Modarabas",
+      "eligible": 1,
+      "members": 19,
+      "medianScore": null,
+      "medianExtraPercent": -16,
+      "top": [
+        {
+          "symbol": "TRSM",
+          "name": "Trust Modaraba",
+          "sector": "Modarabas",
+          "score": 23.2,
+          "firstYear": 2002,
+          "years": 24.9,
+          "growthPercent": 5.8,
+          "indexGrowthPercent": 21.8,
+          "extraPercent": -16,
+          "yearsBeat": 8,
+          "yearsCounted": 23,
+          "worstFallPercent": -94
+        }
+      ]
+    },
+    {
+      "name": "Apparel",
+      "eligible": 1,
+      "members": 3,
+      "medianScore": null,
+      "medianExtraPercent": -26,
+      "top": [
+        {
+          "symbol": "IMAGE",
+          "name": "Image Pakistan Limited",
+          "sector": "Apparel",
+          "score": 7.3,
+          "firstYear": 2021,
+          "years": 5.3,
+          "growthPercent": 1.9,
+          "indexGrowthPercent": 28,
+          "extraPercent": -26,
+          "yearsBeat": 1,
+          "yearsCounted": 4,
+          "worstFallPercent": -62.2
+        }
+      ]
+    },
+    {
+      "name": "Automobile Parts and Accessories",
+      "eligible": 1,
+      "members": 7,
+      "medianScore": null,
+      "medianExtraPercent": -23.8,
+      "top": [
+        {
+          "symbol": "LOADS",
+          "name": "Loads Limited",
+          "sector": "Automobile Parts and Accessories",
+          "score": 0.4,
+          "firstYear": 2016,
+          "years": 10,
+          "growthPercent": -8.1,
+          "indexGrowthPercent": 15.7,
+          "extraPercent": -23.8,
+          "yearsBeat": 1,
+          "yearsCounted": 9,
+          "worstFallPercent": -89.1
+        }
+      ]
+    }
+  ],
+  "final": [
+    {
+      "symbol": "GHNI",
+      "name": "Ghandhara Industries Limited",
+      "sector": "Automobile Assembler",
+      "score": 99.2,
+      "firstYear": 2002,
+      "years": 24.4,
+      "growthPercent": 37.9,
+      "indexGrowthPercent": 20.8,
+      "extraPercent": 17.2,
+      "yearsBeat": 14,
+      "yearsCounted": 23,
+      "worstFallPercent": -91.1
+    },
+    {
+      "symbol": "SYS",
+      "name": "Systems Limited",
+      "sector": "Technology and Communication",
+      "score": 98.8,
+      "firstYear": 2015,
+      "years": 11.8,
+      "growthPercent": 31.3,
+      "indexGrowthPercent": 14.9,
+      "extraPercent": 16.4,
+      "yearsBeat": 6,
+      "yearsCounted": 10,
+      "worstFallPercent": -40.6
+    },
+    {
+      "symbol": "SAZEW",
+      "name": "Sazgar Engineering Works Limited",
+      "sector": "Automobile Assembler",
+      "score": 93.9,
+      "firstYear": 2002,
+      "years": 24.9,
+      "growthPercent": 23.4,
+      "indexGrowthPercent": 21.8,
+      "extraPercent": 1.6,
+      "yearsBeat": 14,
+      "yearsCounted": 23,
+      "worstFallPercent": -86.3
+    },
+    {
+      "symbol": "SRVI",
+      "name": "Service Industries Limited",
+      "sector": "Leather and Tanneries",
+      "score": 91.1,
+      "firstYear": 2002,
+      "years": 24.6,
+      "growthPercent": 25.8,
+      "indexGrowthPercent": 20.3,
+      "extraPercent": 5.6,
+      "yearsBeat": 12,
+      "yearsCounted": 23,
+      "worstFallPercent": -92.3
+    },
+    {
+      "symbol": "PIOC",
+      "name": "Pioneer Cement Limited",
+      "sector": "Cement",
+      "score": 89.8,
+      "firstYear": 2002,
+      "years": 24.9,
+      "growthPercent": 22.1,
+      "indexGrowthPercent": 21.8,
+      "extraPercent": 0.3,
+      "yearsBeat": 13,
+      "yearsCounted": 23,
+      "worstFallPercent": -95.5
+    },
+    {
+      "symbol": "JVDC",
+      "name": "Javedan Corporation Limited",
+      "sector": "Property",
+      "score": 89.4,
+      "firstYear": 2002,
+      "years": 24.8,
+      "growthPercent": 20.5,
+      "indexGrowthPercent": 20.7,
+      "extraPercent": -0.2,
+      "yearsBeat": 12,
+      "yearsCounted": 23,
+      "worstFallPercent": -67.3
+    },
+    {
+      "symbol": "MARI",
+      "name": "Mari Energies Limited",
+      "sector": "Oil and Gas Exploration Companies",
+      "score": 88.2,
+      "firstYear": 2002,
+      "years": 24.9,
+      "growthPercent": 28.8,
+      "indexGrowthPercent": 21.8,
+      "extraPercent": 7,
+      "yearsBeat": 11,
+      "yearsCounted": 23,
+      "worstFallPercent": -81
+    },
+    {
+      "symbol": "FATIMA",
+      "name": "Fatima Fertilizer Company Limited",
+      "sector": "Fertilizer",
+      "score": 86.2,
+      "firstYear": 2010,
+      "years": 16.8,
+      "growthPercent": 15.2,
+      "indexGrowthPercent": 19,
+      "extraPercent": -3.8,
+      "yearsBeat": 8,
+      "yearsCounted": 15,
+      "worstFallPercent": -58.9
+    },
+    {
+      "symbol": "MEBL",
+      "name": "Meezan Bank Limited",
+      "sector": "Commercial Banks",
+      "score": 86.2,
+      "firstYear": 2002,
+      "years": 24.9,
+      "growthPercent": 19.6,
+      "indexGrowthPercent": 21.8,
+      "extraPercent": -2.2,
+      "yearsBeat": 12,
+      "yearsCounted": 23,
+      "worstFallPercent": -78.6
+    },
+    {
+      "symbol": "DCR",
+      "name": "Dolmen City REIT",
+      "sector": "Real Estate Investment Trust",
+      "score": 86.2,
+      "firstYear": 2015,
+      "years": 11.4,
+      "growthPercent": 11.7,
+      "indexGrowthPercent": 15.7,
+      "extraPercent": -4,
+      "yearsBeat": 5,
+      "yearsCounted": 10,
+      "worstFallPercent": -28.2
+    }
+  ]
+}

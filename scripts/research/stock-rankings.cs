@@ -37,6 +37,11 @@ using MarketAnalytics.Domain.ValueObjects;
 //   +44.8% a year). Replaced by the app's StockSplitAdjuster: a move below -15% or above +18% counts as a split, bonus
 //   or payout only between trading days at most 7 days apart and from a price of at least Rs 20. Universe,
 //   eligibility, measures, weights and the selection rules are unchanged.
+// SECOND CORRECTION AFTER THE SECOND RUN (same day): the -15%/+18% rule also caught the source's price glitches (a
+//   price that jumps for a few days and comes back; Rs 0.30 for a Rs 39 share), compounding them into impossible
+//   returns (International Industries +69.9% a year, 43 "splits" for Millat Tractors). StockSplitAdjuster now removes
+//   one-day spikes first and counts a jump only when the price was steady for the 5 days before it and stays steady
+//   for the 5 days after (within 10% of the middle value). Everything else unchanged.
 // Output: console report, and frontend/public/data/stock-rankings.json for the Rankings page.
 // Usage: dotnet run stock-rankings.cs
 

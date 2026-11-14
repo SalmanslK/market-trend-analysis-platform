@@ -8,6 +8,7 @@ const TITLES: Record<string, string> = {
   '/news': 'Market News',
   '/portfolio': 'Portfolio Mix',
   '/comparison': 'Compare',
+  '/rankings': 'Stock Rankings',
   '/track-record': 'Track Record',
   '/guide': 'Guide',
   '/settings': 'Settings',

@@ -116,7 +116,7 @@ public class DailyBriefService
             },
             instruments = analytics.Select(a => new
             {
-                a.Symbol, a.Name, kind = a.LowRiskKind ?? KindOf(a.Symbol), lastDate = a.LastDate.ToString("yyyy-MM-dd"), a.LastPrice,
+                a.Symbol, a.Name, kind = a.LowRiskKind ?? (a.Type == Domain.Enums.InstrumentType.Stock ? "Company share (Shariah-compliant)" : KindOf(a.Symbol)), lastDate = a.LastDate.ToString("yyyy-MM-dd"), a.LastPrice,
                 changePercent = new { day = a.Change1D, week = a.Change1W, month = a.Change1M, threeMonths = a.Change3M, yearToDate = a.ChangeYtd, year = a.Change1Y },
                 a.High52W, a.Low52W, volatility1Y = a.Volatility1Y, worstFall1Y = a.MaxDrawdown1Y,
                 trend = new { a.LongTermTrend.Direction, since = a.LongTermTrend.Since?.ToString("yyyy-MM-dd"), a.LongTermTrend.Phase },

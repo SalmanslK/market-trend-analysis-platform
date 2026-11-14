@@ -174,7 +174,8 @@ public partial class ClaudeCodeBriefWriter : IBriefWriter
         return (process.ExitCode, await output, await error);
     }
 
-    private const string SystemPrompt = """
+    /// <summary>The writing instructions; scripts/cloud-brief/instructions.md must match (a test checks).</summary>
+    public const string SystemPrompt = """
         You are a senior financial analyst writing a market brief for one reader in Pakistan who has no finance
         background. They hold or are considering Meezan (Islamic) mutual funds, gold and cash, and want to understand
         what is going on and what might come next, so they can make their own informed decisions.

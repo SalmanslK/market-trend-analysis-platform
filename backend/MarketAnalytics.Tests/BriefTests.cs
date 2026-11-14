@@ -66,3 +66,20 @@ public class BriefTests
         Assert.Equal((text, isError), ClaudeCodeBriefWriter.ParseResult(output));
     }
 }
+
+public class CloudBriefTests
+{
+    [Fact]
+    public void CloudInstructions_MatchTheApps()
+    {
+        // The cloud routine (scripts/cloud-brief) must write the brief by the same rules as the app
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "scripts", "cloud-brief")))
+            dir = dir.Parent;
+        Assert.NotNull(dir);
+
+        var file = File.ReadAllText(Path.Combine(dir!.FullName, "scripts", "cloud-brief", "instructions.md"));
+        static string Normalize(string s) => string.Join("\n", s.Replace("\r", "").Split('\n').Select(l => l.TrimEnd())).Trim();
+        Assert.Equal(Normalize(ClaudeCodeBriefWriter.SystemPrompt), Normalize(file));
+    }
+}

@@ -98,7 +98,13 @@ async Task RunDaily(string symbol, bool decides)
     var mif = dates.Select(MifOnOrBefore).ToArray();
 
     double Mean(IEnumerable<double> xs) { var l = xs.ToList(); return l.Count == 0 ? double.NaN : l.Average(); }
-    double Sma(double[] xs, int end, int len) => end + 1 < len ? double.NaN : Mean(Enumerable.Range(end - len + 1, len).Select(k => xs[k]));
+    // A day the source has no volume for is skipped, as long as at least 80% of the window has one
+    double Sma(double[] xs, int end, int len)
+    {
+        if (end + 1 < len) return double.NaN;
+        var present = Enumerable.Range(end - len + 1, len).Select(k => xs[k]).Where(x => !double.IsNaN(x)).ToList();
+        return present.Count >= 0.8 * len ? present.Average() : double.NaN;
+    }
     var close = closes.ToArray();
 
     var confirm = new bool?[n];

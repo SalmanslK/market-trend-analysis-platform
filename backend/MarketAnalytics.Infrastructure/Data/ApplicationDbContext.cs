@@ -19,6 +19,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<NewsArticle> NewsArticles { get; set; }
     public DbSet<FundPayout> FundPayouts { get; set; }
     public DbSet<SignalSnapshot> SignalSnapshots { get; set; }
+    public DbSet<TradingVolume> TradingVolumes { get; set; }
+    public DbSet<FundAssets> FundAssets { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

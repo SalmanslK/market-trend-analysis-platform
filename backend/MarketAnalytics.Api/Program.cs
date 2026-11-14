@@ -42,6 +42,7 @@ builder.Services.AddHttpClient<JsonApiDataFetcher>();
 builder.Services.AddHttpClient<HtmlScraperDataFetcher>();
 builder.Services.AddHttpClient<CurrencyApiDataFetcher>();
 builder.Services.AddHttpClient<FundPayoutFetcher>();
+builder.Services.AddHttpClient<MarketActivityFetcher>();
 builder.Services.AddHttpClient<RssNewsFetcher>();
 builder.Services.AddScoped<InstrumentDataFetcherFactory>();
 

@@ -58,6 +58,35 @@ namespace MarketAnalytics.Infrastructure.Migrations
                     b.ToTable("DataUpdateLogs", (string)null);
                 });
 
+            modelBuilder.Entity("MarketAnalytics.Domain.Entities.FundAssets", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("FetchedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("InstrumentId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("Month")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("Rupees")
+                        .HasPrecision(20, 2)
+                        .HasColumnType("numeric(20,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstrumentId", "Month")
+                        .IsUnique();
+
+                    b.ToTable("FundAssets", (string)null);
+                });
+
             modelBuilder.Entity("MarketAnalytics.Domain.Entities.FundPayout", b =>
                 {
                     b.Property<int>("Id")
@@ -455,10 +484,49 @@ namespace MarketAnalytics.Infrastructure.Migrations
                     b.ToTable("SignalSnapshots", (string)null);
                 });
 
+            modelBuilder.Entity("MarketAnalytics.Domain.Entities.TradingVolume", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("FetchedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("InstrumentId")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("Shares")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstrumentId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("TradingVolumes", (string)null);
+                });
+
             modelBuilder.Entity("MarketAnalytics.Domain.Entities.DataUpdateLog", b =>
                 {
                     b.HasOne("MarketAnalytics.Domain.Entities.Instrument", "Instrument")
                         .WithMany("UpdateLogs")
+                        .HasForeignKey("InstrumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Instrument");
+                });
+
+            modelBuilder.Entity("MarketAnalytics.Domain.Entities.FundAssets", b =>
+                {
+                    b.HasOne("MarketAnalytics.Domain.Entities.Instrument", "Instrument")
+                        .WithMany()
                         .HasForeignKey("InstrumentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -489,6 +557,17 @@ namespace MarketAnalytics.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("MarketAnalytics.Domain.Entities.SignalSnapshot", b =>
+                {
+                    b.HasOne("MarketAnalytics.Domain.Entities.Instrument", "Instrument")
+                        .WithMany()
+                        .HasForeignKey("InstrumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Instrument");
+                });
+
+            modelBuilder.Entity("MarketAnalytics.Domain.Entities.TradingVolume", b =>
                 {
                     b.HasOne("MarketAnalytics.Domain.Entities.Instrument", "Instrument")
                         .WithMany()

@@ -420,6 +420,24 @@ never written for an older date, so nothing is recorded with hindsight. Track Re
 readings by the move over the next 20 trading days from the next close, grouped by what the app said. Started
 9 Nov 2026; results appear after about a month and mean something after about a year.
 
+## Market brief (the only AI)
+
+The Brief page writes one page in plain words, on request: Pakistan stocks, gold, the rupee, cash and interest
+rates, the world economy, what history says about the coming months and the next year, and what to watch.
+- **Facts come from the app** (`DailyBriefService.BuildFactsAsync`): every instrument's analytics (changes, trend,
+  signals, stronger than cash, volume, fund flows), the last 7 days' headlines, the research findings, and
+  `HistoricalOutlook`: for KSE-100, MIF, MGF and USD/PKR, what followed earlier days in the same trend state (Up,
+  Up but weakening, Down, Down but recovering) over 1 month, 6 months and 1 year: share higher, middle, 10th and
+  90th percentile, number of separate spells, against all days. The facts are saved with each brief.
+- **Writing** (`ClaudeCodeBriefWriter`): runs `claude -p` (Claude Code, installed and signed in on this computer) in
+  an empty temp folder with only WebSearch/WebFetch, no project settings, MCP servers or saved session. It uses the
+  user's Claude plan (Pro), so no API key and no extra charge; it counts towards the plan's usage limits. About 1-3
+  minutes. `Brief:ClaudePath` in the Api settings can point at claude.exe if it isn't on the PATH.
+- The system prompt: only figures from the facts or cited pages; the future only as historical base rates and
+  scenarios; no buy/sell instructions; plain words; fixed sections; sources listed at the end (shown as links).
+- API: `GET /api/brief/latest` (latest brief, and whether Claude Code is available), `POST /api/brief` (write one).
+  Briefs are kept in the `DailyBriefs` table.
+
 ## Alerts (what changed)
 
 `AlertService` (`GET /api/alerts?days=30`) recomputes each day's technical, news and combined signal and trend direction

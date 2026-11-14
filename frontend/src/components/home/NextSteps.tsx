@@ -3,6 +3,7 @@ import { COLORS, SURFACE } from '../../services/format'
 
 // The things people come to do, each one click away, so nobody has to search the menu
 const STEPS = [
+  { to: '/brief', icon: '📰', title: 'Read the market brief', text: 'Everything in one page, in plain words, written when you ask.' },
   { to: '/holdings', icon: '👛', title: 'Track what I own', text: 'Enter your funds or gold to see their value, payouts and signals.' },
   { to: '/portfolio', icon: '⚖️', title: 'Try a mix', text: 'See how splitting money between stocks, gold and cash would have done.' },
   { to: '/comparison', icon: '📈', title: 'Compare investments', text: 'Put two or more on one chart to see which did better.' },

@@ -21,6 +21,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<SignalSnapshot> SignalSnapshots { get; set; }
     public DbSet<TradingVolume> TradingVolumes { get; set; }
     public DbSet<FundAssets> FundAssets { get; set; }
+    public DbSet<DailyBrief> DailyBriefs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

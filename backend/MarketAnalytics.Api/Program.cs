@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MarketAnalytics.Application.Interfaces.IRepositories;
 using MarketAnalytics.Application.Interfaces.Services;
 using MarketAnalytics.Application.Services;
+using MarketAnalytics.Infrastructure.Brief;
 using MarketAnalytics.Infrastructure.Data;
 using MarketAnalytics.Infrastructure.DataFetchers;
 using MarketAnalytics.Infrastructure.News;
@@ -62,6 +63,10 @@ builder.Services.AddScoped<INewsService, NewsService>();
 builder.Services.AddScoped<IBacktestService, BacktestService>();
 builder.Services.AddScoped<IPortfolioService, PortfolioService>();
 builder.Services.AddScoped<IAlertService, AlertService>();
+// The market brief: the only AI in the app, written on request by Claude Code on the user's plan
+builder.Services.AddScoped<IBriefRepository, BriefRepository>();
+builder.Services.AddSingleton<IBriefWriter, ClaudeCodeBriefWriter>();
+builder.Services.AddScoped<DailyBriefService>();
 
 // CORS configuration for React frontend
 builder.Services.AddCors(options =>

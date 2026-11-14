@@ -36,6 +36,7 @@ builder.Services.AddScoped<IInstrumentRepository, InstrumentRepository>();
 builder.Services.AddScoped<IPricePointRepository, PricePointRepository>();
 builder.Services.AddScoped<INewsRepository, NewsRepository>();
 builder.Services.AddScoped<IFundPayoutRepository, FundPayoutRepository>();
+builder.Services.AddScoped<IMarketActivityRepository, MarketActivityRepository>();
 
 // Register data fetchers as typed HTTP clients
 builder.Services.AddHttpClient<JsonApiDataFetcher>();

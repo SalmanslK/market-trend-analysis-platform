@@ -84,6 +84,12 @@ public class InstrumentAnalyticsDto
     /// </summary>
     public CashTestDto? StrongerThanCash { get; set; }
 
+    /// <summary>Recent trading volume (KSE-100 and KMI-30 only).</summary>
+    public VolumeSummaryDto? Volume { get; set; }
+
+    /// <summary>Fund size and money in or out (funds only).</summary>
+    public FundSizeSummaryDto? FundSize { get; set; }
+
     /// <summary>
     /// Why the stronger-than-cash check couldn't be made for an instrument it applies to; null when it was made or
     /// doesn't apply. Lets the pages say "not available" instead of silently leaving the check out.

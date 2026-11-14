@@ -126,6 +126,16 @@ export const glossary = {
     what: 'The signals the app showed each day, saved at the time, then scored by how prices moved over the following 20 trading days (starting from the next day\'s close).',
     howToRead: 'Compare each row with "Any day": if readings that said Buy were followed by bigger rises than an ordinary day, the signal is adding something. Instruments that move together count separately, so it takes about a year before the numbers mean much.',
   },
+  volume: {
+    title: 'Trading volume',
+    what: 'How many shares changed hands in the index\'s companies each day. "Busier than usual" compares the last month\'s daily average with the average of the last five months.',
+    howToRead: 'Heavy trading on a rise or fall means many investors took part, so the move had broad backing; a move on thin trading is easier to reverse. It describes the past, not the future: tested here from 2014, adding volume to the buy and sell rules made none of them beat simply holding.',
+  },
+  fundFlows: {
+    title: 'Money in and out',
+    what: 'How much money investors put into the fund or took out, worked out from its size after removing the effect of its price change. The fund reports its size once a month.',
+    howToRead: 'Money flowing in shows investors are keen; money leaving shows they are nervous. Tested here from 2010, it did not tell what the fund\'s price would do next, so read it as mood, not a forecast.',
+  },
   strongerThanCash: {
     title: 'Stronger than cash',
     what: 'Once a month, on the first trading day, compare what the instrument earned over the past 12 months with what the Meezan Cash Fund earned. Stay invested while it is ahead; wait in cash while it is behind.',

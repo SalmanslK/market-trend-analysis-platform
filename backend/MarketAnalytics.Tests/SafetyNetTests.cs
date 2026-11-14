@@ -110,6 +110,7 @@ public class SafetyNetTests
         public Task<IEnumerable<InstrumentAnalyticsDto>> GetAllAnalyticsAsync(CancellationToken cancellationToken = default) => throw error;
         public Task<InstrumentAnalyticsDto?> GetInstrumentAnalyticsAsync(string symbol, CancellationToken cancellationToken = default) => throw error;
         public InstrumentAnalyticsDto ComputeAnalytics(IReadOnlyList<PriceDataPoint> dailyPrices, IReadOnlyList<PriceDataPoint>? benchmarkPrices = null) => throw error;
+        public Task<ActivitySeriesDto?> GetActivityAsync(string symbol, CancellationToken cancellationToken = default) => throw error;
     }
 
     private static SignalRecorder FailingRecorder(Exception error) =>

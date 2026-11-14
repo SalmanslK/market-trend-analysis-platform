@@ -32,6 +32,7 @@ public class MarketAnalyticsService : IMarketAnalyticsService
     private readonly ILogger<MarketAnalyticsService> _logger;
     private readonly INewsService? _newsService;
     private readonly IFundPayoutRepository? _fundPayoutRepository;
+    private readonly IMarketActivityRepository? _activityRepository;
 
     public MarketAnalyticsService(
         IInstrumentRepository instrumentRepository,
@@ -39,8 +40,10 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         IIndicatorCalculationService indicators,
         ILogger<MarketAnalyticsService> logger,
         INewsService? newsService = null,
-        IFundPayoutRepository? fundPayoutRepository = null)
+        IFundPayoutRepository? fundPayoutRepository = null,
+        IMarketActivityRepository? activityRepository = null)
     {
+        _activityRepository = activityRepository;
         _newsService = newsService;
         _fundPayoutRepository = fundPayoutRepository;
         _instrumentRepository = instrumentRepository;
@@ -123,6 +126,12 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         ApplyNewsSignals(analytics, mood);
         analytics.NewsSignal.SharedWith = SharedNews(mood, moods);
         ApplyPayouts(analytics, cleaned, payouts);
+        if (_activityRepository != null)
+        {
+            // A year of days is plenty for the 100-day average
+            analytics.Volume = MarketActivity.SummarizeVolume(await _activityRepository.GetVolumesAsync(instrument.Id, DateTime.UtcNow.Date.AddYears(-1), cancellationToken));
+            analytics.FundSize = MarketActivity.SummarizeFundSize(await _activityRepository.GetFundSizesAsync(instrument.Id, cancellationToken), cleaned);
+        }
         if (StrongerThanCash.AppliesTo(instrument))
         {
             analytics.StrongerThanCash = await EvaluateCashTestAsync(instrument, dailyPrices, cancellationToken);
@@ -130,6 +139,30 @@ public class MarketAnalyticsService : IMarketAnalyticsService
                 analytics.StrongerThanCashUnavailable = _cashProblem ?? "It needs 12 months of recent prices for this instrument and the Meezan Cash Fund.";
         }
         return analytics;
+    }
+
+    public async Task<ActivitySeriesDto?> GetActivityAsync(string symbol, CancellationToken cancellationToken = default)
+    {
+        var instrument = await _instrumentRepository.GetBySymbolAsync(symbol, cancellationToken);
+        if (instrument == null || _activityRepository == null)
+            return null;
+
+        var result = new ActivitySeriesDto { Symbol = instrument.Symbol };
+        // Three years of days keeps the chart readable and the response small
+        var volumes = await _activityRepository.GetVolumesAsync(instrument.Id, DateTime.UtcNow.Date.AddYears(-3), cancellationToken);
+        if (volumes.Count > 0)
+        {
+            result.Kind = "Volume";
+            result.Points = volumes.Select(v => new ActivityPointDto { Date = v.Date, Value = v.Shares }).ToList();
+            return result;
+        }
+        var sizes = await _activityRepository.GetFundSizesAsync(instrument.Id, cancellationToken);
+        if (sizes.Count > 0)
+        {
+            result.Kind = "FundSize";
+            result.Points = sizes.Select(a => new ActivityPointDto { Date = a.Month, Value = a.Rupees }).ToList();
+        }
+        return result;
     }
 
     // The cash fund's history, loaded once per scope (an API request or one Worker run); empty when missing or failed

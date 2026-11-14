@@ -16,6 +16,7 @@ import ScaledSignalBadge from '../components/signals/ScaledSignalBadge'
 import SignalPanel from '../components/signals/SignalPanel'
 import AllMetrics from '../components/analytics/AllMetrics'
 import KeyStats from '../components/analytics/KeyStats'
+import ActivityPanel from '../components/analytics/ActivityPanel'
 import PlainSummary from '../components/help/PlainSummary'
 import InstrumentNews from '../components/news/InstrumentNews'
 import { cashTestInWords, describeInstrument, signalMeaning, trendInWords } from '../services/plainLanguage'
@@ -210,6 +211,8 @@ export default function InstrumentView() {
           !loading && !error && <p style={{ padding: '20px', ...SURFACE, color: COLORS.muted }}>No prices for this period. Try a longer period above.</p>
         )}
       </section>
+
+      {analytics && <ActivityPanel analytics={analytics} />}
 
       {analytics && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(420px, 100%), 1fr))', gap: '12px', marginBottom: '12px' }}>

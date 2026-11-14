@@ -22,4 +22,9 @@ public interface IMarketAnalyticsService
     /// Computes analytics from daily prices (exposed for testing).
     /// </summary>
     InstrumentAnalyticsDto ComputeAnalytics(IReadOnlyList<PriceDataPoint> dailyPrices, IReadOnlyList<PriceDataPoint>? benchmarkPrices = null);
+
+    /// <summary>
+    /// Daily shares traded (last three years) for an index, or monthly fund size for a fund. Null for an unknown symbol.
+    /// </summary>
+    Task<ActivitySeriesDto?> GetActivityAsync(string symbol, CancellationToken cancellationToken = default);
 }

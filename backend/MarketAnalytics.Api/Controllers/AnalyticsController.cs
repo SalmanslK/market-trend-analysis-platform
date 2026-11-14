@@ -38,4 +38,14 @@ public class AnalyticsController : ControllerBase
             ? NotFound($"No analytics available for instrument '{symbol}'.")
             : Ok(analytics);
     }
+
+    /// <summary>
+    /// Gets the trading volume (indices) or fund size (funds) history for a chart.
+    /// </summary>
+    [HttpGet("{symbol}/activity")]
+    public async Task<ActionResult<ActivitySeriesDto>> GetActivity(string symbol, CancellationToken cancellationToken)
+    {
+        var activity = await _analyticsService.GetActivityAsync(symbol, cancellationToken);
+        return activity == null ? NotFound($"Unknown instrument '{symbol}'.") : Ok(activity);
+    }
 }

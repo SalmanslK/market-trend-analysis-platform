@@ -231,5 +231,6 @@ public class ForwardRecordTests
         public Task<IEnumerable<InstrumentAnalyticsDto>> GetAllAnalyticsAsync(CancellationToken cancellationToken = default) => Task.FromResult(analytics);
         public Task<InstrumentAnalyticsDto?> GetInstrumentAnalyticsAsync(string symbol, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public InstrumentAnalyticsDto ComputeAnalytics(IReadOnlyList<PriceDataPoint> dailyPrices, IReadOnlyList<PriceDataPoint>? benchmarkPrices = null) => throw new NotSupportedException();
+        public Task<ActivitySeriesDto?> GetActivityAsync(string symbol, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }

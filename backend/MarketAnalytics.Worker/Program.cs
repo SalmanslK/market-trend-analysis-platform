@@ -35,6 +35,7 @@ builder.Services.AddScoped<IInstrumentRepository, InstrumentRepository>();
 builder.Services.AddScoped<IPricePointRepository, PricePointRepository>();
 builder.Services.AddScoped<INewsRepository, NewsRepository>();
 builder.Services.AddScoped<IFundPayoutRepository, FundPayoutRepository>();
+builder.Services.AddScoped<IMarketActivityRepository, MarketActivityRepository>();
 builder.Services.AddScoped<IIndicatorCalculationService, IndicatorCalculationService>();
 builder.Services.AddScoped<INewsService, NewsService>();
 builder.Services.AddScoped<IMarketAnalyticsService, MarketAnalyticsService>();

@@ -14,9 +14,8 @@ using MarketAnalytics.Domain.ValueObjects;
 //
 // Universe: the KMI All-Share index's current members (Shariah-compliant today), with their PSX sectors (Sarmaaya
 //   indices/sunbrust/KMIALLSHR). Prices: Sarmaaya stocks/price-history, as far back as it goes (2002 at most).
-// Cleaning: zero prices dropped; one-day spikes removed (the app's PriceDataCleaner); then any day-to-day move below
-//   -40% or above +67% is treated as a split, bonus issue or data change (PSX's daily price limits make such moves
-//   impossible in normal trading) and earlier prices are rescaled to remove it. Cash dividends are NOT included
+// Cleaning: zero prices dropped; splits and bonus issues rescaled (see the correction below); one-day spikes removed
+//   (the app's PriceDataCleaner). Cash dividends are NOT included
 //   (the source lists them only from about 2022), so every return here is price only, like the KSE-100 index used as
 //   the yardstick, which also leaves out dividends. High-dividend companies are therefore understated.
 // Eligible: at least 5 years of prices (first price on or before 2021-11-14) AND enough trading to buy and sell:
@@ -32,13 +31,19 @@ using MarketAnalytics.Domain.ValueObjects;
 // This ranks the past. Past winners don't reliably keep winning; today's Shariah list leaves out companies that
 // failed or were delisted (survivorship), which flatters every figure. The list is a starting point to study, not a
 // recommendation.
+// CORRECTION AFTER THE FIRST RUN (same day, before anything was published): the first run's split rule (any move
+//   below -40% or above +67%) also erased real crashes: penny shares (Rs 1-4) moving a rupee in 2002, and falls when
+//   the market reopened after the 2008 freeze (gaps of 1-9 months). It inflated some returns enormously (GHNI showed
+//   +44.8% a year). Replaced by the app's StockSplitAdjuster: a move below -15% or above +18% counts as a split, bonus
+//   or payout only between trading days at most 7 days apart and from a price of at least Rs 20. Universe,
+//   eligibility, measures, weights and the selection rules are unchanged.
 // Output: console report, and frontend/public/data/stock-rankings.json for the Rankings page.
 // Usage: dotnet run stock-rankings.cs
 
 const string Base = "https://beta-restapi.sarmaaya.pk/api";
 var asOf = DateTime.UtcNow.Date;
 var minFirstDate = new DateTime(2021, 11, 14);
-const double MinTradedValue = 10_000_000, SplitDown = 0.6, SplitUp = 1.67;
+const double MinTradedValue = 10_000_000;
 
 var http = new HttpClient { Timeout = TimeSpan.FromMinutes(2) };
 http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0");
@@ -82,18 +87,11 @@ foreach (var (symbol, sector) in members)
     catch (Exception ex) { skipped.Add($"{symbol}: fetch failed ({ex.Message})"); continue; }
     if (rows.Count < 250) { skipped.Add($"{symbol}: {rows.Count} prices"); continue; }
 
-    // Spikes out, then rescale across splits and bonus issues
-    var cleaned = PriceDataCleaner.RemoveSpikes(rows.Select(r => new PriceDataPoint(r.Date, (decimal)r.Price))).ToList();
+    // Splits and bonus issues rescaled as the app stores them, then spikes out as the app reads them
+    var (adjusted, adjustments) = StockSplitAdjuster.Adjust(rows.Select(r => new PriceDataPoint(r.Date, (decimal)r.Price)));
+    var cleaned = PriceDataCleaner.RemoveSpikes(adjusted);
     var dates = cleaned.Select(p => p.DateTime.Date).ToList();
     var prices = cleaned.Select(p => (double)p.Price).ToArray();
-    var adjustments = 0;
-    for (int i = prices.Length - 1; i > 0; i--)
-    {
-        var ratio = prices[i] / prices[i - 1];
-        if (ratio is > SplitDown and < SplitUp) continue;
-        for (int k = 0; k < i; k++) prices[k] *= ratio;
-        adjustments++;
-    }
 
     var traded = rows.TakeLast(250).Select(r => r.Price * r.Volume).OrderBy(v => v).ToList();
     var medianTraded = traded[traded.Count / 2];

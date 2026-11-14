@@ -106,6 +106,8 @@ button:not(:disabled) {
   body { background: white !important; }
   main { max-width: none !important; }
   .print-plain { border: none !important; box-shadow: none !important; padding: 0 !important; }
+  .print-plain { margin-bottom: 14px !important; }
+  .brief-grid { display: block !important; }
   a { color: inherit !important; }
   h2 { break-after: avoid; }
   li, p { break-inside: avoid; }

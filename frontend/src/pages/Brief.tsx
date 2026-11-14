@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { briefApi, BriefStatus } from '../services/api/briefApi'
-import { boldParts, parseBrief } from '../services/briefText'
+import { boldParts, BriefBlock, briefSections, parseBrief } from '../services/briefText'
 import { ANSWER_SURFACE, COLORS, SURFACE } from '../services/format'
 
 const when = (value: string) =>
@@ -10,6 +10,22 @@ const when = (value: string) =>
 function Rich({ text }: { text: string }) {
   return <>{boldParts(text).map((part, i) => (part.bold ? <strong key={i}>{part.text}</strong> : <span key={i}>{part.text}</span>))}</>
 }
+
+function Blocks({ blocks }: { blocks: BriefBlock[] }) {
+  return (
+    <>
+      {blocks.map((block, i) => {
+        if (block.kind === 'list')
+          return <ul key={i} style={{ paddingLeft: '22px', margin: '6px 0 10px' }}>{block.items.map((item, j) => <li key={j} style={{ marginBottom: '4px' }}><Rich text={item} /></li>)}</ul>
+        if (block.kind === 'heading')
+          return <h3 key={i} style={{ fontSize: '1rem', margin: '10px 0 4px' }}><Rich text={block.text} /></h3>
+        return <p key={i} style={{ margin: '6px 0 10px' }}><Rich text={block.text} /></p>
+      })}
+    </>
+  )
+}
+
+const sectionTitle = { fontSize: '1.15rem', marginTop: 0, marginBottom: '6px', color: COLORS.ink }
 
 /**
  * The market brief: one page that explains what is happening and what history says may follow, written on request
@@ -43,9 +59,9 @@ export default function Brief() {
   const writtenToday = latest && new Date(latest.createdAt).toDateString() === new Date().toDateString()
 
   return (
-    <div style={{ padding: '20px', maxWidth: '820px' }}>
+    <div style={{ padding: '20px' }}>
       <h1>Market brief</h1>
-      <p className="no-print" style={{ color: COLORS.muted, marginBottom: '16px', lineHeight: 1.5 }}>
+      <p className="no-print" style={{ color: COLORS.muted, marginBottom: '16px', lineHeight: 1.5, maxWidth: '860px' }}>
         Everything in one page, in plain words: what Pakistan's stocks, gold, the rupee and cash are doing, what is
         happening in the world economy, and what history says has tended to follow. Written by Claude from this
         app's figures and today's news, when you ask.
@@ -90,36 +106,48 @@ export default function Brief() {
       {loadError && <div role="alert" style={{ color: COLORS.down, marginBottom: '16px' }}>Could not load the last brief. Is the app running?</div>}
       {status && !latest && !writing && <p style={{ color: COLORS.muted }}>No brief yet. Press the button above to write the first one.</p>}
 
-      {latest && (
-        <article className="print-plain" style={{ ...ANSWER_SURFACE, padding: '20px 24px', lineHeight: 1.6, fontSize: '16px' }} aria-busy={writing}>
-          <p style={{ color: COLORS.muted, fontSize: '14px', marginBottom: '8px' }}>Market brief, written {when(latest.createdAt)}</p>
-          {parseBrief(latest.text).map((block, i) => {
-            if (block.kind === 'heading')
-              return <h2 key={i} style={{ fontSize: '1.15rem', marginTop: i === 0 ? 0 : '22px', marginBottom: '6px', color: COLORS.ink }}><Rich text={block.text} /></h2>
-            if (block.kind === 'list')
-              return <ul key={i} style={{ paddingLeft: '22px', margin: '6px 0 10px' }}>{block.items.map((item, j) => <li key={j} style={{ marginBottom: '4px' }}><Rich text={item} /></li>)}</ul>
-            return <p key={i} style={{ margin: '6px 0 10px' }}><Rich text={block.text} /></p>
-          })}
+      {latest && (() => {
+        const [lead, ...rest] = briefSections(parseBrief(latest.text))
+        return (
+          // The first section across the top, the rest as cards filling the width; printed as one column
+          <article aria-busy={writing} style={{ lineHeight: 1.6, fontSize: '16px' }}>
+            <p style={{ color: COLORS.muted, fontSize: '14px', marginBottom: '8px' }}>Market brief, written {when(latest.createdAt)}</p>
+            {lead && (
+              <section className="print-plain" style={{ ...ANSWER_SURFACE, padding: '18px 22px', marginBottom: '14px' }}>
+                {lead.title && <h2 style={sectionTitle}><Rich text={lead.title} /></h2>}
+                <Blocks blocks={lead.blocks} />
+              </section>
+            )}
+            <div className="brief-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(440px, 100%), 1fr))', gap: '14px', alignItems: 'start' }}>
+              {rest.map((section) => (
+                <section key={section.title} className="print-plain" style={{ ...SURFACE, padding: '16px 20px' }}>
+                  <h2 style={sectionTitle}><Rich text={section.title} /></h2>
+                  <Blocks blocks={section.blocks} />
+                </section>
+              ))}
+            </div>
 
-          {latest.sources.length > 0 && (
-            <>
-              <h2 style={{ fontSize: '1rem', marginTop: '22px', marginBottom: '6px', color: COLORS.muted }}>Sources from the web</h2>
-              <ul style={{ paddingLeft: '22px', fontSize: '14px' }}>
-                {latest.sources.map((s) => (
-                  <li key={s.url} style={{ marginBottom: '4px', overflowWrap: 'anywhere' }}>
-                    <a href={s.url} target="_blank" rel="noopener noreferrer" style={{ color: COLORS.link }}>{s.title}</a>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-
-          <p style={{ marginTop: '20px', paddingTop: '12px', borderTop: `1px solid ${COLORS.border}`, fontSize: '14px', color: COLORS.muted }}>
-            Written by AI from the app's figures and web news. It explains; it doesn't know the future, and it isn't
-            financial advice. Figures come from the app, which you can check on each instrument's page.
-          </p>
-        </article>
-      )}
+            <footer style={{ marginTop: '16px' }}>
+              {latest.sources.length > 0 && (
+                <section className="print-plain" style={{ ...SURFACE, padding: '14px 20px', marginBottom: '12px' }}>
+                  <h2 style={{ fontSize: '1rem', marginTop: 0, marginBottom: '6px', color: COLORS.muted }}>Sources from the web</h2>
+                  <ul style={{ paddingLeft: '22px', fontSize: '14px', columns: '2 320px', columnGap: '28px' }}>
+                    {latest.sources.map((s) => (
+                      <li key={s.url} style={{ marginBottom: '4px', overflowWrap: 'anywhere', breakInside: 'avoid' }}>
+                        <a href={s.url} target="_blank" rel="noopener noreferrer" style={{ color: COLORS.link }}>{s.title}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+              <p style={{ fontSize: '14px', color: COLORS.muted }}>
+                Written by AI from the app's figures and web news. It explains; it doesn't know the future, and it isn't
+                financial advice. Figures come from the app, which you can check on each instrument's page.
+              </p>
+            </footer>
+          </article>
+        )
+      })()}
     </div>
   )
 }

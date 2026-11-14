@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { boldParts, parseBrief } from './briefText'
+import { boldParts, briefSections, parseBrief } from './briefText'
 
 describe('parseBrief', () => {
   it('splits headings, paragraphs and bullet lists', () => {
@@ -28,6 +28,16 @@ describe('boldParts', () => {
       { text: 'Stocks are ', bold: false },
       { text: 'up 8%', bold: true },
       { text: ' this month', bold: false },
+    ])
+  })
+})
+
+describe('briefSections', () => {
+  it('groups blocks under their headings', () => {
+    expect(briefSections(parseBrief('Intro.\n## Gold\nFell.\n- Watch oil\n## Cash\nSteady.'))).toEqual([
+      { title: '', blocks: [{ kind: 'paragraph', text: 'Intro.' }] },
+      { title: 'Gold', blocks: [{ kind: 'paragraph', text: 'Fell.' }, { kind: 'list', items: ['Watch oil'] }] },
+      { title: 'Cash', blocks: [{ kind: 'paragraph', text: 'Steady.' }] },
     ])
   })
 })

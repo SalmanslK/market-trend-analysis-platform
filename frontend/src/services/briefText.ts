@@ -42,3 +42,20 @@ export function parseBrief(text: string): BriefBlock[] {
 export function boldParts(text: string): { text: string; bold: boolean }[] {
   return text.split('**').map((part, i) => ({ text: part, bold: i % 2 === 1 })).filter((p) => p.text.length > 0)
 }
+
+export interface BriefSection {
+  /** Empty for text before the first heading */
+  title: string
+  blocks: BriefBlock[]
+}
+
+/** Groups the blocks under their headings, so each section can be laid out on its own. */
+export function briefSections(blocks: BriefBlock[]): BriefSection[] {
+  const sections: BriefSection[] = []
+  for (const block of blocks) {
+    if (block.kind === 'heading') sections.push({ title: block.text, blocks: [] })
+    else if (sections.length === 0) sections.push({ title: '', blocks: [block] })
+    else sections[sections.length - 1].blocks.push(block)
+  }
+  return sections
+}

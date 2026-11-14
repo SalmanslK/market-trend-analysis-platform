@@ -118,9 +118,10 @@ export default function Brief() {
                 <Blocks blocks={lead.blocks} />
               </section>
             )}
-            <div className="brief-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(440px, 100%), 1fr))', gap: '14px', alignItems: 'start' }}>
-              {rest.map((section) => (
-                <section key={section.title} className="print-plain" style={{ ...SURFACE, padding: '16px 20px' }}>
+            {/* Two columns at most, cards in a row the same height; an odd last card takes the full row */}
+            <div className="brief-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(440px, 100%), 1fr))', gap: '14px', alignItems: 'stretch' }}>
+              {rest.map((section, i) => (
+                <section key={section.title} className="print-plain" style={{ ...SURFACE, padding: '16px 20px', gridColumn: i === rest.length - 1 && rest.length % 2 === 1 ? '1 / -1' : undefined }}>
                   <h2 style={sectionTitle}><Rich text={section.title} /></h2>
                   <Blocks blocks={section.blocks} />
                 </section>

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import InfoTip from '../help/InfoTip'
 import { InstrumentAnalyticsDto } from '../../services/types/marketData'
 import { GOLD_SYMBOLS, signedPct, trendInWords } from '../../services/plainLanguage'
-import { COLORS, signalStyles, SURFACE } from '../../services/format'
+import { COLORS, formatDate, signalStyles, SURFACE } from '../../services/format'
 
 interface AtAGlanceProps {
   analytics: InstrumentAnalyticsDto[]
@@ -40,7 +40,8 @@ const versusCash = (a: InstrumentAnalyticsDto) => {
   const test = a.strongerThanCash
   if (!test) return ''
   const untested = GOLD_SYMBOLS.includes(a.symbol) ? ' (a check tested on stocks, not gold)' : ''
-  return ` Over 12 months it is ${test.aheadOfCash ? 'ahead of' : 'behind'} cash (${pct(test.return12M)} against ${pct(test.cashReturn12M)})${untested}.`
+  // Dated, because this monthly check can differ a lot from the table's 12-month change, which runs to today
+  return ` At the monthly check on ${formatDate(test.checkedOn)}, its last 12 months were ${test.aheadOfCash ? 'ahead of' : 'behind'} cash (${pct(test.return12M)} against ${pct(test.cashReturn12M)})${untested}.`
 }
 
 interface Card {

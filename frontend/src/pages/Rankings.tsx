@@ -4,6 +4,7 @@ import axios from 'axios'
 import { ANSWER_SURFACE, COLORS, SURFACE } from '../services/format'
 import { signedPct } from '../services/plainLanguage'
 import Kmi30Badge from '../components/signals/Kmi30Badge'
+import InfoTip from '../components/help/InfoTip'
 
 interface RankedStock {
   symbol: string
@@ -155,7 +156,7 @@ export default function RankingsPage() {
       )}
 
       <section style={{ ...SURFACE, padding: '16px 20px', marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '1.1rem', marginBottom: '6px' }}>How companies were ranked</h2>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: '6px' }}>How companies were ranked<InfoTip term="rankingScore" /></h2>
         <ul style={{ paddingLeft: '20px', fontSize: '14px', lineHeight: 1.6 }}>
           {data.criteria.map((c) => <li key={c}>{c}</li>)}
           <li>The score is 0 to 100: where a company stands among all ranked companies, averaged over the three measures.</li>
@@ -168,7 +169,7 @@ export default function RankingsPage() {
 
       {data.kmi30 && data.kmi30.length > 0 && (
         <section style={{ ...SURFACE, padding: '16px 20px', marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '1.1rem', marginBottom: '6px' }}>The KMI-30 companies</h2>
+          <h2 style={{ fontSize: '1.1rem', marginBottom: '6px' }}>The KMI-30 companies<InfoTip term="kmi30" /></h2>
           <p style={{ fontSize: '14px', color: COLORS.muted, marginBottom: '10px', lineHeight: 1.5 }}>
             The 30 largest, most traded Shariah-compliant companies, and where each ranks among the {data.eligible} ranked
             companies on the same three measures. Being big doesn't mean a strong record: many of them trailed the KSE-100.

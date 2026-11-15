@@ -6,11 +6,14 @@ import { useFeatures } from '../services/features'
 import { SignalAction } from '../services/types/marketData'
 
 const sections: { title: string; terms: GlossaryKey[] }[] = [
-  { title: 'Prices and performance', terms: ['price', 'change', 'range52w'] },
+  { title: 'Prices and performance', terms: ['price', 'change', 'range52w', 'payouts', 'cashFund'] },
   { title: 'Risk', terms: ['volatility', 'drawdown'] },
+  { title: 'Trading and money flows', terms: ['volume', 'fundFlows', 'kmi30', 'rankingScore'] },
   { title: 'Chart lines and indicators', terms: ['sma20', 'bollinger', 'trend', 'rsi', 'macd'] },
-  { title: 'Trend and track record', terms: ['combinedSignal', 'signal', 'newsSignal', 'score', 'longTermTrend', 'backtest', 'goldenCross', 'monthlyTrend', 'annualReturn', 'tradingCost'] },
-  { title: 'News', terms: ['newsMood', 'confidence', 'background', 'bigMoves'] },
+  { title: 'Signals and trend', terms: ['strongerThanCash', 'longTermTrend', 'combinedSignal', 'signal', 'steadySignal', 'newsSignal', 'score'] },
+  { title: 'Track record and testing', terms: ['backtest', 'liveRecord', 'goldenCross', 'monthlyTrend', 'annualReturn', 'tradingCost'] },
+  { title: 'Mixing stocks, gold and cash', terms: ['portfolio', 'rebalance', 'trendFilter', 'sharpe'] },
+  { title: 'News', terms: ['newsMood', 'newsEvents', 'confidence', 'background', 'bigMoves'] },
 ]
 
 const cardStyle = { padding: '20px', ...SURFACE, marginBottom: '12px', lineHeight: 1.55 }
@@ -31,7 +34,7 @@ const QUICK_ANSWERS = (news: boolean): [string, string][] => [
 ]
 
 // Guide entries about news and sentiment, shown only when news is switched on
-const NEWS_TERMS: GlossaryKey[] = ['combinedSignal', 'newsSignal', 'newsMood', 'confidence', 'background', 'bigMoves']
+const NEWS_TERMS: GlossaryKey[] = ['combinedSignal', 'newsSignal', 'newsMood', 'newsEvents', 'confidence', 'background', 'bigMoves']
 
 export default function Guide() {
   const { news } = useFeatures()

@@ -248,6 +248,7 @@ export default function Comparison() {
           </div>
 
           <h2 style={{ marginTop: '20px' }}>Performance</h2>
+          <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px', backgroundColor: 'white' }}>
             <thead>
               <tr style={{ backgroundColor: '#f0f0f0' }}>
@@ -281,6 +282,7 @@ export default function Comparison() {
               ))}
             </tbody>
           </table>
+          </div>
         </>
       )}
     </div>

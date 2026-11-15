@@ -166,6 +166,21 @@ export const glossary = {
     what: 'The broker fees, taxes and price gap paid each time you buy or sell, as a % of the amount.',
     howToRead: 'Check your own broker or fund. Mutual funds can charge much more than shares through entry or exit fees. The more often a strategy trades, the more this matters.',
   },
+  kmi30: {
+    title: 'KMI-30',
+    what: 'An index of the 30 largest, most traded Shariah-compliant companies on the Pakistan Stock Exchange. The KMI-30 badge marks a company that is in it; the list follows the index when it is rebalanced.',
+    howToRead: 'Being in the KMI-30 means a company is big and easy to buy and sell, not that it has done well: most members grew more slowly than the KSE-100 over their history.',
+  },
+  rankingScore: {
+    title: 'Ranking score',
+    what: "A 0 to 100 score for a company's whole record: how much faster it grew than the KSE-100 over the same years, in how many years it beat the index, and how much it grew for the size of its worst fall, each counting a third.",
+    howToRead: "It ranks the past, not the future. Companies that failed or left the exchange are not in today's list, which flatters every score. A list to study, not to buy.",
+  },
+  newsEvents: {
+    title: 'How news is counted',
+    what: 'One piece of news is often carried by many outlets under different headlines. Headlines about the same instrument, at most 2 days apart and sharing most of their key words, count as one event.',
+    howToRead: 'So a story copied 20 times weighs the same as one reported once, and "how sure" grows with separate pieces of news, not with copies.',
+  },
   newsMood: {
     title: 'News mood (sentiment)',
     what: 'An automatic reading of whether recent headlines about this instrument sound positive or negative for its price, from -100 (very negative) to +100 (very positive).',

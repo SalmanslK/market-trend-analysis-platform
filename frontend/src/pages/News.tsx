@@ -175,7 +175,7 @@ export default function News() {
       </>)}
 
       <h2 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>
-        News mood by instrument (last 7 days)<InfoTip term="newsMood" />
+        News mood by instrument (last 7 days)<InfoTip term="newsMood" /><InfoTip term="newsEvents" />
       </h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '8px', marginBottom: '20px' }}>
         {/* Funds that never have news of their own (cash and income funds) only add empty cards */}

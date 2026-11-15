@@ -22,6 +22,45 @@ namespace MarketAnalytics.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("MarketAnalytics.Domain.Entities.DailyBrief", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("CostUsd")
+                        .HasPrecision(10, 4)
+                        .HasColumnType("numeric(10,4)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FactsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("SourcesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.ToTable("DailyBriefs", (string)null);
+                });
+
             modelBuilder.Entity("MarketAnalytics.Domain.Entities.DataUpdateLog", b =>
                 {
                     b.Property<int>("Id")
@@ -56,6 +95,35 @@ namespace MarketAnalytics.Infrastructure.Migrations
                     b.HasIndex("InstrumentId");
 
                     b.ToTable("DataUpdateLogs", (string)null);
+                });
+
+            modelBuilder.Entity("MarketAnalytics.Domain.Entities.FundAssets", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("FetchedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("InstrumentId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("Month")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("Rupees")
+                        .HasPrecision(20, 2)
+                        .HasColumnType("numeric(20,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstrumentId", "Month")
+                        .IsUnique();
+
+                    b.ToTable("FundAssets", (string)null);
                 });
 
             modelBuilder.Entity("MarketAnalytics.Domain.Entities.FundPayout", b =>
@@ -296,6 +364,126 @@ namespace MarketAnalytics.Infrastructure.Migrations
                             Symbol = "MMP-I",
                             Type = 1,
                             UpdatedAt = new DateTime(2026, 11, 9, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 14,
+                            CreatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/stocks/price-history/GHNI?days=365",
+                            IsActive = true,
+                            Name = "Ghandhara Industries Limited",
+                            Symbol = "GHNI",
+                            Type = 4,
+                            UpdatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 15,
+                            CreatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/stocks/price-history/SYS?days=365",
+                            IsActive = true,
+                            Name = "Systems Limited",
+                            Symbol = "SYS",
+                            Type = 4,
+                            UpdatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 16,
+                            CreatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/stocks/price-history/SAZEW?days=365",
+                            IsActive = true,
+                            Name = "Sazgar Engineering Works Limited",
+                            Symbol = "SAZEW",
+                            Type = 4,
+                            UpdatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 17,
+                            CreatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/stocks/price-history/SRVI?days=365",
+                            IsActive = true,
+                            Name = "Service Industries Limited",
+                            Symbol = "SRVI",
+                            Type = 4,
+                            UpdatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 18,
+                            CreatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/stocks/price-history/PIOC?days=365",
+                            IsActive = true,
+                            Name = "Pioneer Cement Limited",
+                            Symbol = "PIOC",
+                            Type = 4,
+                            UpdatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 19,
+                            CreatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/stocks/price-history/JVDC?days=365",
+                            IsActive = true,
+                            Name = "Javedan Corporation Limited",
+                            Symbol = "JVDC",
+                            Type = 4,
+                            UpdatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 20,
+                            CreatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/stocks/price-history/MARI?days=365",
+                            IsActive = true,
+                            Name = "Mari Energies Limited",
+                            Symbol = "MARI",
+                            Type = 4,
+                            UpdatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 21,
+                            CreatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/stocks/price-history/FATIMA?days=365",
+                            IsActive = true,
+                            Name = "Fatima Fertilizer Company Limited",
+                            Symbol = "FATIMA",
+                            Type = 4,
+                            UpdatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 22,
+                            CreatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/stocks/price-history/MEBL?days=365",
+                            IsActive = true,
+                            Name = "Meezan Bank Limited",
+                            Symbol = "MEBL",
+                            Type = 4,
+                            UpdatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 23,
+                            CreatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DataSourceType = 0,
+                            DataSourceUrl = "https://beta-restapi.sarmaaya.pk/api/stocks/price-history/DCR?days=365",
+                            IsActive = true,
+                            Name = "Dolmen City REIT",
+                            Symbol = "DCR",
+                            Type = 4,
+                            UpdatedAt = new DateTime(2026, 11, 15, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 
@@ -455,10 +643,49 @@ namespace MarketAnalytics.Infrastructure.Migrations
                     b.ToTable("SignalSnapshots", (string)null);
                 });
 
+            modelBuilder.Entity("MarketAnalytics.Domain.Entities.TradingVolume", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("FetchedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("InstrumentId")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("Shares")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstrumentId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("TradingVolumes", (string)null);
+                });
+
             modelBuilder.Entity("MarketAnalytics.Domain.Entities.DataUpdateLog", b =>
                 {
                     b.HasOne("MarketAnalytics.Domain.Entities.Instrument", "Instrument")
                         .WithMany("UpdateLogs")
+                        .HasForeignKey("InstrumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Instrument");
+                });
+
+            modelBuilder.Entity("MarketAnalytics.Domain.Entities.FundAssets", b =>
+                {
+                    b.HasOne("MarketAnalytics.Domain.Entities.Instrument", "Instrument")
+                        .WithMany()
                         .HasForeignKey("InstrumentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -489,6 +716,17 @@ namespace MarketAnalytics.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("MarketAnalytics.Domain.Entities.SignalSnapshot", b =>
+                {
+                    b.HasOne("MarketAnalytics.Domain.Entities.Instrument", "Instrument")
+                        .WithMany()
+                        .HasForeignKey("InstrumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Instrument");
+                });
+
+            modelBuilder.Entity("MarketAnalytics.Domain.Entities.TradingVolume", b =>
                 {
                     b.HasOne("MarketAnalytics.Domain.Entities.Instrument", "Instrument")
                         .WithMany()

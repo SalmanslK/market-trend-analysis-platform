@@ -1,8 +1,12 @@
 # Market Trend Analysis Platform
 
 Tracks Pakistani market instruments for ordinary investors: KSE-100 and KMI-30, Meezan funds (MIF, KMIF, MBF, MGF;
-cash/income funds MCF, MRAF, MIIF, MMP-I), gold (GOLDPK, GOLDINT) and USD/PKR. It shows prices, rule-based signals,
-news mood and honest backtests in plain language. No AI at runtime: everything is rules over closing prices and headlines.
+cash/income funds MCF, MRAF, MIIF, MMP-I), gold (GOLDPK, GOLDINT), USD/PKR, and ten Shariah-compliant stocks chosen by
+the stock rankings (`TrackedStocks`; share prices are stored adjusted for splits by `StockSplitAdjuster`). It shows prices, rule-based signals,
+news mood and honest backtests in plain language. Everything is rules over closing prices, volumes and headlines; the
+one exception is the on-demand **Market brief**, which Claude Code on the user's Claude plan writes from the app's own
+figures (`ClaudeCodeBriefWriter`; no API key, no extra charge). Its prompt forbids invented numbers and forecasts
+beyond the historical base rates the app computes (`HistoricalOutlook`).
 
 `SETUP_CHECKLIST.md` is the detailed reference for setup, every feature and all research results. Read the relevant
 section before changing a feature, and update it when behaviour changes.

@@ -247,6 +247,29 @@ least 25% smaller than holding's and yearly return no more than 2 points lower):
   similar returns; on KSE-100 and KMI30 since 2021 (no big crash) it matched holding. Caveats: about 4 big falls in
   21 years decide the result, and cash in Pakistan paid unusually well (up to 21%), which helps the rule.
 
+**Trading volume and fund flows** (`scripts/research/volume-research.cs`, committed before running on Nov 14 2026;
+KMI-30 price and volume decide, MIF with payouts is held, cash and costs as above; development Mar 2014 to 2019,
+holdout 2020 on; fund flows: development 2010-2017, holdout 2018 on). Volume is "confirming" when the 20-day average is
+at least the 100-day average.
+- Volume confirmation for entries: failed for the golden cross and stronger than cash (no help, slightly worse).
+  **Passed both periods for the technical signal** against its own price-only version: development +8.9% a year and
+  worst fall -15% against +5.1% and -28%; holdout +9.7% and -24% against +6.3% and -49%. It halves the moves too.
+  But it still trails simply holding MIF (holdout +19.8%) and stronger than cash (+19.4%, worst fall -23%), and the
+  same test with KSE-100 deciding (information only) failed its holdout. Volume makes a weak rule less bad; it does
+  not make one worth following.
+- On-balance volume: failed badly (-7.7% a year in development, 160 moves). Selling climaxes (2% falls on twice the
+  usual volume): only one per period, too rare to use. Contrarian fund flows (buy after money leaves MIF): failed
+  (development -4.3 points, the opposite of the idea; holdout +1.8).
+- Volume history (Sarmaaya `indices/volume-history`) starts Nov 2013; fund sizes (`mutual-funds/aum-history`) are
+  monthly and were in thousands of rupees before 2025.
+
+**Longer price history** (`scripts/research/backfill-history.cs`, Nov 14 2026): most instruments had been added with
+prices from 2020 or later although the source goes back much further. Added after checking the source matches the
+stored prices (99.7-100% of overlapping days): KSE-100 from 2002, KMI-30 from 2009, MBF from 2005, KMIF from 2012,
+MGF from 2015, USD/PKR from 2010, plus missing days of MIF (2008-09) and MGF (2024). Gold (Pakistan) before 2019 is
+monthly at the source and was left out. Earlier results that used KSE-100, KMI-30 or MGF "since 2020/2021" can now be
+rechecked on the longer history (as new tests, since those periods were already seen).
+
 **Biggest moves**: for each of an instrument's largest daily moves in the last 30 days, the API returns the news
 published from the day before to the next trading day (so weekend reports of a Friday move are included).
 
@@ -396,6 +419,65 @@ trend and stronger-than-cash answer for its latest price date. A reading is upda
 never written for an older date, so nothing is recorded with hindsight. Track Record's "Live record" scores the saved
 readings by the move over the next 20 trading days from the next close, grouped by what the app said. Started
 9 Nov 2026; results appear after about a month and mean something after about a year.
+
+## Shariah stocks and the Rankings page
+
+**Ranking** (`scripts/research/stock-rankings.cs`, criteria committed before running, Nov 14 2026): the 291
+Shariah-compliant companies in the KMI All-Share index (Sarmaaya `indices/sunbrust/KMIALLSHR`), prices from Sarmaaya
+`stocks/price-history` (back to 2002). Eligible: 5+ years of prices and a median of Rs 10 million+ traded a day over the
+last year (83 companies). Score: equal-weight percentile ranks of (a) yearly growth minus the KSE-100's over the same
+dates, (b) share of calendar years ahead of the KSE-100, (c) yearly growth divided by the worst fall. Top 5 per
+industry; best industry = highest median score (3+ ranked companies); final 10 = highest scores, at most 2 per
+industry. Prices only (dividends are listed only from about 2022), like the KSE-100 itself.
+- Two corrections after running, labelled in the script header: the first split rule erased real crashes (penny
+  shares, the 2008 freeze); the second caught the source's multi-day price glitches. The final rule is
+  `StockSplitAdjuster` (below). Each final-10 company's adjustments were checked by hand against known splits and
+  bonus issues.
+- Result: **GHNI, SYS, SAZEW, SRVI, PIOC, JVDC, MARI, FATIMA, MEBL, DCR**; best industry Automobile Assembler. PIOC
+  and GHNI start in 2002 as distressed penny shares, which drives much of their record. Survivorship: today's
+  Shariah list leaves out failed companies. The page says these are past records, not picks.
+- Output `frontend/public/data/stock-rankings.json`, shown on the **Rankings** page. Rerun the script to refresh it.
+
+**Tracked stocks** (`TrackedStocks`, Application): the one list the seed (`InstrumentType.Stock`, ids 14-23,
+migration `AddShariahStocks`), news searches (Google News by company name) and news topics (company-name patterns)
+read. Changing the selection = edit the list + a migration.
+- **Splits and bonus issues** (`StockSplitAdjuster`): Sarmaaya gives share prices as traded, so a 5-for-1 split looks
+  like -80%. A move below -15% or above +18% (beyond PSX's daily limits) counts as one when the trading days are at
+  most 7 days apart, the price was at least Rs 20, and the price is steady (within 10% of the middle) for the 5 days
+  before and after; one-day spikes are removed first. For stocks the updater always fetches the full history and
+  stores it adjusted, so a new split rescales everything once. Funds, indices, gold and the dollar are untouched.
+- Volume comes from the same price history. The overview shows them as a "Shariah stocks" group.
+- Company data pages ("SYS Technical Analysis - Systems Ltd") are excluded from news collection.
+
+## Market brief (the only AI)
+
+The Brief page writes one page in plain words, on request: Pakistan stocks, gold, the rupee, cash and interest
+rates, the world economy, what history says about the coming months and the next year, and what to watch.
+- **Facts come from the app** (`DailyBriefService.BuildFactsAsync`): every instrument's analytics (changes, trend,
+  signals, stronger than cash, volume, fund flows), the last 7 days' headlines, the research findings, and
+  `HistoricalOutlook`: for KSE-100, MIF, MGF and USD/PKR, what followed earlier days in the same trend state (Up,
+  Up but weakening, Down, Down but recovering) over 1 month, 6 months and 1 year: share higher, middle, 10th and
+  90th percentile, number of separate spells, against all days. The facts are saved with each brief.
+- **Writing** (`ClaudeCodeBriefWriter`): runs `claude -p` (Claude Code, installed and signed in on this computer) in
+  an empty temp folder with only WebSearch/WebFetch, no project settings, MCP servers or saved session. It uses the
+  user's Claude plan (Pro), so no API key and no extra charge; it counts towards the plan's usage limits. About 1-3
+  minutes. `Brief:ClaudePath` in the Api settings can point at claude.exe if it isn't on the PATH.
+- The system prompt: only figures from the facts or cited pages; the future only as historical base rates and
+  scenarios; no buy/sell instructions; plain words; fixed sections; sources listed at the end (shown as links).
+- API: `GET /api/brief/latest` (latest brief, and whether Claude Code is available), `POST /api/brief` (write one).
+  Briefs are kept in the `DailyBriefs` table.
+
+**The brief without the PC: skill and morning routine.**
+- Skill `.claude/skills/pakistan-market-brief/`: `scripts/facts.py` gathers the same facts from Sarmaaya and Google
+  News without the database (standard-library Python; KMI-30 stands in for MIF in the history-based outlook, since
+  MIF's 2005-2013 payouts are estimated in the app's database only); `references/writing-rules.md` is the app's
+  writing instructions, kept identical by `CloudBriefTests`. Test cases with graders in `evals/`. Usable in Claude
+  Code here and, packaged, in the Claude app.
+- Cloud routine "Morning market brief (Pakistan)" (`trig_01LvU3hwaC9wUAK8veBv5iWq`, claude.ai/code/routines): weekdays
+  8:30 am Pakistan time (03:30 UTC), after the PSX and US closes and an hour before the PSX opens. It runs the skill,
+  saves the brief as a Claude document and sends a phone notification; no email. Its environment ("Default") must
+  allow beta-restapi.sarmaaya.pk and news.google.com (Network access, Limited). It checks out `feature/volumes`
+  until that branch is merged.
 
 ## Alerts (what changed)
 

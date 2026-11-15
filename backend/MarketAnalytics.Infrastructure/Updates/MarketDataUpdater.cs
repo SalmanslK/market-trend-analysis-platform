@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MarketAnalytics.Application.Services;
 using MarketAnalytics.Domain.Entities;
 using MarketAnalytics.Domain.Enums;
 using MarketAnalytics.Infrastructure.Data;
@@ -21,17 +22,20 @@ public class MarketDataUpdater
     private readonly ApplicationDbContext _dbContext;
     private readonly InstrumentDataFetcherFactory _fetcherFactory;
     private readonly FundPayoutFetcher _payoutFetcher;
+    private readonly MarketActivityFetcher _activityFetcher;
     private readonly ILogger<MarketDataUpdater> _logger;
 
     public MarketDataUpdater(
         ApplicationDbContext dbContext,
         InstrumentDataFetcherFactory fetcherFactory,
         FundPayoutFetcher payoutFetcher,
+        MarketActivityFetcher activityFetcher,
         ILogger<MarketDataUpdater> logger)
     {
         _dbContext = dbContext;
         _fetcherFactory = fetcherFactory;
         _payoutFetcher = payoutFetcher;
+        _activityFetcher = activityFetcher;
         _logger = logger;
     }
 
@@ -86,6 +90,17 @@ public class MarketDataUpdater
                 _dbContext.ChangeTracker.Clear();
             }
 
+            try
+            {
+                await UpdateActivityAsync(instrument, cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Prices stay usable without volumes or fund sizes; they are retried on the next update
+                _logger.LogError(ex, "Error updating volumes or fund size for {Symbol}", instrument.Symbol);
+                _dbContext.ChangeTracker.Clear();
+            }
+
             results.Add(new InstrumentUpdateResult(instrument.Symbol, newPrices, latest, newPayouts, error));
         }
 
@@ -114,9 +129,14 @@ public class MarketDataUpdater
         var fetcher = _fetcherFactory.GetFetcher(instrument.DataSourceType);
 
         // Fetch new data since latest date (matches Python: new_df = new_df[new_df["datetime"] > max_date]).
-        // A new instrument asks for its whole history instead of the usual last year
-        var url = latestDate == null ? FullHistoryUrl(instrument.DataSourceUrl) : instrument.DataSourceUrl;
-        var newDataList = (await fetcher.FetchHistoricalDataAsync(url, instrument.Symbol, latestDate)).ToList();
+        // A new instrument asks for its whole history instead of the usual last year.
+        // Company shares always fetch everything: a new split or bonus issue rescales all earlier prices, so the whole
+        // adjusted history is stored again (the source gives prices as traded)
+        var isStock = instrument.Type == InstrumentType.Stock;
+        var url = latestDate == null || isStock ? FullHistoryUrl(instrument.DataSourceUrl) : instrument.DataSourceUrl;
+        var newDataList = (await fetcher.FetchHistoricalDataAsync(url, instrument.Symbol, isStock ? null : latestDate)).ToList();
+        if (isStock)
+            newDataList = StockSplitAdjuster.Adjust(newDataList).Prices;
 
         if (newDataList.Count == 0)
         {
@@ -208,6 +228,52 @@ public class MarketDataUpdater
         await _dbContext.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Stored {Count} new payouts for {Symbol}", added.Count, instrument.Symbol);
         return added.Count;
+    }
+
+    /// <summary>
+    /// Stores an index's daily volumes (all of them the first time, then the last month) or a fund's monthly sizes
+    /// (a short list, fetched whole). Values the source revises are updated.
+    /// </summary>
+    private async Task UpdateActivityAsync(Instrument instrument, CancellationToken cancellationToken)
+    {
+        var hasVolumes = await _dbContext.TradingVolumes.AnyAsync(v => v.InstrumentId == instrument.Id, cancellationToken);
+        var volumeUrl = MarketActivityFetcher.VolumeUrlFor(instrument.DataSourceUrl, hasVolumes ? 30 : 10000);
+        if (volumeUrl != null)
+        {
+            var fetched = await _activityFetcher.FetchVolumesAsync(volumeUrl, cancellationToken);
+            if (fetched.Count == 0)
+                return;
+            var from = fetched[0].Date;
+            var existing = await _dbContext.TradingVolumes
+                .Where(v => v.InstrumentId == instrument.Id && v.Date >= from)
+                .ToDictionaryAsync(v => v.Date, cancellationToken);
+            foreach (var (date, shares) in fetched.GroupBy(v => v.Date).Select(g => g.Last()))
+            {
+                if (existing.TryGetValue(date, out var row))
+                    row.Shares = shares;
+                else
+                    _dbContext.TradingVolumes.Add(new TradingVolume { InstrumentId = instrument.Id, Date = date, Shares = shares });
+            }
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
+        var sizeUrl = MarketActivityFetcher.FundSizeUrlFor(instrument.DataSourceUrl);
+        if (sizeUrl != null)
+        {
+            var fetched = await _activityFetcher.FetchFundSizesAsync(sizeUrl, cancellationToken);
+            var existing = await _dbContext.FundAssets
+                .Where(a => a.InstrumentId == instrument.Id)
+                .ToDictionaryAsync(a => a.Month, cancellationToken);
+            foreach (var (month, rupees) in fetched.GroupBy(a => a.Month).Select(g => g.Last()))
+            {
+                if (existing.TryGetValue(month, out var row))
+                    row.Rupees = rupees;
+                else
+                    _dbContext.FundAssets.Add(new FundAssets { InstrumentId = instrument.Id, Month = month, Rupees = rupees });
+            }
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
     }
 
     private async Task LogUpdateResultAsync(

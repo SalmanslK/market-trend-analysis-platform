@@ -233,7 +233,7 @@ function StrongerThanCashResult() {
       <p style={{ ...noteStyle, marginTop: '8px' }}>
         Figures are returns a year with payouts included, and the worst fall from a peak. It switched about once a year, at 0.5% a trade, with cash earning the State Bank rate less 1%. Limits: about four big falls in
         21 years decide the result, Pakistan's cash rates were unusually high (up to 21%), and it was tested on stocks, not gold.
-        Each instrument's page shows where it stands now. Volatility-based and news-based rules were tested the same way and failed.
+        Each instrument's page shows where it stands now. Rules based on volatility, news and trading volume were tested the same way and failed.
       </p>
     </section>
   )

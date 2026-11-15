@@ -131,6 +131,50 @@ public class MarketAnalyticsServiceTests
     }
 
     [Fact]
+    public void StockSplits_RescaleEarlierPricesAcrossASplit()
+    {
+        // A 5-for-1 split: 1000 -> 200 overnight, then trading goes on from 200
+        var prices = Daily(new[] { 990m, 1000m, 200m, 204m });
+
+        var (adjusted, count) = StockSplitAdjuster.Adjust(prices);
+
+        Assert.Equal(new[] { 198m, 200m, 200m, 204m }, adjusted.Select(p => p.Price));
+        Assert.Equal(prices.Select(p => p.DateTime), adjusted.Select(p => p.DateTime));
+        Assert.Equal(1, count);
+    }
+
+    [Fact]
+    public void StockSplits_IgnoreAFewDaysOfBadPrices()
+    {
+        // Millat Tractors, November 2003 in the source: 66-67 for days, then 170 and 182.8, then back to about 80
+        var prices = Daily(new[] { 69m, 67.5m, 66.2m, 66.7m, 67m, 170m, 182.8m, 80.8m, 78m, 80m, 79.5m, 80.2m });
+
+        var (adjusted, count) = StockSplitAdjuster.Adjust(prices);
+
+        Assert.Equal(0, count);
+        Assert.Equal(prices.Select(p => p.Price), adjusted.Select(p => p.Price));
+    }
+
+    [Fact]
+    public void StockSplits_LeaveRealFallsAfterAGapAndPennyMovesAlone()
+    {
+        var day = new DateTime(2008, 8, 1, 0, 0, 0, DateTimeKind.Utc);
+        var prices = new List<PriceDataPoint>
+        {
+            new(day, 100m),
+            new(day.AddDays(120), 40m),   // the market reopened months later, 60% lower: a real fall
+            new(day.AddDays(121), 40m),
+            new(day.AddDays(122), 4m),    // a 10-for-1 split the next day
+            new(day.AddDays(123), 2m),    // a Rs 4 share halving is a penny-stock move, not a split
+        };
+
+        var (adjusted, count) = StockSplitAdjuster.Adjust(prices);
+
+        Assert.Equal(1, count); // only 40 -> 4
+        Assert.Equal(new[] { 10m, 4m, 4m, 4m, 2m }, adjusted.Select(p => p.Price));
+    }
+
+    [Fact]
     public void Signal_SkipsTrendRules_WithoutEnoughHistory()
     {
         // 60 points: enough for the 50-period average but not the 200-period one

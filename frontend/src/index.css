@@ -99,3 +99,16 @@ button:not(:disabled) {
   box-shadow: 0 4px 12px rgba(16, 42, 67, 0.12) !important;
   text-decoration: none;
 }
+
+/* Printing (the Brief's "Export PDF" uses the browser's Save as PDF): only the page content, on white */
+@media print {
+  header, .skip-link, .no-print { display: none !important; }
+  body { background: white !important; }
+  main { max-width: none !important; }
+  .print-plain { border: none !important; box-shadow: none !important; padding: 0 !important; }
+  .print-plain { margin-bottom: 14px !important; }
+  .brief-grid { display: block !important; }
+  a { color: inherit !important; }
+  h2 { break-after: avoid; }
+  li, p { break-inside: avoid; }
+}

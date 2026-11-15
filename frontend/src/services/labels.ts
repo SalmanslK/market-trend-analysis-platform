@@ -24,4 +24,5 @@ export const instrumentTypeLabels: Record<InstrumentType, string> = {
   [InstrumentType.MutualFund]: 'Mutual Fund',
   [InstrumentType.Forex]: 'Forex',
   [InstrumentType.Commodity]: 'Commodity',
+  [InstrumentType.Stock]: 'Shariah stock',
 }

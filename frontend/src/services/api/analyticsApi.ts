@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { InstrumentAnalyticsDto } from '../types/marketData'
+import { ActivitySeries, InstrumentAnalyticsDto } from '../types/marketData'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -18,6 +18,11 @@ export const analyticsApi = {
 
   getBySymbol: async (symbol: string): Promise<InstrumentAnalyticsDto> => {
     const response = await api.get<InstrumentAnalyticsDto>(`/analytics/${symbol}`)
+    return response.data
+  },
+
+  getActivity: async (symbol: string): Promise<ActivitySeries> => {
+    const response = await api.get<ActivitySeries>(`/analytics/${symbol}/activity`)
     return response.data
   },
 }

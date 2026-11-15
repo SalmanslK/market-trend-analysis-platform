@@ -22,6 +22,8 @@ export enum InstrumentType {
   MutualFund = 1,
   Forex = 2,
   Commodity = 3,
+  /** A company's shares (prices adjusted for splits and bonus issues) */
+  Stock = 4,
 }
 
 export interface PriceDataDto extends PriceIndicatorFields {
@@ -156,6 +158,36 @@ export interface InstrumentAnalyticsDto {
   strongerThanCash?: CashTest | null;
   /** Why the stronger-than-cash check couldn't be made for an instrument it applies to */
   strongerThanCashUnavailable?: string | null;
+  /** Recent trading volume; KSE-100 and KMI-30 only */
+  volume?: VolumeSummary | null;
+  /** Fund size and money in or out; funds only */
+  fundSize?: FundSizeSummary | null;
+}
+
+/** How busy trading has been: shares a day over the last 20 trading days against the last 100 */
+export interface VolumeSummary {
+  latestDate: string;
+  latestShares: number;
+  average20: number;
+  average100: number;
+  /** The last month's average as a percentage of the usual level */
+  recentVersusUsualPercent: number;
+  busier: boolean;
+}
+
+/** A fund's size and the money put in (+) or taken out (-), beyond what price changes explain, in percent */
+export interface FundSizeSummary {
+  month: string;
+  rupees: number;
+  flow1MPercent?: number | null;
+  flow12MPercent?: number | null;
+}
+
+export interface ActivitySeries {
+  symbol: string;
+  /** Daily shares traded, or monthly fund size in rupees; empty when the instrument has neither */
+  kind: 'Volume' | 'FundSize' | '';
+  points: { date: string; value: number }[];
 }
 
 /** Whether an instrument beat cash over the 12 months before this month's check (the first trading day) */

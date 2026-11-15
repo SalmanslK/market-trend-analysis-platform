@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MarketAnalytics.Application.Interfaces.IRepositories;
 using MarketAnalytics.Application.Interfaces.Services;
 using MarketAnalytics.Application.Services;
+using MarketAnalytics.Infrastructure.Brief;
 using MarketAnalytics.Infrastructure.Data;
 using MarketAnalytics.Infrastructure.DataFetchers;
 using MarketAnalytics.Infrastructure.News;
@@ -12,6 +13,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddControllers();
+// Computed answers kept until new prices or news arrive (see DataCache)
+builder.Services.AddMemoryCache(o => o.SizeLimit = 500);
+builder.Services.AddScoped<MarketAnalytics.Api.DataCache>();
+builder.Services.AddHostedService<MarketAnalytics.Api.CacheWarmer>();
 builder.Services.AddOpenApi();
 
 // Unhandled errors return a short JSON problem description instead of a stack trace
@@ -36,12 +41,15 @@ builder.Services.AddScoped<IInstrumentRepository, InstrumentRepository>();
 builder.Services.AddScoped<IPricePointRepository, PricePointRepository>();
 builder.Services.AddScoped<INewsRepository, NewsRepository>();
 builder.Services.AddScoped<IFundPayoutRepository, FundPayoutRepository>();
+builder.Services.AddScoped<IMarketActivityRepository, MarketActivityRepository>();
 
 // Register data fetchers as typed HTTP clients
 builder.Services.AddHttpClient<JsonApiDataFetcher>();
 builder.Services.AddHttpClient<HtmlScraperDataFetcher>();
 builder.Services.AddHttpClient<CurrencyApiDataFetcher>();
 builder.Services.AddHttpClient<FundPayoutFetcher>();
+builder.Services.AddHttpClient<MarketActivityFetcher>();
+builder.Services.AddHttpClient<IndexMembersFetcher>();
 builder.Services.AddHttpClient<RssNewsFetcher>();
 builder.Services.AddScoped<InstrumentDataFetcherFactory>();
 
@@ -60,6 +68,10 @@ builder.Services.AddScoped<INewsService, NewsService>();
 builder.Services.AddScoped<IBacktestService, BacktestService>();
 builder.Services.AddScoped<IPortfolioService, PortfolioService>();
 builder.Services.AddScoped<IAlertService, AlertService>();
+// The market brief: the only AI in the app, written on request by Claude Code on the user's plan
+builder.Services.AddScoped<IBriefRepository, BriefRepository>();
+builder.Services.AddSingleton<IBriefWriter, ClaudeCodeBriefWriter>();
+builder.Services.AddScoped<DailyBriefService>();
 
 // CORS configuration for React frontend
 builder.Services.AddCors(options =>

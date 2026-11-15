@@ -126,6 +126,16 @@ export const glossary = {
     what: 'The signals the app showed each day, saved at the time, then scored by how prices moved over the following 20 trading days (starting from the next day\'s close).',
     howToRead: 'Compare each row with "Any day": if readings that said Buy were followed by bigger rises than an ordinary day, the signal is adding something. Instruments that move together count separately, so it takes about a year before the numbers mean much.',
   },
+  volume: {
+    title: 'Trading volume',
+    what: 'How many shares changed hands in the index\'s companies each day. "Busier than usual" compares the last month\'s daily average with the average of the last five months.',
+    howToRead: 'Heavy trading on a rise or fall means many investors took part, so the move had broad backing; a move on thin trading is easier to reverse. It describes the past, not the future: tested here from 2014, adding volume to the buy and sell rules made none of them beat simply holding.',
+  },
+  fundFlows: {
+    title: 'Money in and out',
+    what: 'How much money investors put into the fund or took out, worked out from its size after removing the effect of its price change. The fund reports its size once a month.',
+    howToRead: 'Money flowing in shows investors are keen; money leaving shows they are nervous. Tested here from 2010, it did not tell what the fund\'s price would do next, so read it as mood, not a forecast.',
+  },
   strongerThanCash: {
     title: 'Stronger than cash',
     what: 'Once a month, on the first trading day, compare what the instrument earned over the past 12 months with what the Meezan Cash Fund earned. Stay invested while it is ahead; wait in cash while it is behind.',
@@ -155,6 +165,21 @@ export const glossary = {
     title: 'Cost per trade',
     what: 'The broker fees, taxes and price gap paid each time you buy or sell, as a % of the amount.',
     howToRead: 'Check your own broker or fund. Mutual funds can charge much more than shares through entry or exit fees. The more often a strategy trades, the more this matters.',
+  },
+  kmi30: {
+    title: 'KMI-30',
+    what: 'An index of the 30 largest, most traded Shariah-compliant companies on the Pakistan Stock Exchange. The KMI-30 badge marks a company that is in it; the list follows the index when it is rebalanced.',
+    howToRead: 'Being in the KMI-30 means a company is big and easy to buy and sell, not that it has done well: most members grew more slowly than the KSE-100 over their history.',
+  },
+  rankingScore: {
+    title: 'Ranking score',
+    what: "A 0 to 100 score for a company's whole record: how much faster it grew than the KSE-100 over the same years, in how many years it beat the index, and how much it grew for the size of its worst fall, each counting a third.",
+    howToRead: "It ranks the past, not the future. Companies that failed or left the exchange are not in today's list, which flatters every score. A list to study, not to buy.",
+  },
+  newsEvents: {
+    title: 'How news is counted',
+    what: 'One piece of news is often carried by many outlets under different headlines. Headlines about the same instrument, at most 2 days apart and sharing most of their key words, count as one event.',
+    howToRead: 'So a story copied 20 times weighs the same as one reported once, and "how sure" grows with separate pieces of news, not with copies.',
   },
   newsMood: {
     title: 'News mood (sentiment)',

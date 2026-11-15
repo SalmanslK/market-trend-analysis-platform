@@ -1,3 +1,4 @@
+using MarketAnalytics.Application.Services;
 using MarketAnalytics.Domain.Entities;
 using MarketAnalytics.Domain.Enums;
 
@@ -181,6 +182,20 @@ public static class InstrumentSeedData
                 CreatedAt = new DateTime(2026, 11, 9, 0, 0, 0, DateTimeKind.Utc),
                 UpdatedAt = new DateTime(2026, 11, 9, 0, 0, 0, DateTimeKind.Utc)
             }
-        };
+        }
+        // The Shariah-compliant companies chosen by the stock rankings (one list, in TrackedStocks)
+        .Concat(TrackedStocks.All.Select(stock => new Instrument
+        {
+            Id = stock.Id,
+            Symbol = stock.Symbol,
+            Name = stock.Name,
+            Type = InstrumentType.Stock,
+            DataSourceUrl = $"https://beta-restapi.sarmaaya.pk/api/stocks/price-history/{stock.Symbol}?days=365",
+            DataSourceType = DataSourceType.JsonApi,
+            IsActive = true,
+            CreatedAt = new DateTime(2026, 11, 15, 0, 0, 0, DateTimeKind.Utc),
+            UpdatedAt = new DateTime(2026, 11, 15, 0, 0, 0, DateTimeKind.Utc),
+        }))
+        .ToList();
     }
 }

@@ -1,4 +1,4 @@
-import { BacktestResult, BacktestVerdict, CashTest, InstrumentAnalyticsDto, InstrumentType, NewsSentimentSummary, SignalAction, PortfolioComparison } from './types/marketData'
+import { BacktestResult, BacktestVerdict, CashTest, FundSizeSummary, InstrumentAnalyticsDto, InstrumentType, NewsSentimentSummary, SignalAction, PortfolioComparison, VolumeSummary } from './types/marketData'
 import { formatDate, formatNumber } from './format'
 
 /**
@@ -469,4 +469,45 @@ export function cashTestInWords(symbol: string, test: CashTest): { word: string;
       tone: 'bad',
       sentence: `In the 12 months to ${formatDate(test.checkedOn)} it earned ${signedPct(test.return12M)}, less than cash's ${signedPct(test.cashReturn12M)}, so the "stronger than cash" rule would wait in cash until it catches up. It is checked again at the start of next month.${since}${untested}`,
     }
+}
+
+/** A large count in words: 312 million, 1.4 billion. */
+export function bigNumber(value: number): string {
+  if (Math.abs(value) >= 1e9) return `${(value / 1e9).toFixed(1)} billion`
+  if (Math.abs(value) >= 1e6) return `${Math.round(value / 1e6)} million`
+  return Math.round(value).toLocaleString('en-US')
+}
+
+const monthName = (value: string) =>
+  new Date(value).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+
+/** Within 10% of the usual level counts as usual: day-to-day volume swings a lot. */
+const USUAL_BAND = 10
+
+/** Recent trading volume in words: a short label and a sentence. */
+export function volumeInWords(v: VolumeSummary): { word: string; tone: 'busy' | 'quiet' | 'usual'; sentence: string } {
+  const difference = v.recentVersusUsualPercent - 100
+  const tone = difference >= USUAL_BAND ? 'busy' : difference <= -USUAL_BAND ? 'quiet' : 'usual'
+  const word = tone === 'busy' ? 'Busier than usual' : tone === 'quiet' ? 'Quieter than usual' : 'About usual'
+  const comparison = tone === 'usual'
+    ? 'about the same as'
+    : `${Math.abs(Math.round(difference))}% ${difference > 0 ? 'more than' : 'less than'}`
+  return {
+    word,
+    tone,
+    sentence: `Over the last month about ${bigNumber(v.average20)} shares a day changed hands, ${comparison} the usual ${bigNumber(v.average100)} of the last five months.`,
+  }
+}
+
+/** A fund's size and money in or out, in words; null parts are left out. */
+export function fundSizeInWords(f: FundSizeSummary): { word: string; tone: 'in' | 'out' | 'flat'; sentence: string } {
+  const year = f.flow12MPercent
+  const tone = year == null || Math.abs(year) < 2 ? 'flat' : year > 0 ? 'in' : 'out'
+  const word = tone === 'in' ? 'Money coming in' : tone === 'out' ? 'Money leaving' : 'Little change'
+  const parts = [`The fund held Rs ${bigNumber(f.rupees)} in ${monthName(f.month)}.`]
+  if (f.flow1MPercent != null)
+    parts.push(`That month investors ${f.flow1MPercent >= 0 ? 'put in' : 'took out'} about ${Math.abs(f.flow1MPercent).toFixed(1)}% of its size.`)
+  if (year != null)
+    parts.push(`Over 12 months, money ${year >= 0 ? 'put in' : 'taken out'} came to about ${Math.abs(year).toFixed(0)}% of its size a year earlier.`)
+  return { word, tone, sentence: parts.join(' ') }
 }

@@ -6,10 +6,12 @@ import { useIsNarrow } from '../../services/useIsNarrow'
 // In the order people use them: the market, their own money, then deeper analysis and help
 const LINKS = [
   { path: '/', label: 'Overview' },
+  { path: '/brief', label: 'Brief' },
   { path: '/holdings', label: 'My Holdings' },
   { path: '/news', label: 'News' },
   { path: '/portfolio', label: 'Portfolio' },
   { path: '/comparison', label: 'Compare' },
+  { path: '/rankings', label: 'Rankings' },
   { path: '/track-record', label: 'Track Record' },
   { path: '/guide', label: 'Guide' },
   { path: '/settings', label: 'Settings' },

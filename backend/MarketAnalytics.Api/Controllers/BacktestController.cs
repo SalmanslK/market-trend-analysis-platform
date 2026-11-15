@@ -16,10 +16,13 @@ public class BacktestController : ControllerBase
 
     private readonly IBacktestService _backtestService;
 
-    public BacktestController(IBacktestService backtestService)
+    public BacktestController(IBacktestService backtestService, DataCache cache)
     {
         _backtestService = backtestService;
+        _cache = cache;
     }
+
+    private readonly DataCache _cache;
 
     /// <summary>
     /// Backtests all active instruments. Optional query parameter: costPercent, the cost of each trade.
@@ -29,7 +32,8 @@ public class BacktestController : ControllerBase
         [FromQuery] decimal costPercent = BacktestService.DefaultCostPercent,
         CancellationToken cancellationToken = default)
     {
-        return Ok(await _backtestService.GetAllAsync(Math.Clamp(costPercent, 0, MaxCostPercent), cancellationToken));
+        var cost = Math.Clamp(costPercent, 0, MaxCostPercent);
+        return Ok(await _cache.GetOrComputeAsync($"backtests:{cost}", async () => (await _backtestService.GetAllAsync(cost, cancellationToken)).ToList(), cancellationToken));
     }
 
     /// <summary>

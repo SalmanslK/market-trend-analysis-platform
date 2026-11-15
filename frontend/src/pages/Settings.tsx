@@ -150,12 +150,26 @@ export default function Settings() {
       </section>
 
       <section style={{ marginTop: '20px', padding: '20px', ...SURFACE }}>
+        <h2 style={{ fontSize: '1.2rem' }}>Market brief on your phone</h2>
+        <p style={{ margin: '6px 0 8px', lineHeight: 1.5 }}>
+          Every weekday at about 6 pm (Pakistan time), a cloud routine on your Claude plan writes the same brief as the{' '}
+          <Link to="/brief" style={{ color: COLORS.link }}>Brief</Link> page, even when this computer is off. Read it in the Claude
+          app under Routines, or by email once a mail connector is connected.
+        </p>
+        <ul style={{ paddingLeft: '20px', fontSize: '14px', lineHeight: 1.6, color: '#2f3d37' }}>
+          <li>Manage or pause it: <a href="https://claude.ai/code/routines/trig_01LvU3hwaC9wUAK8veBv5iWq" target="_blank" rel="noopener noreferrer" style={{ color: COLORS.link }}>Daily market brief routine</a></li>
+          <li>It needs network access to beta-restapi.sarmaaya.pk and news.google.com, allowed in the routine's environment settings on claude.ai.</li>
+          <li>For email, connect Outlook or Gmail at <a href="https://claude.ai/customize/connectors" target="_blank" rel="noopener noreferrer" style={{ color: COLORS.link }}>claude.ai connectors</a>; it only ever writes to your own address.</li>
+        </ul>
+      </section>
+
+      <section style={{ marginTop: '20px', padding: '20px', ...SURFACE }}>
         <h2 style={{ fontSize: '1.2rem' }}>Each instrument's last update</h2>
         <p style={{ margin: '6px 0 12px', color: COLORS.muted }}>
           The background worker checks every instrument for new prices every 6 hours while the app is running.
         </p>
         <details>
-          <summary style={{ cursor: 'pointer', color: COLORS.link, fontSize: '14px', padding: '4px 0' }}>Show all {instruments.length} instruments</summary>
+          <summary style={{ cursor: 'pointer', color: COLORS.link, fontSize: '14px', padding: '4px 0' }}>{loading ? 'Show all instruments' : `Show all ${instruments.length} instruments`}</summary>
 
         {loading ? (
           <div>Loading...</div>

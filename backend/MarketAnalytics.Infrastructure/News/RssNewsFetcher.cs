@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using MarketAnalytics.Application.Services;
 using Microsoft.Extensions.Logging;
 
 namespace MarketAnalytics.Infrastructure.News;
@@ -40,7 +41,7 @@ public class RssNewsFetcher
     /// Google News search queries per instrument. Individual Meezan funds are rarely named in the news,
     /// so the funds share one broader query (they also follow the stock market through topics).
     /// </summary>
-    public static readonly IReadOnlyList<InstrumentNewsSearch> InstrumentSearches = new[]
+    public static readonly IReadOnlyList<InstrumentNewsSearch> InstrumentSearches = new InstrumentNewsSearch[]
     {
         new InstrumentNewsSearch("\"KSE-100\" OR \"KSE 100\" OR \"Pakistan Stock Exchange\" OR PSX Pakistan", new[] { "KSE100" },
             Pattern(@"\b(KSE|PSX|Pakistan Stock Exchange|bourse)\b")),
@@ -54,14 +55,19 @@ public class RssNewsFetcher
             Pattern(@"\bgold\b")),
         new InstrumentNewsSearch("gold price ounce OR bullion OR spot gold", new[] { "GOLDINT" },
             Pattern(@"\b(gold|bullion|XAU)\b")),
-    };
+    }
+    // One search per tracked company, by name
+    .Concat(TrackedStocks.All.Select(s => new InstrumentNewsSearch(s.NewsQuery, new[] { s.Symbol }, Pattern(s.NamePattern))))
+    .ToArray();
 
     /// <summary>
     /// Items never worth storing: other markets' "PSX" (Phillips 66 on the NYSE) and evergreen price pages
-    /// such as "KMI 30 Index Today: Live Chart &amp; Price".
+    /// such as "KMI 30 Index Today: Live Chart &amp; Price", and company data pages such as
+    /// "SYS Technical Analysis - Systems Ltd" or "DCR Competitors - Dolmen City REIT".
     /// </summary>
     public static readonly Regex Excluded = Pattern(
-        @"Phillips 66|\$PSX|NYSE|Live Chart|Index Today|Price Today|Constituents|Historical Data|News & Updates|Market Roundup$|Live Gold Price|Live Price|Rates on ");
+        @"Phillips 66|\$PSX|NYSE|Live Chart|Index Today|Price Today|Constituents|Historical Data|News & Updates|Market Roundup$|Live Gold Price|Live Price|Rates on |" +
+        @"^\w+ (Technical Analysis|Competitors|Company Announcements|Stock Discussion|Financial Results|Share Price|Stock Price|Dividend History|Company Profile)\b");
 
     private static Regex Pattern(string pattern) => new(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 

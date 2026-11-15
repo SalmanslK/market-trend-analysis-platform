@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { analyticsApi } from '../services/api/analyticsApi'
 import { newsApi } from '../services/api/newsApi'
-import { InstrumentAnalyticsDto, NewsSentimentSummary } from '../services/types/marketData'
+import { InstrumentAnalyticsDto, InstrumentType, NewsSentimentSummary } from '../services/types/marketData'
+import { indicesApi } from '../services/api/indicesApi'
+import { INSTRUMENT_GROUPS, InstrumentGroup } from '../services/instrumentGroups'
+import Kmi30Badge from '../components/signals/Kmi30Badge'
 import { GlossaryKey } from '../services/glossary'
 import { describeMarket } from '../services/plainLanguage'
 import InfoTip from '../components/help/InfoTip'
@@ -23,20 +26,36 @@ import RangeBar from '../components/analytics/RangeBar'
 
 type SortKey = 'symbol' | 'change1D' | 'change1M' | 'changeYtd' | 'change1Y' | 'rsi14' | 'signal' | 'combined' | 'trend' | 'news'
 
-// Rows are grouped by what they are, so stocks, gold, the dollar and cash funds aren't mixed in one list
-const GROUPS = [
-  { key: 'stocks', title: 'Stocks and stock funds', note: 'Pakistan stock indices and Meezan funds that invest in shares' },
-  { key: 'gold', title: 'Gold', note: 'Gold prices and the Meezan Gold Fund' },
-  { key: 'currency', title: 'Currency', note: 'Rupees per US dollar: up means a weaker rupee' },
-  { key: 'cash', title: 'Cash and income funds', note: "Low-risk funds whose price creeps up; Buy/Sell signals don't apply" },
-] as const
-type GroupKey = (typeof GROUPS)[number]['key']
+// Three tabs, one short table at a time; each tab splits into at most two plain sub-groups
+const TABS = INSTRUMENT_GROUPS
+type TabKey = InstrumentGroup
 
-function groupOf(a: InstrumentAnalyticsDto): GroupKey {
-  if (a.isCash) return 'cash'
-  if (a.symbol === 'USDPKR') return 'currency'
-  if (a.symbol.startsWith('GOLD') || a.symbol === 'MGF') return 'gold'
-  return 'stocks'
+const SUBGROUPS = [
+  { key: 'pakistan', tab: 'markets', title: 'Pakistan' },
+  { key: 'global', tab: 'markets', title: 'Global' },
+  { key: 'equityFunds', tab: 'funds', title: 'Stock and gold funds' },
+  { key: 'cashFunds', tab: 'funds', title: "Cash and income funds: their price creeps up; Buy/Sell signals don't apply" },
+  { key: 'shares', tab: 'shares', title: '' },
+] as const
+type SubgroupKey = (typeof SUBGROUPS)[number]['key']
+
+function subgroupOf(a: InstrumentAnalyticsDto): SubgroupKey {
+  if (a.type === InstrumentType.Stock) return 'shares'
+  if (a.isCash) return 'cashFunds'
+  if (a.symbol === 'GOLDINT') return 'global'
+  if (a.type === InstrumentType.MutualFund) return 'equityFunds'
+  return 'pakistan'
+}
+
+const TAB_KEY = 'overview.tab'
+
+function readTab(): TabKey {
+  try {
+    const saved = localStorage.getItem(TAB_KEY)
+    return TABS.some((t) => t.key === saved) ? (saved as TabKey) : 'markets'
+  } catch {
+    return 'markets'
+  }
 }
 
 const MORE_COLUMNS_KEY = 'overview.moreColumns'
@@ -70,6 +89,20 @@ export default function Dashboard() {
   const [reloadKey, setReloadKey] = useState(0)
   // RSI is for people who know it; everyone else sees a shorter table
   const [moreColumns, setMoreColumns] = useState(readMoreColumns)
+  const [tab, setTab] = useState<TabKey>(readTab)
+  const chooseTab = (key: TabKey) => {
+    setTab(key)
+    try {
+      localStorage.setItem(TAB_KEY, key)
+    } catch {
+      // Only a convenience
+    }
+  }
+  // Companies in the KMI-30 get a mark; the list comes from the source, so it follows the index's rebalancing
+  const [kmi30, setKmi30] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    indicesApi.getMembers('KMI30').then((m) => setKmi30(new Set(m))).catch((err) => console.error('Error loading KMI-30 members:', err))
+  }, [])
   const toggleMoreColumns = () => {
     setMoreColumns(!moreColumns)
     try {
@@ -166,7 +199,7 @@ export default function Dashboard() {
 
       <h2 id="all-instruments" style={{ fontSize: '1.2rem', marginBottom: '4px' }}>All instruments</h2>
       <p style={{ color: COLORS.muted, fontSize: '14px', marginBottom: '12px' }}>
-        Every market the app follows. Select a name for its chart and details; tap a signal to see why it says so.
+        Select a name for its chart and details; tap a signal to see why it says so.
       </p>
 
       {analytics.length > 0 && (
@@ -183,7 +216,26 @@ export default function Dashboard() {
         <div role="status" style={{ padding: '20px', color: COLORS.muted }}>Loading prices and signals...</div>
       ) : analytics.length > 0 && (
         <>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '6px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: '8px', marginBottom: '8px' }}>
+          <div role="tablist" aria-label="Instrument groups" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            {TABS.map((t) => {
+              const count = analytics.filter((a) => SUBGROUPS.find((g) => g.key === subgroupOf(a))?.tab === t.key).length
+              const selected = tab === t.key
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  title={t.note}
+                  onClick={() => chooseTab(t.key)}
+                  style={{ padding: '8px 14px', borderRadius: '8px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', border: `1px solid ${selected ? COLORS.ink : COLORS.border}`, backgroundColor: selected ? COLORS.ink : 'white', color: selected ? 'white' : COLORS.ink }}
+                >
+                  {t.title} <span style={{ fontWeight: 400, opacity: 0.8 }}>{count}</span>
+                </button>
+              )
+            })}
+          </div>
           <button
             type="button"
             aria-pressed={moreColumns}
@@ -212,23 +264,25 @@ export default function Dashboard() {
                 {header('trend', 'Long-term trend', 'center', 'longTermTrend')}
               </tr>
             </thead>
-            {GROUPS.map((group) => {
-              const rows = sorted.filter((a) => groupOf(a) === group.key)
+            {SUBGROUPS.filter((group) => group.tab === tab).map((group) => {
+              const rows = sorted.filter((a) => subgroupOf(a) === group.key)
               if (rows.length === 0) return null
               return (
             <tbody key={group.key}>
+              {group.title && (
               <tr>
-                <th colSpan={columns} scope="colgroup" style={{ textAlign: 'left', padding: '14px 10px 6px', backgroundColor: '#fafafa', borderBottom: `1px solid ${COLORS.border}` }}>
-                  <span style={{ fontSize: '15px' }}>{group.title}</span>
-                  <span style={{ fontWeight: 'normal', fontSize: '12px', color: COLORS.muted, marginLeft: '8px' }}>{group.note}</span>
+                <th colSpan={columns} scope="colgroup" style={{ textAlign: 'left', padding: '12px 10px 6px', backgroundColor: '#fafafa', borderBottom: `1px solid ${COLORS.border}`, fontSize: '14px' }}>
+                  {group.title}
                 </th>
               </tr>
+              )}
               {rows.map((a) => (
                 <tr key={a.symbol}>
                   <td style={{ ...cellStyle, textAlign: 'left' }}>
                     <Link to={`/instrument/${a.symbol}`} style={{ color: COLORS.link, textDecoration: 'none', fontWeight: 'bold' }}>
                       {a.symbol}
                     </Link>
+                    {kmi30.has(a.symbol) && <Kmi30Badge />}
                     <div style={{ fontSize: '12px', color: COLORS.muted, minWidth: '130px' }}>{a.name}</div>
                   </td>
                   <td style={cellStyle}>

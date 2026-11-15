@@ -6,6 +6,7 @@ Standard library only. Usage: python3 scripts/facts.py > facts.json   (from the 
 import json
 import re
 import sys
+import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -47,10 +48,21 @@ RESEARCH_FINDINGS = [
 ]
 
 
-def get(path):
+def get(path, attempts=4):
+    """One request to the price source, retried with pauses: it sometimes answers 502 or times out for a moment."""
     request = urllib.request.Request(API + path, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(request, timeout=90) as response:
-        return json.load(response)["response"]
+    for attempt in range(1, attempts + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=90) as response:
+                return json.load(response)["response"]
+        except urllib.error.HTTPError as error:
+            # 403 means this environment blocks the site: retrying won't help
+            if error.code < 500 or attempt == attempts:
+                raise
+        except (urllib.error.URLError, TimeoutError):
+            if attempt == attempts:
+                raise
+        time.sleep(5 * attempt)
 
 
 def series(rows, field="price"):

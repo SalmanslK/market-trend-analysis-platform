@@ -1,7 +1,7 @@
 """Facts for the market brief, gathered without the app's database, for the cloud routine that writes the brief when
 the PC is off. Mirrors what the app computes (DailyBriefService): price changes, long-term trend, what followed
 similar trends (HistoricalOutlook), trading volume, the stronger-than-cash check, and the week's headlines.
-Standard library only. Usage: python3 scripts/cloud-brief/facts.py > facts.json
+Standard library only. Usage: python3 scripts/facts.py > facts.json   (from the skill folder)
 """
 import json
 import re

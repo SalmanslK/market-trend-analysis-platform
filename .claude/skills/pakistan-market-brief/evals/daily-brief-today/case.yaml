@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: daily-brief-today
+expected_outcome: |
+  A brief built from freshly gathered figures (KSE-100, KMI-30, Meezan funds, gold, USD/PKR) in the app's fixed sections, with the outlook given only as historical base rates, no buy or sell instructions, and sources listed.

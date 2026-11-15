@@ -72,13 +72,14 @@ public class CloudBriefTests
     [Fact]
     public void CloudInstructions_MatchTheApps()
     {
-        // The cloud routine (scripts/cloud-brief) must write the brief by the same rules as the app
+        // The pakistan-market-brief skill (used by the cloud routine and in Claude) must write by the same rules as the app
+        var skill = Path.Combine(".claude", "skills", "pakistan-market-brief");
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "scripts", "cloud-brief")))
+        while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, skill)))
             dir = dir.Parent;
         Assert.NotNull(dir);
 
-        var file = File.ReadAllText(Path.Combine(dir!.FullName, "scripts", "cloud-brief", "instructions.md"));
+        var file = File.ReadAllText(Path.Combine(dir!.FullName, skill, "references", "writing-rules.md"));
         static string Normalize(string s) => string.Join("\n", s.Replace("\r", "").Split('\n').Select(l => l.TrimEnd())).Trim();
         Assert.Equal(Normalize(ClaudeCodeBriefWriter.SystemPrompt), Normalize(file));
     }

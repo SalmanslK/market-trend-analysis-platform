@@ -9,7 +9,8 @@ figures (`ClaudeCodeBriefWriter`; no API key, no extra charge). Its prompt forbi
 beyond the historical base rates the app computes (`HistoricalOutlook`).
 
 `SETUP_CHECKLIST.md` is the detailed reference for setup, every feature and all research results. Read the relevant
-section before changing a feature, and update it when behaviour changes.
+section before changing a feature, and update it when behaviour changes. `TRACKER.md` is the overview of what is done,
+what is left and what was decided against: update it whenever work is finished or a new task is agreed.
 
 ## Layout
 

@@ -108,10 +108,10 @@ It doesn't start automatically after a reboot, and .NET updates may close the AP
 If prices are more than 4 days old, the Overview and instrument pages show a warning. `GET /api/health` reports whether
 the database answers and the newest price date.
 
-**News and sentiment switch:** `Features:News` in `backend/MarketAnalytics.Api/appsettings.json` is `false` by default, so
-the app is based on technical analysis only: no News page, no news or combined signals, no news in summaries, alerts,
-holdings or the track record (the combined signal is replaced by the technical one). The Worker keeps collecting news so
-the history is ready. Set it to `true` (or the environment variable `Features__News=true`) and restart to turn news on.
+**News and sentiment switch:** `Features:News` in `backend/MarketAnalytics.Api/appsettings.json` turns news and sentiment
+on or off (on since Nov 2026). Set it to `false` (or the environment variable `Features__News=false`) and restart for a
+technical-only app: no News page, no news or combined signals, no news in summaries, alerts, holdings or the track record
+(the combined signal is replaced by the technical one). The Worker collects news either way.
 
 **Check for new data now:** a button on the Overview and Settings pages (`POST /api/data/refresh`) runs the same price,
 payout and news update as the Worker (`MarketDataUpdater` and `NewsUpdater` in Infrastructure, shared by both) and says
@@ -207,6 +207,46 @@ The per-instrument news mood is the confidence-weighted average over 7 days. Wei
 a year; 7 days equal: +7.8%; 14 days equal: +12.7%), and no weighting made the news mood predict the next 5 days
 (correlation 0.00 to 0.05). News mostly reports moves already made, so the 7-day window is kept.
 
+Retested in Nov 2026 with the improved sentiment (`scripts/research/news-forward-research.cs`; forward moves from the next
+close, overlap-adjusted significance): the 7-day mood matches the past week's move clearly (KSE-100 r = +0.58, gold +0.35)
+but not the next day (-0.05 to +0.04) or next 5 days (-0.05 to +0.05) on any instrument. For stocks and the gold fund there
+is a weak, not significant link with the next 20 days (+0.12 to +0.15; +0.08 to +0.12 once the past week's price move is
+taken out): after news Buy days KSE-100 rose +4.2% over 20 days against +2.0% after Sell days. Too weak to trade on.
+
+Six other ways of reading the news were then tested (`scripts/research/news-strategies-research.cs`), with the ideas and
+pass rules written down and committed before any result was seen, and the last 30% of the news period held back:
+event news only (price reports left out), surprise against the 60-day average, news disagreeing with the price, contrarian,
+story volume, and a 30-day window. On the first 70%, none passed: the strongest was |t| = 1.0 against a pass mark of 2
+(e.g. 30-day mood vs stocks' next 20 days r = +0.17, t = +0.6). So nothing went on to the held-back period, which stays
+unused for a future test. Conclusion: with this news (about 5,900 stories since 2021), no reading of it predicts prices;
+news stays a description of what happened, and Buy/Sell decisions rest on the technical signals.
+
+The State Bank's policy rate was tested next (`scripts/research/policy-rate-research.cs`, rules committed before the rate
+history was fetched; rates in `scripts/research/data/sbp-policy-rate.csv` from the State Bank's published history).
+Question: do stocks do better in the 6 months after a rate cut than after a rise? The first run found MIF's payouts
+before 2020 missing, so they were added (below) and the development period rerun. On MIF 2005-2015, payouts included:
++11.8% after a cut against +6.8% after a rise, a difference of +4.9 points but t = 0.8 against a pass mark of 2. The
+period holds only about 6 rate cycles, so one or two of them (the 2008 crash came while rates were rising) decide the
+result. The "stocks after a cut, cash after a rise" rule earned +16.1% a year against +18.3% for holding, so it fails
+too, though its worst fall was far smaller (-16% against -63%). 2016 onward stays unused for a future test.
+
+**MIF payouts 2005-2017** (migration `AddEarlyMifPayouts`): the payout source lists MIF only from 2020, so its history
+before then showed each payout as a fall. 2014-2017 use the amounts Al Meezan published; 2005-2013 aren't published
+anywhere reachable, so they are the one-day NAV drop on each July ex-date (several are exact round amounts, such as
+Rs 17.50 and Rs 10.00), which also carries that day's market move. No payout in FY2009, FY2018 or FY2019. Effect:
+MIF 2005-2019 went from -0.7% a year (price only) to +13.6% a year (with payouts); since 2005, from +4.3% to +15.5%.
+
+**How much to hold in stocks** (`scripts/research/risk-rules-research.cs`, rules committed before running; MIF with
+payouts, cash at the policy rate minus 1%, 0.5% per trade; development to 2015, holdout 2016 on; pass = worst fall at
+least 25% smaller than holding's and yearly return no more than 2 points lower):
+- Cut stocks when markets turn jumpy (volatility targeting): failed. 2006-2015 +10.3% a year against +14.4% holding.
+- **Stronger than cash** (hold stocks only while their last 12 months beat cash; checked monthly): **passed both
+  periods**, the first rule in this project to do so. 2006-2015: +12.8% a year, worst fall -25%, against +14.4% and
+  -63% for holding. 2016-2026: +15.6% a year, worst fall -23%, against +12.7% and -57%. About one switch a year.
+- Robustness, checked after the result: 6-, 9- and 12-month lookbacks all cut MIF's worst fall to -25%..-41% with
+  similar returns; on KSE-100 and KMI30 since 2021 (no big crash) it matched holding. Caveats: about 4 big falls in
+  21 years decide the result, and cash in Pakistan paid unusually well (up to 21%), which helps the rule.
+
 **Biggest moves**: for each of an instrument's largest daily moves in the last 30 days, the API returns the news
 published from the day before to the next trading day (so weekend reports of a Friday move are included).
 
@@ -270,9 +310,11 @@ price update, in the `FundPayouts` table. Prices are adjusted when read (`Payout
 - Prices before each payout are scaled by (1 - payout / NAV before it), like adjusted stock prices. The latest price
   stays the real NAV, and returns, metrics, charts and backtests count payouts as reinvested.
 - The fund page lists the payouts and the last 12 months' payouts as a share of the price.
-- Gaps: the source lists MIF's payouts only from 2020 (and none for 2021-2023), while MIF's history goes back to 2005
-  with large drops each July that look like payouts. These are left unadjusted rather than guessed, so MIF's
-  long-term returns and worst fall understate it. KSE-100 and KMI-30 are price indices and exclude stock dividends.
+- Gaps filled by migrations: the source lists MIF's payouts only from 2020 and MCF's only from 2018.
+  `AddEarlyMifPayouts` adds MIF 2005-2017 (2014-2017 as published by Al Meezan; 2005-2013 are the July ex-date NAV
+  drops, which include that day's market move). `AddEarlyMcfPayouts` adds MCF 2010-2017 from its NAV drops, which
+  are exact for a cash fund except where a drop spans a gap in the price data. KSE-100 and KMI-30 are price indices
+  and exclude stock dividends.
 
 ## Track record (backtest)
 
@@ -337,6 +379,23 @@ with 1.8 trades; the golden cross +17.2% and price above both its 50- and 200-da
 worst fall than holding (-29% against -34%) but behind it in both halves of the history. Faster averages (price vs 50-day,
 EMA 12/26) did little better than the plain signal. In the combined signal, a technical score averaged over 5 to 20
 days earned +18.8% to +19.2% against +16.2% (holding +22.6%), with 1.4 to 3.1 trades a year instead of 6.2.
+
+## Stronger than cash, and the forward record
+
+**Stronger than cash** (`StrongerThanCash`): on the first trading day of each month, compare an instrument's 12-month
+return (payouts included) with the Meezan Cash Fund's over the same 12 months. The rule stays invested while it is
+ahead and waits in cash while it is behind. It is the one rule that passed a test fixed in advance on both periods
+(see the research notes above). The analytics include it as `strongerThanCash` for stock and gold instruments (not
+cash and income funds or USD/PKR); the instrument page, the Overview's glance cards, Track Record and the Guide show
+it. With MCF's payouts filled in, the app's version gives the same answer as the research version (policy rate minus
+1%) in 193 of 197 months since 2010; MCF earned about 1.1 points a year less than that assumption.
+
+**Forward record** (`SignalSnapshots` table, `SignalRecorder`, `GET /api/signal-record`): after every price update
+(the Worker's, and the refresh button's) the app saves each instrument's daily, steady, news and combined signals,
+trend and stronger-than-cash answer for its latest price date. A reading is updated until the next price arrives and
+never written for an older date, so nothing is recorded with hindsight. Track Record's "Live record" scores the saved
+readings by the move over the next 20 trading days from the next close, grouped by what the app said. Started
+9 Nov 2026; results appear after about a month and mean something after about a year.
 
 ## Alerts (what changed)
 

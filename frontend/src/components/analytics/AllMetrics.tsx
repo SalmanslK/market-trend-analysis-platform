@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { InstrumentAnalyticsDto, Metric } from '../../services/types/marketData'
-import { COLORS, formatNumber, formatPercent } from '../../services/format'
+import { COLORS, formatNumber, formatPercent, SURFACE } from '../../services/format'
 import InfoTip from '../help/InfoTip'
 
 interface AllMetricsProps {
@@ -32,7 +32,7 @@ export default function AllMetrics({ analytics }: AllMetricsProps) {
   const open = chosen ?? false
 
   return (
-    <section style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px', marginBottom: '12px' }}>
+    <section style={{ padding: '20px', ...SURFACE, marginBottom: '12px' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
         <h2 style={{ fontSize: '1.2rem' }}>All metrics</h2>
         <button

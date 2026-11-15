@@ -1,7 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using MarketAnalytics.Application.Interfaces.IRepositories;
+using MarketAnalytics.Application.Interfaces.Services;
+using MarketAnalytics.Application.Services;
 using MarketAnalytics.Infrastructure.Data;
 using MarketAnalytics.Infrastructure.DataFetchers;
 using MarketAnalytics.Infrastructure.News;
+using MarketAnalytics.Infrastructure.Repositories;
 using MarketAnalytics.Infrastructure.Updates;
 using MarketAnalytics.Worker;
 
@@ -24,6 +28,16 @@ builder.Services.AddHttpClient<FundPayoutFetcher>();
 builder.Services.AddScoped<InstrumentDataFetcherFactory>();
 builder.Services.AddScoped<MarketDataUpdater>();
 builder.Services.AddScoped<NewsUpdater>();
+
+// After each price update the Worker saves the day's signals (the forward record), which needs the analysis services
+builder.Services.AddScoped<IInstrumentRepository, InstrumentRepository>();
+builder.Services.AddScoped<IPricePointRepository, PricePointRepository>();
+builder.Services.AddScoped<INewsRepository, NewsRepository>();
+builder.Services.AddScoped<IFundPayoutRepository, FundPayoutRepository>();
+builder.Services.AddScoped<IIndicatorCalculationService, IndicatorCalculationService>();
+builder.Services.AddScoped<INewsService, NewsService>();
+builder.Services.AddScoped<IMarketAnalyticsService, MarketAnalyticsService>();
+builder.Services.AddScoped<SignalRecorder>();
 
 // "--import-csv <directory>" runs a one-off historical CSV import instead of the scheduled updates
 var importDirectory = builder.Configuration["import-csv"];

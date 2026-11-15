@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { analyticsApi } from '../services/api/analyticsApi'
 import { InstrumentAnalyticsDto, InstrumentType } from '../services/types/marketData'
-import { changeColor, COLORS, formatDate, formatNumber, formatPercent } from '../services/format'
+import { changeColor, COLORS, formatDate, formatNumber, formatPercent, SURFACE } from '../services/format'
 import ScaledSignalBadge from '../components/signals/ScaledSignalBadge'
 import TrendBadge from '../components/trend/TrendBadge'
 import InfoTip from '../components/help/InfoTip'
@@ -183,7 +183,7 @@ export default function Holdings() {
         />
       )}
 
-      <section style={{ padding: '16px 20px', backgroundColor: 'white', borderRadius: '6px', margin: '16px 0' }}>
+      <section style={{ padding: '16px 20px', ...SURFACE, margin: '16px 0' }}>
         <h2 style={{ fontSize: '1.15rem', marginBottom: '8px' }}>Add or update a holding</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', alignItems: 'end' }}>
           <label style={{ fontSize: '13px', color: COLORS.muted }}>
@@ -225,7 +225,7 @@ export default function Holdings() {
       </section>
 
       {rows.length > 0 && (
-        <div style={{ overflowX: 'auto', backgroundColor: 'white', borderRadius: '6px' }}>
+        <div style={{ overflowX: 'auto', ...SURFACE }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
             <thead>
               <tr>
@@ -299,7 +299,7 @@ export default function Holdings() {
       )}
 
       {rows.length === 0 && analytics.length > 0 && (
-        <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px', lineHeight: 1.5 }}>
+        <div style={{ padding: '20px', ...SURFACE, lineHeight: 1.5 }}>
           <strong>No holdings yet.</strong>
           <ol style={{ margin: '6px 0 0', paddingLeft: '20px', color: COLORS.neutral }}>
             <li>Choose an investment above, for example MIF (Meezan Islamic Fund).</li>

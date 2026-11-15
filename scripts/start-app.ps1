@@ -8,8 +8,21 @@ $root = Split-Path -Parent $PSScriptRoot
 $logs = Join-Path $root 'logs'
 New-Item -ItemType Directory -Force -Path $logs | Out-Null
 
+# Tries to connect, rather than asking Windows for its list of listening ports: that list (Get-NetTCPConnection)
+# sometimes comes back empty while the port is open, which made the script wait for a database already running
 function Test-Port([int]$Port) {
-    [bool](Get-NetTCPConnection -State Listen -LocalPort $Port -ErrorAction SilentlyContinue)
+    # Both families: PostgreSQL and the API listen on 127.0.0.1, the website on ::1 only
+    foreach ($address in [System.Net.IPAddress]::Loopback, [System.Net.IPAddress]::IPv6Loopback) {
+        $client = New-Object System.Net.Sockets.TcpClient($address.AddressFamily)
+        try {
+            if ($client.ConnectAsync($address, $Port).Wait(1000) -and $client.Connected) { return $true }
+        } catch {
+            # Refused: nothing listens on this family
+        } finally {
+            $client.Dispose()
+        }
+    }
+    return $false
 }
 
 function Wait-ForPort([int]$Port, [string]$Name, [string]$Log, [int]$TimeoutSeconds = 120) {

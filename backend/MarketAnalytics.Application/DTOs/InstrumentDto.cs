@@ -13,4 +13,6 @@ public class InstrumentDto
     public InstrumentType Type { get; set; }
     public bool IsActive { get; set; }
     public DateTime? LastUpdateDate { get; set; }
+    /// <summary>The date of the newest stored price; null when there are no prices.</summary>
+    public DateTime? LatestPriceDate { get; set; }
 }

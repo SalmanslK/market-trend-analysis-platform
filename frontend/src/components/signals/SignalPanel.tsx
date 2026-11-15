@@ -1,5 +1,5 @@
 import { InstrumentAnalyticsDto } from '../../services/types/marketData'
-import { COLORS, formatDate, TREND_DISCLAIMER, signalStyles } from '../../services/format'
+import { COLORS, formatDate, TREND_DISCLAIMER, signalStyles, SURFACE } from '../../services/format'
 import { describeTrend, directionNote, signalMeaning } from '../../services/plainLanguage'
 import InfoTip from '../help/InfoTip'
 import TrendBadge from '../trend/TrendBadge'
@@ -25,7 +25,7 @@ export default function SignalPanel({ analytics }: SignalPanelProps) {
   const note = directionNote(analytics.symbol)
 
   return (
-    <section style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px' }}>
+    <section style={{ padding: '20px', ...SURFACE }}>
       <h2 style={{ fontSize: '1.2rem', marginBottom: '10px' }}>Buy/Sell signals</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px', marginBottom: '14px' }}>
         {news && (

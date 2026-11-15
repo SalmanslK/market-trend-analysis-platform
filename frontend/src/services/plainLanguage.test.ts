@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { compareWithHolding, describeDrawdown, describeMarket, describePortfolios, describeRsi } from './plainLanguage'
+import { cashTestInWords, compareWithHolding, describeDrawdown, describeMarket, describePortfolios, describeRsi } from './plainLanguage'
 import { daysSince } from './format'
 import { InstrumentAnalyticsDto, PortfolioResult } from './types/marketData'
 
@@ -103,5 +103,27 @@ describe('technical-only summaries', () => {
 
     expect(sentences.some((s) => s.startsWith('Technical signal:'))).toBe(true)
     expect(sentences.some((s) => s.includes('news'))).toBe(false)
+  })
+})
+
+describe('cashTestInWords', () => {
+  const test = { aheadOfCash: false, return12M: 3.12, cashReturn12M: 9.86, checkedOn: '2026-11-02T00:00:00Z', since: '2026-10-01T00:00:00Z' }
+
+  it('says behind cash with both returns and when it changed', () => {
+    const words = cashTestInWords('KSE100', test)
+    expect(words.word).toBe('Behind cash')
+    expect(words.tone).toBe('bad')
+    expect(words.sentence).toContain('+3.1%')
+    expect(words.sentence).toContain('+9.9%')
+    expect(words.sentence).toContain('since')
+    expect(words.sentence).not.toContain('untested')
+  })
+
+  it('says ahead of cash, and that gold is untested', () => {
+    const words = cashTestInWords('GOLDPK', { ...test, aheadOfCash: true, return12M: 25, since: null })
+    expect(words.word).toBe('Ahead of cash')
+    expect(words.sentence).toContain('stays invested')
+    expect(words.sentence).not.toContain('since')
+    expect(words.sentence).toContain('untested')
   })
 })

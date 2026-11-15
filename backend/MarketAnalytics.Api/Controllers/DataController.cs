@@ -16,12 +16,14 @@ public class DataController : ControllerBase
 
     private readonly MarketDataUpdater _marketDataUpdater;
     private readonly NewsUpdater _newsUpdater;
+    private readonly SignalRecorder _signalRecorder;
     private readonly ILogger<DataController> _logger;
 
-    public DataController(MarketDataUpdater marketDataUpdater, NewsUpdater newsUpdater, ILogger<DataController> logger)
+    public DataController(MarketDataUpdater marketDataUpdater, NewsUpdater newsUpdater, SignalRecorder signalRecorder, ILogger<DataController> logger)
     {
         _marketDataUpdater = marketDataUpdater;
         _newsUpdater = newsUpdater;
+        _signalRecorder = signalRecorder;
         _logger = logger;
     }
 
@@ -53,6 +55,17 @@ public class DataController : ControllerBase
                 newsError = ex.Message;
             }
 
+            string? signalRecordError = null;
+            try
+            {
+                await _signalRecorder.RecordAsync(cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "Recording signals failed");
+                signalRecordError = ex.Message;
+            }
+
             return Ok(new RefreshResultDto
             {
                 StartedAt = started,
@@ -67,6 +80,7 @@ public class DataController : ControllerBase
                 }).ToList(),
                 NewStories = news?.Added ?? 0,
                 NewsError = newsError,
+                SignalRecordError = signalRecordError,
             });
         }
         finally
@@ -84,6 +98,8 @@ public class RefreshResultDto
     public int NewStories { get; set; }
     /// <summary>Set when the news sources could not be read; prices may still have been updated.</summary>
     public string? NewsError { get; set; }
+    /// <summary>Set when today's signals could not be saved to the live record; prices are still updated.</summary>
+    public string? SignalRecordError { get; set; }
 }
 
 public class InstrumentRefreshDto

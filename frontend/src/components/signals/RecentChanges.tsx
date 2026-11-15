@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { alertsApi } from '../../services/api/alertsApi'
 import { SignalAlert, SignalAction } from '../../services/types/marketData'
-import { COLORS, formatDate, signalStyles } from '../../services/format'
+import { COLORS, formatDate, signalStyles, SURFACE } from '../../services/format'
 import InfoTip from '../help/InfoTip'
 import { useFeatures } from '../../services/features'
 import { useSignalMode } from '../../services/signalMode'
@@ -98,7 +98,7 @@ export default function RecentChanges() {
   const listed = expanded ? visible : visible.slice(0, SHOWN_AT_FIRST)
 
   return (
-    <section style={{ padding: '16px 20px', backgroundColor: 'white', borderRadius: '6px', marginTop: '20px' }}>
+    <section style={{ padding: '16px 20px', ...SURFACE, marginTop: '20px' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
         <h2 style={{ fontSize: '1.15rem' }}>
           What changed in the last 30 days

@@ -41,7 +41,10 @@ export interface InstrumentDto {
   name: string;
   type: InstrumentType;
   isActive: boolean;
+  /** When the worker last checked the source successfully (a check can find nothing new) */
   lastUpdateDate?: string;
+  /** The date of the newest stored price: what says whether the data is current */
+  latestPriceDate?: string;
 }
 
 export interface SummaryDto {
@@ -149,6 +152,43 @@ export interface InstrumentAnalyticsDto {
   /** Fund cash payouts, newest first; prices and returns are adjusted for them */
   payouts: Payout[];
   payoutYield1Y?: number;
+  /** The "stronger than cash" check; null for cash and income funds, currencies, dollar-priced gold and short histories */
+  strongerThanCash?: CashTest | null;
+  /** Why the stronger-than-cash check couldn't be made for an instrument it applies to */
+  strongerThanCashUnavailable?: string | null;
+}
+
+/** Whether an instrument beat cash over the 12 months before this month's check (the first trading day) */
+export interface CashTest {
+  aheadOfCash: boolean;
+  /** Percent, payouts included */
+  return12M: number;
+  /** The Meezan Cash Fund over the same 12 months, percent */
+  cashReturn12M: number;
+  checkedOn: string;
+  /** Since which monthly check the answer has been the same; null if it hasn't changed in the stored history */
+  since?: string | null;
+}
+
+/** The forward record: signals saved as they were shown, scored against what prices did next */
+export interface SignalRecord {
+  since?: string | null;
+  readings: number;
+  /** Readings old enough to have a full outcome */
+  scored: number;
+  horizonDays: number;
+  groups: SignalRecordGroup[];
+}
+
+export interface SignalRecordGroup {
+  /** Group names from SignalRecordSummary.cs */
+  signal: 'Any day' | 'Technical signal (steady)' | 'Combined signal' | 'Stronger than cash';
+  reading: string;
+  count: number;
+  /** Average move afterwards, percent */
+  averageMove?: number | null;
+  /** Share of readings followed by a rise, percent */
+  shareUp?: number | null;
 }
 
 export interface Payout {

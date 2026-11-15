@@ -18,6 +18,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<DataUpdateLog> DataUpdateLogs { get; set; }
     public DbSet<NewsArticle> NewsArticles { get; set; }
     public DbSet<FundPayout> FundPayouts { get; set; }
+    public DbSet<SignalSnapshot> SignalSnapshots { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

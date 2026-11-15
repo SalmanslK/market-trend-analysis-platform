@@ -7,7 +7,7 @@ public class FeatureSettings
 {
     /// <summary>
     /// News and sentiment: the News page, the news and combined signals, and news in summaries, alerts and the track
-    /// record. Off by default, so the app is based on technical analysis until the news readings are trusted. The
+    /// record. Set in appsettings.json (on); off when the setting is missing, for a technical-only app. The
     /// Worker keeps collecting news either way, so the history is there when it is switched on.
     /// </summary>
     public bool News { get; set; }

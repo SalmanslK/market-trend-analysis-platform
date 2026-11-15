@@ -16,7 +16,7 @@ export default function InstrumentSelector({
       aria-label="Instrument"
       value={selectedInstrument}
       onChange={(e) => onInstrumentChange(e.target.value)}
-      style={{ padding: '8px', fontSize: '16px' }}
+      style={{ padding: '8px', fontSize: '16px', maxWidth: '100%' }}
     >
       <option value="">Select Instrument</option>
       {instruments.map((instrument) => (

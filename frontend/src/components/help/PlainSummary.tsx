@@ -20,14 +20,14 @@ export default function PlainSummary({ title = 'In plain words', headline, point
     <section
       style={{
         padding: '16px 20px',
-        backgroundColor: '#e8f1fb',
-        borderLeft: '4px solid #1565c0',
+        backgroundColor: '#e6efe9',
+        borderLeft: '4px solid #155e75',
         borderRadius: '6px',
         marginBottom: '16px',
         lineHeight: 1.5,
       }}
     >
-      <div style={{ fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#0d47a1', marginBottom: '6px' }}>
+      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#155e75', marginBottom: '6px' }}>
         {title}
       </div>
       {headline && <div style={{ fontSize: '17px', fontWeight: 'bold', marginBottom: '6px' }}>{headline}</div>}
@@ -41,7 +41,7 @@ export default function PlainSummary({ title = 'In plain words', headline, point
           type="button"
           aria-expanded={!folded}
           onClick={() => setExpanded(!expanded)}
-          style={{ marginTop: '4px', border: 'none', background: 'none', padding: 0, color: '#0d47a1', fontSize: '14px', textDecoration: 'underline' }}
+          style={{ marginTop: '4px', border: 'none', background: 'none', padding: 0, color: '#155e75', fontSize: '14px', textDecoration: 'underline' }}
         >
           {folded ? `Show all ${points.length} points` : 'Show fewer'}
         </button>

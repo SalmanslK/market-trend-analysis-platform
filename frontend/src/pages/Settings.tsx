@@ -7,7 +7,9 @@ import TimeframeSelector from '../components/controls/TimeframeSelector'
 import { instrumentTypeLabels, intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences, savePreferences } from '../services/preferences'
 import RefreshDataButton from '../components/layout/RefreshDataButton'
-import { COLORS } from '../services/format'
+import AnswerCard from '../components/help/AnswerCard'
+import { dataStatusAnswer, isPriceStale } from '../services/answers'
+import { COLORS, formatDate, STALE_AFTER_DAYS, SURFACE } from '../services/format'
 
 // Suggested interval/timeframe combinations for common use cases
 const PRESETS: { label: string; interval: Interval; timeframe: Timeframe }[] = [
@@ -18,9 +20,6 @@ const PRESETS: { label: string; interval: Interval; timeframe: Timeframe }[] = [
   { label: 'Gold or index tracking', interval: Interval.Weekly, timeframe: Timeframe.Year },
   { label: 'Mutual fund NAV trend', interval: Interval.Daily, timeframe: Timeframe.Month },
 ]
-
-// The worker checks every 6 hours; flag sources that haven't updated in over two days
-const STALE_AFTER_MS = 2 * 24 * 60 * 60 * 1000
 
 const cellStyle = { padding: '10px', border: '1px solid #ddd' }
 
@@ -49,31 +48,44 @@ export default function Settings() {
     setSaveMessage(saved ? 'Saved. Instrument and Comparison views will open with these defaults.' : 'Could not save: browser storage is unavailable.')
   }
 
-  const updateStatus = (lastUpdateDate?: string) => {
-    if (!lastUpdateDate) return { label: 'Never updated', color: '#d32f2f' }
-    const age = Date.now() - new Date(lastUpdateDate).getTime()
-    return age > STALE_AFTER_MS
-      ? { label: 'Stale', color: '#f57c00' }
+  // Judged by the newest price: a check can succeed without the source having published anything new
+  const updateStatus = (instrument: InstrumentDto) => {
+    if (!instrument.latestPriceDate) return { label: 'No prices', color: '#d32f2f' }
+    return isPriceStale(instrument)
+      ? { label: `No price for over ${STALE_AFTER_DAYS} days`, color: '#b45309' }
       : { label: 'Up to date', color: COLORS.up }
   }
 
   return (
     <div style={{ padding: '20px' }}>
       <h1>Settings</h1>
-      <section aria-label="Update data" style={{ margin: '12px 0 20px', padding: '16px 20px', backgroundColor: 'white', borderRadius: '6px' }}>
-        <h2 style={{ fontSize: '1.15rem', marginBottom: '4px' }}>Update data</h2>
-        <p style={{ color: COLORS.muted, fontSize: '14px', marginBottom: '10px' }}>
-          Prices are checked every 6 hours and news every hour while the app is running. Check now if you want the latest before then.
-        </p>
-        <RefreshDataButton onRefreshed={() => setReloadKey((k) => k + 1)} />
-      </section>
+      <p style={{ color: COLORS.muted, margin: '4px 0 16px' }}>Whether the data is up to date, and how charts open.</p>
 
-      <section style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white' }}>
-        <h2>Default View</h2>
-        <p style={{ margin: '8px 0 15px', color: '#555' }}>
-          The interval and timeframe each page starts with. Saved in this browser.
+      {error ? (
+        // Without the list there is no answer, but the refresh button is exactly what's needed
+        <section role="alert" style={{ padding: '16px 20px', ...SURFACE, borderLeft: `4px solid ${COLORS.down}` }}>
+          <p style={{ color: COLORS.down, fontWeight: 600 }}>{error} Check that the API is running, then try again.</p>
+          <div style={{ marginTop: '12px' }}>
+            <RefreshDataButton onRefreshed={() => { setError(null); setReloadKey((k) => k + 1) }} />
+          </div>
+        </section>
+      ) : !loading && (() => {
+        const status = dataStatusAnswer(instruments)
+        return (
+          <AnswerCard question="Is the data up to date?" answer={status.answer} meaning={status.meaning}>
+            <div style={{ marginTop: '14px' }}>
+              <RefreshDataButton onRefreshed={() => setReloadKey((k) => k + 1)} />
+            </div>
+          </AnswerCard>
+        )
+      })()}
+
+      <section style={{ marginTop: '20px', padding: '20px', ...SURFACE }}>
+        <h2 style={{ fontSize: '1.2rem' }}>How charts open</h2>
+        <p style={{ margin: '6px 0 15px', color: COLORS.muted }}>
+          Pick a suggested setting, or choose your own, then save. Instrument and Compare pages will open with it. Saved in this browser.
         </p>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
           <label style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
             Interval:
             <IntervalSelector
@@ -93,7 +105,7 @@ export default function Settings() {
             style={{
               padding: '8px 16px',
               fontSize: '16px',
-              backgroundColor: '#1976d2',
+              backgroundColor: '#155e75',
               color: 'white',
               border: 'none',
               borderRadius: '4px',
@@ -120,8 +132,8 @@ export default function Settings() {
                 style={{
                   padding: '8px 12px',
                   fontSize: '14px',
-                  backgroundColor: isCurrent ? '#e3f2fd' : 'white',
-                  border: `1px solid ${isCurrent ? '#1976d2' : '#ccc'}`,
+                  backgroundColor: isCurrent ? '#e6efe9' : 'white',
+                  border: `1px solid ${isCurrent ? '#155e75' : '#ccc'}`,
                   borderRadius: '4px',
                   cursor: 'pointer',
                   textAlign: 'left',
@@ -137,30 +149,32 @@ export default function Settings() {
         </div>
       </section>
 
-      <section style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white' }}>
-        <h2>Data Sources</h2>
-        <p style={{ margin: '8px 0 15px', color: '#555' }}>
-          The background worker checks every instrument for new prices every 6 hours while the app is running. Last updated is
-          the time of the most recent successful check.
+      <section style={{ marginTop: '20px', padding: '20px', ...SURFACE }}>
+        <h2 style={{ fontSize: '1.2rem' }}>Each instrument's last update</h2>
+        <p style={{ margin: '6px 0 12px', color: COLORS.muted }}>
+          The background worker checks every instrument for new prices every 6 hours while the app is running.
         </p>
+        <details>
+          <summary style={{ cursor: 'pointer', color: COLORS.link, fontSize: '14px', padding: '4px 0' }}>Show all {instruments.length} instruments</summary>
 
-        {error && <div style={{ color: '#d32f2f' }}>{error}</div>}
         {loading ? (
           <div>Loading...</div>
         ) : (
+          <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ backgroundColor: '#f0f0f0' }}>
                 <th style={cellStyle}>Instrument</th>
                 <th style={cellStyle}>Name</th>
                 <th style={cellStyle}>Type</th>
-                <th style={cellStyle}>Last Updated</th>
+                <th style={cellStyle}>Newest price</th>
+                <th style={cellStyle}>Last checked</th>
                 <th style={cellStyle}>Status</th>
               </tr>
             </thead>
             <tbody>
               {instruments.map((instrument) => {
-                const status = updateStatus(instrument.lastUpdateDate)
+                const status = updateStatus(instrument)
                 return (
                   <tr key={instrument.id}>
                     <td style={cellStyle}>
@@ -173,6 +187,7 @@ export default function Settings() {
                     </td>
                     <td style={cellStyle}>{instrument.name}</td>
                     <td style={cellStyle}>{instrumentTypeLabels[instrument.type]}</td>
+                    <td style={cellStyle}>{instrument.latestPriceDate ? formatDate(instrument.latestPriceDate) : '-'}</td>
                     <td style={cellStyle}>
                       {instrument.lastUpdateDate ? new Date(instrument.lastUpdateDate).toLocaleString() : '-'}
                     </td>
@@ -182,7 +197,9 @@ export default function Settings() {
               })}
             </tbody>
           </table>
+          </div>
         )}
+        </details>
       </section>
     </div>
   )

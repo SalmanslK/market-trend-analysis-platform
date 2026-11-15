@@ -18,13 +18,18 @@ import AllMetrics from '../components/analytics/AllMetrics'
 import KeyStats from '../components/analytics/KeyStats'
 import PlainSummary from '../components/help/PlainSummary'
 import InstrumentNews from '../components/news/InstrumentNews'
-import { describeInstrument } from '../services/plainLanguage'
+import { cashTestInWords, describeInstrument, signalMeaning, trendInWords } from '../services/plainLanguage'
 import { intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences } from '../services/preferences'
 import { applySignalMode, useSignalMode } from '../services/signalMode'
 import { useFeatures } from '../services/features'
 import SignalBadge from '../components/signals/SignalBadge'
-import { changeColor, COLORS, formatDate, formatNumber, formatPercent, daysSince, STALE_AFTER_DAYS } from '../services/format'
+import { changeColor, COLORS, formatDate, formatNumber, formatPercent, daysSince, STALE_AFTER_DAYS, SURFACE } from '../services/format'
+
+// The reading tiles in the answer card at the top
+const tileStyle = { padding: '12px 14px', borderRadius: '10px', backgroundColor: '#eef2ee' }
+const tileLabelStyle = { fontSize: '14px', color: COLORS.muted, fontWeight: 700 }
+const tileTextStyle = { fontSize: '14px', marginTop: '6px', color: '#2f3d37' }
 
 export default function InstrumentView() {
   // The URL is the source of truth for the selected instrument, so links between instruments work
@@ -89,7 +94,7 @@ export default function InstrumentView() {
     <div style={{ padding: '20px' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '14px' }}>
         <Link to="/" style={{ color: COLORS.link }}>← Market Overview</Link>
-        <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: COLORS.muted }}>
+        <label style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', color: COLORS.muted, flex: '1 1 240px', minWidth: 0, maxWidth: '100%' }}>
           Switch to
           <InstrumentSelector
             instruments={instruments}
@@ -98,36 +103,81 @@ export default function InstrumentView() {
           />
         </label>
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '12px', marginBottom: '6px' }}>
-        <h1>{symbol}</h1>
-        {instrumentName && <span style={{ color: COLORS.muted, fontSize: '18px' }}>{instrumentName}</span>}
-      </div>
+      {/* The answer first: where it stands and what each reading means, before any chart or table */}
+      <section style={{ ...SURFACE, padding: '20px 22px', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '20px' }}>
+          <div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '10px' }}>
+              <h1>{symbol}</h1>
+              {instrumentName && <span style={{ color: COLORS.muted, fontSize: '17px' }}>{instrumentName}</span>}
+            </div>
+            {analytics && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '12px', marginTop: '6px' }}>
+                <span style={{ fontSize: '30px', fontWeight: 700, color: '#0e3b2e' }}>{formatNumber(analytics.lastPrice)}</span>
+                <span style={{ fontSize: '17px', color: changeColor(analytics.change1D) }}>
+                  {formatPercent(analytics.change1D)} <span style={{ fontSize: '13px', color: COLORS.muted }}>today</span>
+                </span>
+                {daysSince(analytics.lastDate) > STALE_AFTER_DAYS ? (
+                  <span style={{ color: '#e65100', fontWeight: 'bold' }}>⚠ as of {formatDate(analytics.lastDate)}, {daysSince(analytics.lastDate)} days ago</span>
+                ) : (
+                  <span style={{ color: COLORS.muted, fontSize: '14px' }}>as of {formatDate(analytics.lastDate)}</span>
+                )}
+              </div>
+            )}
+          </div>
 
-      {analytics && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-          <span style={{ fontSize: '28px', fontWeight: 'bold' }}>{formatNumber(analytics.lastPrice)}</span>
-          <span style={{ fontSize: '18px', color: changeColor(analytics.change1D) }}>
-            {formatPercent(analytics.change1D)} <span style={{ fontSize: '13px', color: COLORS.muted }}>1D</span>
-          </span>
-          {daysSince(analytics.lastDate) > STALE_AFTER_DAYS ? (
-            <span style={{ color: '#e65100', fontWeight: 'bold' }}>⚠ as of {formatDate(analytics.lastDate)}, {daysSince(analytics.lastDate)} days ago</span>
-          ) : (
-            <span style={{ color: COLORS.muted }}>as of {formatDate(analytics.lastDate)}</span>
+          {analytics && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(230px, 100%), 1fr))', gap: '12px', flex: '1 1 300px', maxWidth: '640px', minWidth: 0 }}>
+              {analytics.isCash ? (
+                <div style={tileStyle}>
+                  <div style={tileLabelStyle}>{analytics.lowRiskKind ?? 'Cash fund'}<InfoTip term="cashFund" /></div>
+                  <p style={{ fontSize: '14px', marginTop: '6px' }}>Its price creeps up almost every day, so Buy/Sell signals don't apply. It shows what money earns while it waits.</p>
+                </div>
+              ) : (<>
+                <div style={tileStyle}>
+                  <div style={{ ...tileLabelStyle, marginBottom: '6px' }}>
+                    {news ? 'Combined signal' : `Technical signal${analytics.signal.steady ? ', last 20 days' : ', today'}`}
+                  </div>
+                  {news ? <ScaledSignalBadge signal={analytics.combinedSignal} large /> : <SignalBadge signal={analytics.signal} large />}
+                  {/* The meaning of the badge shown above it: the combined signal when news is on */}
+                  <p style={tileTextStyle}>{signalMeaning[(news ? analytics.combinedSignal : analytics.signal).action].headline}.</p>
+                </div>
+                <div style={tileStyle}>
+                  <div style={{ ...tileLabelStyle, marginBottom: '6px' }}>Long-term trend</div>
+                  <TrendBadge trend={analytics.longTermTrend} large />
+                  <p style={tileTextStyle}>{trendInWords(analytics.longTermTrend)}</p>
+                </div>
+                {analytics.strongerThanCash && (() => {
+                  const words = cashTestInWords(analytics.symbol, analytics.strongerThanCash)
+                  return (
+                    // A row of its own under the signal and trend, so neither tile gets squeezed
+                    <div style={{ ...tileStyle, gridColumn: '1 / -1' }}>
+                      <div style={{ ...tileLabelStyle, marginBottom: '6px' }}>
+                        Stronger than cash?<InfoTip term="strongerThanCash" />
+                      </div>
+                      <span style={{ display: 'inline-block', padding: '3px 12px', borderRadius: '999px', fontWeight: 700, fontSize: '16px', color: words.tone === 'good' ? '#1b5e20' : '#a23a12', backgroundColor: words.tone === 'good' ? '#e8f5e9' : '#fdeee9' }}>
+                        {words.word}
+                      </span>
+                      <p style={tileTextStyle}>{words.sentence}</p>
+                    </div>
+                  )
+                })()}
+                {!analytics.strongerThanCash && analytics.strongerThanCashUnavailable && (
+                  <div style={{ ...tileStyle, gridColumn: '1 / -1' }}>
+                    <div style={{ ...tileLabelStyle, marginBottom: '6px' }}>
+                      Stronger than cash?<InfoTip term="strongerThanCash" />
+                    </div>
+                    <span style={{ display: 'inline-block', padding: '3px 12px', borderRadius: '999px', fontWeight: 700, fontSize: '16px', color: '#2f3d37', backgroundColor: '#e4e7eb' }}>
+                      Not available
+                    </span>
+                    <p style={tileTextStyle}>{analytics.strongerThanCashUnavailable}</p>
+                  </div>
+                )}
+              </>)}
+            </div>
           )}
-          {analytics.isCash ? (
-            <span style={{ color: COLORS.muted, fontSize: '14px' }}>
-              {analytics.lowRiskKind ?? 'Cash fund'}: Buy/Sell signals don't apply<InfoTip term="cashFund" />
-            </span>
-          ) : (<>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: COLORS.muted, fontSize: '14px' }}>
-            {news ? <>Combined signal <ScaledSignalBadge signal={analytics.combinedSignal} large /></> : <>Technical signal <SignalBadge signal={analytics.signal} large /></>}
-          </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: COLORS.muted, fontSize: '14px' }}>
-            Long-term trend <TrendBadge trend={analytics.longTermTrend} />
-          </span>
-          </>)}
         </div>
-      )}
+      </section>
 
       {summary && (
         <PlainSummary
@@ -157,7 +207,7 @@ export default function InstrumentView() {
             timeframe={timeframeLabels[timeframe]}
           />
         ) : (
-          !loading && !error && <p style={{ padding: '20px', backgroundColor: 'white', borderRadius: '6px', color: COLORS.muted }}>No prices for this period. Try a longer period above.</p>
+          !loading && !error && <p style={{ padding: '20px', ...SURFACE, color: COLORS.muted }}>No prices for this period. Try a longer period above.</p>
         )}
       </section>
 

@@ -31,6 +31,7 @@ public class InstrumentsController : ControllerBase
     {
         var instruments = await _instrumentRepository.GetActiveInstrumentsAsync(cancellationToken);
         var lastUpdates = await _instrumentRepository.GetLastSuccessfulUpdateTimesAsync(cancellationToken);
+        var latestPrices = await _instrumentRepository.GetLatestPriceDatesAsync(cancellationToken);
 
         var result = instruments.Select(i => new InstrumentDto
         {
@@ -39,7 +40,8 @@ public class InstrumentsController : ControllerBase
             Name = i.Name,
             Type = i.Type,
             IsActive = i.IsActive,
-            LastUpdateDate = lastUpdates.TryGetValue(i.Id, out var lastUpdate) ? lastUpdate : null
+            LastUpdateDate = lastUpdates.TryGetValue(i.Id, out var lastUpdate) ? lastUpdate : null,
+            LatestPriceDate = latestPrices.TryGetValue(i.Id, out var latestPrice) ? latestPrice : null
         });
 
         return Ok(result);
@@ -59,6 +61,7 @@ public class InstrumentsController : ControllerBase
         }
 
         var lastUpdates = await _instrumentRepository.GetLastSuccessfulUpdateTimesAsync(cancellationToken);
+        var latestPrices = await _instrumentRepository.GetLatestPriceDatesAsync(cancellationToken);
 
         var result = new InstrumentDto
         {
@@ -67,7 +70,8 @@ public class InstrumentsController : ControllerBase
             Name = instrument.Name,
             Type = instrument.Type,
             IsActive = instrument.IsActive,
-            LastUpdateDate = lastUpdates.TryGetValue(instrument.Id, out var lastUpdate) ? lastUpdate : null
+            LastUpdateDate = lastUpdates.TryGetValue(instrument.Id, out var lastUpdate) ? lastUpdate : null,
+            LatestPriceDate = latestPrices.TryGetValue(instrument.Id, out var latestPrice) ? latestPrice : null
         };
 
         return Ok(result);

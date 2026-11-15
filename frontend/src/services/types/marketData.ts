@@ -187,7 +187,8 @@ export interface ActivitySeries {
   symbol: string;
   /** Daily shares traded, or monthly fund size in rupees; empty when the instrument has neither */
   kind: 'Volume' | 'FundSize' | '';
-  points: { date: string; value: number }[];
+  /** direction (volume days only): 1 the price closed up that day, -1 down, 0 flat or unknown */
+  points: { date: string; value: number; direction?: number }[];
 }
 
 /** Whether an instrument beat cash over the 12 months before this month's check (the first trading day) */

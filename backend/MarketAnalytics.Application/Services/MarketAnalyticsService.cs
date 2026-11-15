@@ -153,7 +153,18 @@ public class MarketAnalyticsService : IMarketAnalyticsService
         if (volumes.Count > 0)
         {
             result.Kind = "Volume";
-            result.Points = volumes.Select(v => new ActivityPointDto { Date = v.Date, Value = v.Shares }).ToList();
+            // Colour each day by its close against the previous close, so heavy selling and heavy buying stand apart
+            var prices = await PriceHistory.LoadDailyAsync(_pricePointRepository, _fundPayoutRepository, instrument.Id,
+                DateTime.UtcNow.Date.AddYears(-3).AddDays(-10), cancellationToken);
+            var direction = new Dictionary<DateTime, int>();
+            for (var i = 1; i < prices.Count; i++)
+                direction[prices[i].DateTime.Date] = Math.Sign(prices[i].Price - prices[i - 1].Price);
+            result.Points = volumes.Select(v => new ActivityPointDto
+            {
+                Date = v.Date,
+                Value = v.Shares,
+                Direction = direction.GetValueOrDefault(v.Date.Date),
+            }).ToList();
             return result;
         }
         var sizes = await _activityRepository.GetFundSizesAsync(instrument.Id, cancellationToken);

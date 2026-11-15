@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import InfoTip from '../help/InfoTip'
 import { analyticsApi } from '../../services/api/analyticsApi'
 import { ActivitySeries, InstrumentAnalyticsDto } from '../../services/types/marketData'
@@ -14,6 +14,11 @@ const TONE_COLORS = {
   usual: { color: '#2f3d37', background: '#e4e7eb' },
   flat: { color: '#2f3d37', background: '#e4e7eb' },
 }
+
+// Bars for days the price closed up, down, or flat; the same green and red as the rest of the app's up and down
+const DAY_COLORS = { up: COLORS.up, down: COLORS.down, flat: '#9aa5ad' }
+const dayColor = (direction?: number) => direction === 1 ? DAY_COLORS.up : direction === -1 ? DAY_COLORS.down : DAY_COLORS.flat
+const DAY_WORDS: Record<string, string> = { '1': 'price closed up', '-1': 'price closed down', '0': 'price unchanged' }
 
 const shortDate = (value: string) =>
   new Date(value).toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' })
@@ -42,8 +47,9 @@ export default function ActivityPanel({ analytics }: { analytics: InstrumentAnal
   if (!words) return null
   const isVolume = !!analytics.volume
   const tone = TONE_COLORS[words.tone]
-  // Fund sizes before about 2015 are tiny next to today's, so the chart shows the last ten years
-  const points = (series?.points ?? []).slice(isVolume ? 0 : -120)
+  // Volume: the last six months (about 125 trading days), so each day's bar is wide enough to show its colour.
+  // Fund sizes before about 2015 are tiny next to today's, so that chart shows the last ten years
+  const points = (series?.points ?? []).slice(isVolume ? -125 : -120)
 
   return (
     <section aria-labelledby="activity-title" style={{ ...SURFACE, padding: '18px 20px', marginBottom: '12px' }}>
@@ -60,19 +66,31 @@ export default function ActivityPanel({ analytics }: { analytics: InstrumentAnal
           : 'This shows how keen investors are; it doesn\'t say which way the price goes next.'}
       </p>
       {points.length > 1 && (
-        <div style={{ height: 160, marginTop: '10px' }} aria-label={isVolume ? 'Shares traded each day, last three years' : 'Fund size each month'}>
+        <div style={{ height: 160, marginTop: '10px' }} aria-label={isVolume ? 'Shares traded each day, last six months, green when the price closed up and red when down' : 'Fund size each month'}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={points} margin={{ top: 4, right: 8, bottom: 0, left: 0 }} barCategoryGap={0}>
               <XAxis dataKey="date" tickFormatter={shortDate} minTickGap={40} tick={{ fontSize: 12, fill: COLORS.muted }} />
               <YAxis tickFormatter={(v: number) => bigNumber(v).replace(' million', 'M').replace(' billion', 'B')} width={48} tick={{ fontSize: 12, fill: COLORS.muted }} />
               <Tooltip
                 labelFormatter={(label: string) => new Date(label).toLocaleDateString('en-US', { day: isVolume ? 'numeric' : undefined, month: 'short', year: 'numeric', timeZone: 'UTC' })}
-                formatter={(value: number) => [isVolume ? `${bigNumber(value)} shares` : `Rs ${bigNumber(value)}`, isVolume ? 'Traded' : 'Fund size']}
+                formatter={(value: number, _name: string, item: { payload?: { direction?: number } }) => [
+                  isVolume ? `${bigNumber(value)} shares, ${DAY_WORDS[String(item.payload?.direction ?? 0)]}` : `Rs ${bigNumber(value)}`,
+                  isVolume ? 'Traded' : 'Fund size',
+                ]}
               />
-              <Bar dataKey="value" fill="#9cc6d3" isAnimationActive={false} />
+              <Bar dataKey="value" fill="#9cc6d3" isAnimationActive={false}>
+                {isVolume && points.map((p) => <Cell key={p.date} fill={dayColor(p.direction)} />)}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
+      )}
+      {isVolume && points.length > 1 && (
+        <p style={{ fontSize: '13px', color: COLORS.muted, marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '4px 14px' }}>
+          <span><span aria-hidden="true" style={{ display: 'inline-block', width: 10, height: 10, backgroundColor: DAY_COLORS.up, marginRight: 5 }} />Price closed up that day</span>
+          <span><span aria-hidden="true" style={{ display: 'inline-block', width: 10, height: 10, backgroundColor: DAY_COLORS.down, marginRight: 5 }} />Price closed down</span>
+          <span>Taller bar = more shares traded</span>
+        </p>
       )}
     </section>
   )

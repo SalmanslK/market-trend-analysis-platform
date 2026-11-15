@@ -120,6 +120,9 @@ what it found. One refresh runs at a time; a second request gets "already runnin
 **Independent checks** (`scripts/verify`, plain Python, no packages; the app must be running):
 `python scripts/verify/verify_technical.py` recomputes every instrument's averages, RSI, MACD, Bollinger %B, votes, steady
 score and trend from the price series without the app's code and lists any mismatch with the app (none in Nov 2026).
+`python scripts/verify/verify_analytics.py` recomputes the headline figures (latest price, 1-day, 1-month and 1-year
+change, 52-week high, funds' money in and out) straight from Sarmaaya and compares them with the app (none differ in
+Nov 2026, apart from funds that paid out, where the app reinvests the payout by design).
 `python scripts/verify/verify_news.py KSE100 GOLDPK` lists each instrument's direct stories of the last 7 days with their
 scores, the news mood and the week's price change, to read by hand.
 
@@ -181,6 +184,11 @@ archive builds up from the first run (which backfills about 30 days).
 **Direct vs background**: an article is *direct* for an instrument when its search found it or its main topic is
 about it (gold news for gold, rupee news for USD/PKR). Wider topics (interest rates, IMF, oil) are shown as
 *background* and are not counted in that instrument's news mood.
+Each story is scored from each instrument's side: stocks with stocks (cheaper oil helps), gold with gold (a stronger
+dollar hurts; for gold in Pakistan and the gold fund a weaker rupee helps, for world gold, priced in dollars, the
+rupee doesn't count), USD/PKR opposite to the rupee. The News page's combined moods never average gold with shares
+(Pakistan stocks, gold in Pakistan, gold worldwide, the dollar, stock funds, the gold fund, Shariah stocks): their
+monthly moves are unrelated (KSE-100 and gold in Pakistan, 2020-2026: correlation 0.02), so an average would hide both.
 
 **Sentiment** (`NewsSentimentAnalyzer`, rule-based, no AI) is read from the wording, from each instrument's point of view:
 
@@ -262,6 +270,9 @@ at least the 100-day average.
   (development -4.3 points, the opposite of the idea; holdout +1.8).
 - Volume history (Sarmaaya `indices/volume-history`) starts Nov 2013; fund sizes (`mutual-funds/aum-history`) are
   monthly and were in thousands of rupees before 2025.
+- The "How busy trading is" chart shows the last six months of daily volume, each bar green when the price closed up
+  that day and red when it closed down (prices read through `PriceHistory`). It is for reading the market only: the
+  on-balance volume test above is the same idea as a rule, and it failed.
 
 **Longer price history** (`scripts/research/backfill-history.cs`, Nov 14 2026): most instruments had been added with
 prices from 2020 or later although the source goes back much further. Added after checking the source matches the

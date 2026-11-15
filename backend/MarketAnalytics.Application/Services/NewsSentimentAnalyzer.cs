@@ -28,7 +28,7 @@ public static class NewsSentimentAnalyzer
     private const RegexOptions Options = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled;
 
     /// <summary>Whose point of view an article is read from.</summary>
-    public enum View { General, Stocks, Gold, Rupee, Company }
+    public enum View { General, Stocks, Gold, GoldWorld, Rupee, Company }
 
     private enum Subject { None, Stocks, Gold, Rupee, Dollar, Oil, OtherMetal, GlobalStocks, Rates, Reserves }
 
@@ -110,14 +110,16 @@ public static class NewsSentimentAnalyzer
     };
 
     /// <summary>
-    /// The view an instrument reads news from: USD/PKR moves opposite to the rupee, gold with gold, a tracked company
+    /// The view an instrument reads news from: USD/PKR moves opposite to the rupee, gold with gold (in Pakistan also
+    /// with a weaker rupee; the world price, in dollars, not), a tracked company
     /// with whatever its own headlines say (they name it, so a "copper-gold discovery" is the company's news, not gold's),
     /// the rest with stocks.
     /// </summary>
     public static View ViewFor(string symbol) => symbol.ToUpperInvariant() switch
     {
         "USDPKR" => View.Rupee,
-        "GOLDPK" or "GOLDINT" or "MGF" => View.Gold,
+        "GOLDINT" => View.GoldWorld,
+        "GOLDPK" or "MGF" => View.Gold,
         _ when TrackedStocks.Find(symbol) != null => View.Company,
         _ => View.Stocks,
     };
@@ -134,6 +136,8 @@ public static class NewsSentimentAnalyzer
         (View.Gold, Subject.Gold) => 1,
         (View.Gold, Subject.Dollar) => -1,
         (View.Gold, Subject.Rupee) => -1,
+        (View.GoldWorld, Subject.Gold) => 1,
+        (View.GoldWorld, Subject.Dollar) => -1,
         (View.Rupee, Subject.Rupee) => -1,
         (View.Rupee, Subject.Reserves) => -1,
         (View.Rupee, Subject.Dollar) => 1,
@@ -159,7 +163,7 @@ public static class NewsSentimentAnalyzer
         var main = titleClauses.Select(SubjectOf).FirstOrDefault(s => s != Subject.None);
         // A linked headline that names no subject is about the instrument itself ("Bulls return", "Rate hits Rs280")
         if (main == Subject.None)
-            main = view switch { View.Stocks => Subject.Stocks, View.Gold => Subject.Gold, View.Rupee => Subject.Dollar, _ => Subject.None };
+            main = view switch { View.Stocks => Subject.Stocks, View.Gold or View.GoldWorld => Subject.Gold, View.Rupee => Subject.Dollar, _ => Subject.None };
         int EffectOf(Subject subject) => view == View.General
             ? (subject == main || subject == Subject.None ? 1 : 0)
             : Effect(view, subject == Subject.None ? main : subject);

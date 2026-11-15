@@ -4,7 +4,7 @@ import math
 import urllib.request
 
 API = "http://localhost:5000/api"
-SYMBOLS = ["KSE100", "KMI30", "KMIF", "MIF", "MBF", "GOLDINT", "GOLDPK", "MGF", "USDPKR"]
+SYMBOLS = ["KSE100", "KMI30", "KMIF", "MIF", "MBF", "GOLDINT", "GOLDPK", "MGF", "USDPKR", "GHNI", "SYS", "SAZEW", "SRVI", "PIOC", "JVDC", "MARI", "FATIMA", "MEBL", "DCR"]
 
 
 def get(path):

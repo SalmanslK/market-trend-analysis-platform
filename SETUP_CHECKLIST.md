@@ -467,6 +467,18 @@ rates, the world economy, what history says about the coming months and the next
 - API: `GET /api/brief/latest` (latest brief, and whether Claude Code is available), `POST /api/brief` (write one).
   Briefs are kept in the `DailyBriefs` table.
 
+**The brief without the PC: skill and morning routine.**
+- Skill `.claude/skills/pakistan-market-brief/`: `scripts/facts.py` gathers the same facts from Sarmaaya and Google
+  News without the database (standard-library Python; KMI-30 stands in for MIF in the history-based outlook, since
+  MIF's 2005-2013 payouts are estimated in the app's database only); `references/writing-rules.md` is the app's
+  writing instructions, kept identical by `CloudBriefTests`. Test cases with graders in `evals/`. Usable in Claude
+  Code here and, packaged, in the Claude app.
+- Cloud routine "Morning market brief (Pakistan)" (`trig_01LvU3hwaC9wUAK8veBv5iWq`, claude.ai/code/routines): weekdays
+  8:30 am Pakistan time (03:30 UTC), after the PSX and US closes and an hour before the PSX opens. It runs the skill,
+  saves the brief as a Claude document and sends a phone notification; no email. Its environment ("Default") must
+  allow beta-restapi.sarmaaya.pk and news.google.com (Network access, Limited). It checks out `feature/volumes`
+  until that branch is merged.
+
 ## Alerts (what changed)
 
 `AlertService` (`GET /api/alerts?days=30`) recomputes each day's technical, news and combined signal and trend direction

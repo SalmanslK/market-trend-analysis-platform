@@ -153,8 +153,10 @@ public class MarketDataUpdater
 
         if (validData.Count == 0)
         {
-            _logger.LogWarning("No valid data after cleaning for {Symbol}", instrument.Symbol);
-            await LogUpdateResultAsync(instrument, latestDate, 0, UpdateStatus.Failed, "No valid data after cleaning", cancellationToken);
+            // Not a failure: early in the day the gold source lists today's row before the rate is set (no price yet).
+            // The next run picks it up, so this is recorded like "no new data", with the reason kept for the log
+            _logger.LogInformation("No usable new prices yet for {Symbol} (zero or future-dated rows)", instrument.Symbol);
+            await LogUpdateResultAsync(instrument, latestDate, 0, UpdateStatus.Success, "No usable new prices yet (zero or future-dated rows)", cancellationToken);
             return (0, latestDate);
         }
 

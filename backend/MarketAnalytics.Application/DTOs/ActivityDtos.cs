@@ -31,6 +31,8 @@ public class ActivityPointDto
 {
     public DateTime Date { get; set; }
     public decimal Value { get; set; }
+    /// <summary>Volume days only: 1 when the price closed up that day, -1 down, 0 flat or unknown</summary>
+    public int Direction { get; set; }
 }
 
 /// <summary>The activity history for a chart: daily shares traded, or monthly fund size in rupees.</summary>

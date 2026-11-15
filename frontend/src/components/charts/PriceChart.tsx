@@ -78,8 +78,10 @@ export default function PriceChart({ data, instrument, interval, timeframe }: Pr
   }
 
   return (
-    <div style={{ width: '100%', height: '600px', padding: '20px', ...SURFACE }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+    // The box grows with its heading (which wraps on a phone) and the chart keeps a fixed height, so the chart and its
+    // legend never spill onto the section below
+    <div style={{ width: '100%', padding: '20px', ...SURFACE }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
         <div>
           <h2>{instrument} | {interval} Prices ({timeframe})</h2>
           <p style={{ fontSize: '13px', color: '#546e7a', marginTop: '4px', maxWidth: '640px', lineHeight: 1.4 }}>
@@ -103,7 +105,8 @@ export default function PriceChart({ data, instrument, interval, timeframe }: Pr
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height="82%">
+      <div style={{ height: '480px' }}>
+      <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData} syncId="price" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="date" minTickGap={30} />
@@ -135,6 +138,7 @@ export default function PriceChart({ data, instrument, interval, timeframe }: Pr
           ))}
         </LineChart>
       </ResponsiveContainer>
+      </div>
     </div>
   )
 }

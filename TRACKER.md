@@ -7,7 +7,7 @@ What has been built, what is left, and what was decided against. Updated 15 Nove
 
 | | |
 |---|---|
-| Code | Everything merged into `main` (PRs #1 to #9) |
+| Code | Merged into `main` up to PR #10; end-to-end review PR open |
 | App | Runs locally: `scripts/start-app.ps1`, website at http://localhost:3000 |
 | Morning brief | Cloud routine, weekdays 8:30 am Pakistan time, to the phone (Claude app) |
 | Tests | Backend 221, website 35, all passing |
@@ -60,6 +60,17 @@ What has been built, what is left, and what was decided against. Updated 15 Nove
 | Review | Every page checked: Guide covers every term, Compare grouped and phone-safe, Settings explains the phone brief | 811422d |
 | Phone | Cloud brief: facts gathered without the PC's database, same writing rules (a test keeps them equal) | 839277f |
 | Phone | Skill `pakistan-market-brief` (Claude Code here; uploaded to the user's Claude account); retries on source hiccups | 14aa700, 46bdf4d |
+
+### End-to-end review (November 2026)
+- Figures checked against the source with independent scripts: technical signals for all 19 instruments, and the
+  headline figures (price, 1-day, 1-month, 1-year, 52-week high, money in and out). No mismatches; funds that paid out
+  differ by design because the app reinvests payouts.
+- Data: no duplicate days, all current. Gaps in the funds (24 Feb to 21 Mar 2025) and the dollar (to 12 May 2026)
+  are in the source itself. One-day glitches in fund prices are dropped on reading. Old stock jumps (2002-2003) only
+  show on the all-years chart; backtests start in 2006.
+- Fixed: the price chart and the RSI/MACD boxes spilled over the next section on a phone; early-morning gold updates
+  were logged as "Failed" when the source simply had no rate yet.
+- New: the volume chart colours each day green (price closed up) or red (closed down), last six months.
 
 ### Outside the repository
 - **Morning brief routine** "Morning market brief (Pakistan)": https://claude.ai/code/routines/trig_01LvU3hwaC9wUAK8veBv5iWq

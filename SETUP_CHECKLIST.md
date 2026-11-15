@@ -184,6 +184,11 @@ archive builds up from the first run (which backfills about 30 days).
 **Direct vs background**: an article is *direct* for an instrument when its search found it or its main topic is
 about it (gold news for gold, rupee news for USD/PKR). Wider topics (interest rates, IMF, oil) are shown as
 *background* and are not counted in that instrument's news mood.
+Each story is scored from each instrument's side: stocks with stocks (cheaper oil helps), gold with gold (a stronger
+dollar hurts; for gold in Pakistan and the gold fund a weaker rupee helps, for world gold, priced in dollars, the
+rupee doesn't count), USD/PKR opposite to the rupee. The News page's combined moods never average gold with shares
+(Pakistan stocks, gold in Pakistan, gold worldwide, the dollar, stock funds, the gold fund, Shariah stocks): their
+monthly moves are unrelated (KSE-100 and gold in Pakistan, 2020-2026: correlation 0.02), so an average would hide both.
 
 **Sentiment** (`NewsSentimentAnalyzer`, rule-based, no AI) is read from the wording, from each instrument's point of view:
 

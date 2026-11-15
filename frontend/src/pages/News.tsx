@@ -14,6 +14,9 @@ import InfoTip from '../components/help/InfoTip'
 const PAGE_SIZE = 30
 import PlainSummary from '../components/help/PlainSummary'
 
+// Instruments that follow the gold price (MGF is Meezan's gold fund); their news mood is read from gold's side
+const GOLD = new Set(['GOLDPK', 'GOLDINT', 'MGF'])
+
 const selectStyle = { padding: '8px', fontSize: '15px' }
 
 export default function News() {
@@ -80,20 +83,28 @@ export default function News() {
   // Combined moods: the whole picture on "All", finer parts inside a tab (Pakistan and global markets, each industry)
   const pick = (test: (symbol: string) => boolean) => moods.filter((m) => test(m.symbol))
   const isMarket = (sym: string) => groups[sym] === 'markets'
-  // USD/PKR gets its own card: news that is good for it (a dearer dollar) is bad for Pakistan
+  const isFund = (sym: string) => groups[sym] === 'funds'
+  // Gold and shares are never averaged together: news good for one is often neutral or bad for the other, and the
+  // average would hide both. USD/PKR gets its own card too: news that is good for it (a dearer dollar) is bad for Pakistan
+  const isGold = (sym: string) => GOLD.has(sym)
   const marketParts: [string, (sym: string) => boolean][] = [
-    ['Markets: Pakistan', (sym) => isMarket(sym) && sym !== 'GOLDINT' && sym !== 'USDPKR'],
+    ['Pakistan stocks', (sym) => isMarket(sym) && !isGold(sym) && sym !== 'USDPKR'],
+    ['Gold in Pakistan', (sym) => sym === 'GOLDPK'],
+    ['Gold worldwide', (sym) => sym === 'GOLDINT'],
     ['The dollar (USD/PKR)', (sym) => sym === 'USDPKR'],
-    ['Markets: Global', (sym) => sym === 'GOLDINT'],
+  ]
+  const fundParts: [string, (sym: string) => boolean][] = [
+    ['Stock funds', (sym) => isFund(sym) && !isGold(sym)],
+    ['Gold fund', (sym) => isFund(sym) && isGold(sym)],
   ]
   const combined: (GroupMood | null)[] =
     group === 'markets' ? marketParts.map(([title, test]) => groupMood(title, pick(test)))
-      : group === 'funds' ? [groupMood('Meezan funds', pick((sym) => groups[sym] === 'funds'))]
+      : group === 'funds' ? fundParts.map(([title, test]) => groupMood(title, pick(test)))
         : group === 'shares'
           ? [...new Set(Object.values(industries))].sort().map((industry) => groupMood(industry, pick((sym) => industries[sym] === industry)))
           : [
             ...marketParts.map(([title, test]) => groupMood(title, pick(test))),
-            groupMood('Funds', pick((sym) => groups[sym] === 'funds')),
+            ...fundParts.map(([title, test]) => groupMood(title, pick(test))),
             groupMood('Shariah stocks', pick((sym) => groups[sym] === 'shares')),
           ]
 

@@ -71,6 +71,8 @@ What has been built, what is left, and what was decided against. Updated 15 Nove
 - Fixed: the price chart and the RSI/MACD boxes spilled over the next section on a phone; early-morning gold updates
   were logged as "Failed" when the source simply had no rate yet.
 - New: the volume chart colours each day green (price closed up) or red (closed down), last six months.
+- News page: combined moods no longer average gold with shares (Pakistan stocks, gold in Pakistan, gold worldwide,
+  stock funds, gold fund); world gold no longer reacts to rupee news.
 
 ### Outside the repository
 - **Morning brief routine** "Morning market brief (Pakistan)": https://claude.ai/code/routines/trig_01LvU3hwaC9wUAK8veBv5iWq

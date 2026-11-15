@@ -125,6 +125,10 @@ public class NewsSentimentAnalyzerTests
     [InlineData("GOLDPK", "Gold drops over 2% as dollar strengthens", "Negative")]
     [InlineData("GOLDPK", "Gold prices remain unchanged, silver declines in domestic market", "Neutral")]
     [InlineData("GOLDPK", "Gold firms, silver slides as oil surge revives inflation pressure", "Positive")]
+    // A weaker rupee lifts gold's rupee price; the world price, in dollars, doesn't care
+    [InlineData("GOLDPK", "Rupee slides to record low", "Positive")]
+    [InlineData("GOLDINT", "Rupee slides to record low", "Neutral")]
+    [InlineData("GOLDINT", "Gold prices surge as dollar weakens", "Positive")]
     [InlineData("USDPKR", "Rupee gains against US dollar", "Negative")]                 // rupee stronger -> USD/PKR falls
     [InlineData("USDPKR", "Dollar hits historic high at Rs170 in interbank market", "Positive")]
     [InlineData("USDPKR", "Pakistan's foreign exchange reserves climb to record high", "Negative")]

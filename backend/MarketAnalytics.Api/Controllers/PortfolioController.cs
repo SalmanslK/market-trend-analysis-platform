@@ -15,10 +15,12 @@ public class PortfolioController : ControllerBase
     private const decimal MaxCostPercent = 5m;
 
     private readonly IPortfolioService _portfolioService;
+    private readonly DataCache _cache;
 
-    public PortfolioController(IPortfolioService portfolioService)
+    public PortfolioController(IPortfolioService portfolioService, DataCache cache)
     {
         _portfolioService = portfolioService;
+        _cache = cache;
     }
 
     /// <summary>
@@ -35,7 +37,9 @@ public class PortfolioController : ControllerBase
         [FromQuery] decimal costPercent = BacktestService.DefaultCostPercent,
         CancellationToken cancellationToken = default)
     {
-        return Ok(await _portfolioService.CompareAsync(PortfolioService.Presets, Math.Clamp(costPercent, 0, MaxCostPercent), cancellationToken));
+        var cost = Math.Clamp(costPercent, 0, MaxCostPercent);
+        return Ok(await _cache.GetOrComputeAsync($"portfolio:presets:{cost}",
+            () => _portfolioService.CompareAsync(PortfolioService.Presets, cost, cancellationToken), cancellationToken));
     }
 
     /// <summary>
@@ -52,6 +56,9 @@ public class PortfolioController : ControllerBase
         if (mixes.Count > PortfolioService.MaxMixes)
             return BadRequest($"Send at most {PortfolioService.MaxMixes} mixes.");
 
-        return Ok(await _portfolioService.CompareAsync(mixes, Math.Clamp(costPercent, 0, MaxCostPercent), cancellationToken));
+        var cost = Math.Clamp(costPercent, 0, MaxCostPercent);
+        // The same mixes asked again (changing the cost back, reopening the page) are answered from memory
+        var key = $"portfolio:{cost}:{System.Text.Json.JsonSerializer.Serialize(mixes)}";
+        return Ok(await _cache.GetOrComputeAsync(key, () => _portfolioService.CompareAsync(mixes, cost, cancellationToken), cancellationToken));
     }
 }

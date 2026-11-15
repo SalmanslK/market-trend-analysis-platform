@@ -11,13 +11,14 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { instrumentsApi } from '../services/api/instrumentsApi'
+import { groupOfType, INSTRUMENT_GROUPS } from '../services/instrumentGroups'
 import { pricesApi } from '../services/api/pricesApi'
 import { InstrumentDto, PriceDataDto, Interval, Timeframe } from '../services/types/marketData'
 import IntervalSelector from '../components/controls/IntervalSelector'
 import TimeframeSelector from '../components/controls/TimeframeSelector'
 import { intervalLabels, timeframeLabels } from '../services/labels'
 import { loadPreferences } from '../services/preferences'
-import { formatNumber, SURFACE } from '../services/format'
+import { COLORS, formatNumber, SURFACE } from '../services/format'
 import PlainSummary from '../components/help/PlainSummary'
 
 // One distinct colour per instrument (13 today, with spares); with fewer colours than instruments two lines matched
@@ -147,13 +148,24 @@ export default function Comparison() {
         the first price in the selected timeframe, so instruments on very different scales share one axis.
       </p>
 
-      <div style={{ marginBottom: '15px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+      <div style={{ marginBottom: '15px', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', fontSize: '14px', color: COLORS.muted }}>
+        <span>Chart:</span>
         <IntervalSelector selectedInterval={interval} onIntervalChange={setInterval} />
+        <span>over</span>
         <TimeframeSelector selectedTimeframe={timeframe} onTimeframeChange={setTimeframe} />
+        {selected.length > 0 && (
+          <button type="button" onClick={() => setSelected([])} style={{ border: `1px solid ${COLORS.border}`, background: 'white', borderRadius: '6px', padding: '4px 10px', color: COLORS.link, cursor: 'pointer' }}>
+            Clear all
+          </button>
+        )}
       </div>
 
-      <div style={{ marginBottom: '20px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-        {instruments.map((instrument) => {
+      {/* The same three groups as the overview, so a choice among 23 instruments stays easy to scan */}
+      <div style={{ marginBottom: '20px', display: 'grid', gap: '8px' }}>
+      {INSTRUMENT_GROUPS.map((group) => (
+      <div key={group.key} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
+        <span style={{ fontSize: '14px', fontWeight: 700, color: COLORS.muted, minWidth: '110px' }}>{group.title}</span>
+        {instruments.filter((i) => groupOfType(i.type) === group.key).map((instrument) => {
           const isSelected = selected.includes(instrument.symbol)
           return (
             <label
@@ -179,6 +191,8 @@ export default function Comparison() {
             </label>
           )
         })}
+      </div>
+      ))}
       </div>
 
       {error && <div style={{ color: '#d32f2f', marginBottom: '15px' }}>{error}</div>}
